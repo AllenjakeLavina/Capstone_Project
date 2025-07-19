@@ -116,42 +116,9 @@
       <div v-show="activeTab === 'experience'" class="tab-content section">
         <div class="section-header">
           <h2>Work Experience</h2>
-          <button v-if="!addingExperience" @click="toggleAddExperience" class="add-btn">
+          <button @click="toggleAddExperience" class="add-btn">
             <i class="fas fa-plus"></i> Add Experience
           </button>
-        </div>
-        
-        <div v-if="addingExperience" class="add-section">
-          <form @submit.prevent="addExperience" class="add-form">
-            <div class="form-group">
-              <label>Company:</label>
-              <input v-model="experienceForm.company" required />
-            </div>
-            <div class="form-group">
-              <label>Position:</label>
-              <input v-model="experienceForm.position" required />
-            </div>
-            <div class="form-group">
-              <label>Start Date:</label>
-              <input type="date" v-model="experienceForm.startDate" required />
-            </div>
-            <div class="form-group">
-              <label>Current Position:</label>
-              <input type="checkbox" v-model="experienceForm.isCurrentPosition" />
-            </div>
-            <div v-if="!experienceForm.isCurrentPosition" class="form-group">
-              <label>End Date:</label>
-              <input type="date" v-model="experienceForm.endDate" :required="!experienceForm.isCurrentPosition" />
-            </div>
-            <div class="form-group">
-              <label>Description:</label>
-              <textarea v-model="experienceForm.description" rows="3"></textarea>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="save-btn">Save</button>
-              <button type="button" class="cancel-btn" @click="toggleAddExperience">Cancel</button>
-            </div>
-          </form>
         </div>
         
         <div v-if="profile.serviceProvider?.workExperience && profile.serviceProvider.workExperience.length > 0" class="experience-list">
@@ -166,7 +133,7 @@
             <p class="experience-description">{{ experience.description }}</p>
           </div>
         </div>
-        <div v-else-if="!addingExperience" class="no-data">
+        <div v-else class="no-data">
           <p>No work experience added yet.</p>
           <p>Add work experience to showcase your professional history to potential clients.</p>
         </div>
@@ -176,42 +143,9 @@
       <div v-show="activeTab === 'education'" class="tab-content section">
         <div class="section-header">
           <h2>Education</h2>
-          <button v-if="!addingEducation" @click="toggleAddEducation" class="add-btn">
+          <button @click="toggleAddEducation" class="add-btn">
             <i class="fas fa-plus"></i> Add Education
           </button>
-        </div>
-        
-        <div v-if="addingEducation" class="add-section">
-          <form @submit.prevent="addEducation" class="add-form">
-            <div class="form-group">
-              <label>Institution:</label>
-              <input v-model="educationForm.institution" required />
-            </div>
-            <div class="form-group">
-              <label>Degree:</label>
-              <input v-model="educationForm.degree" required />
-            </div>
-            <div class="form-group">
-              <label>Field of Study:</label>
-              <input v-model="educationForm.fieldOfStudy" />
-            </div>
-            <div class="form-group">
-              <label>Start Date:</label>
-              <input type="date" v-model="educationForm.startDate" required />
-            </div>
-            <div class="form-group">
-              <label>Currently Studying:</label>
-              <input type="checkbox" v-model="educationForm.isCurrentlyStudying" />
-            </div>
-            <div v-if="!educationForm.isCurrentlyStudying" class="form-group">
-              <label>End Date:</label>
-              <input type="date" v-model="educationForm.endDate" :required="!educationForm.isCurrentlyStudying" />
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="save-btn">Save</button>
-              <button type="button" class="cancel-btn" @click="toggleAddEducation">Cancel</button>
-            </div>
-          </form>
         </div>
         
         <div v-if="profile.serviceProvider?.education && profile.serviceProvider.education.length > 0" class="education-list">
@@ -226,7 +160,7 @@
             </div>
           </div>
         </div>
-        <div v-else-if="!addingEducation" class="no-data">
+        <div v-else class="no-data">
           <p>No education history added yet.</p>
           <p>Add your educational background to highlight your qualifications.</p>
         </div>
@@ -242,28 +176,15 @@
         <div class="subsection">
           <div class="subsection-header">
             <h3>Professional Skills</h3>
-            <button v-if="!addingSkill" @click="toggleAddSkill" class="add-btn">
+            <button @click="toggleAddSkill" class="add-btn">
               <i class="fas fa-plus"></i> Add Skill
             </button>
-          </div>
-          
-          <div v-if="addingSkill" class="add-section">
-            <form @submit.prevent="addSkill" class="add-form">
-              <div class="form-group">
-                <label>Skill Name:</label>
-                <input v-model="skillForm.skillName" required />
-              </div>
-              <div class="form-actions">
-                <button type="submit" class="save-btn">Save</button>
-                <button type="button" class="cancel-btn" @click="toggleAddSkill">Cancel</button>
-              </div>
-            </form>
           </div>
           
           <div v-if="profile.serviceProvider?.skills && profile.serviceProvider.skills.length > 0" class="skills-list">
             <span v-for="skill in profile.serviceProvider.skills" :key="skill.id" class="skill-tag">{{ skill.name }}</span>
           </div>
-          <div v-else-if="!addingSkill" class="no-data">
+          <div v-else class="no-data">
             <p>No skills added yet.</p>
             <p>Add skills to help clients find you and understand your expertise.</p>
           </div>
@@ -273,7 +194,7 @@
         <div class="subsection">
           <div class="subsection-header">
             <h3>Documents & Verification</h3>
-            <button v-if="!addingDocument" @click="toggleAddDocument" class="add-btn">
+            <button @click="toggleAddDocument" class="add-btn">
               <i class="fas fa-plus"></i> Upload Document
             </button>
           </div>
@@ -282,33 +203,6 @@
             <p><strong>Verification Status:</strong> 
               <span :class="verificationStatusClass">{{ verificationStatusText }}</span>
             </p>
-          </div>
-          
-          <div v-if="addingDocument" class="add-section">
-            <form @submit.prevent="addDocument" class="add-form" enctype="multipart/form-data">
-              <div class="form-group">
-                <label>Document Title:</label>
-                <input v-model="documentForm.title" required />
-              </div>
-              <div class="form-group">
-                <label>Document Type:</label>
-                <select v-model="documentForm.type" required>
-                  <option value="ID">ID Document</option>
-                  <option value="CERTIFICATE">Certificate</option>
-                  <option value="LICENSE">License</option>
-                  <option value="RESUME">Resume</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>File:</label>
-                <input type="file" ref="fileInput" required />
-              </div>
-              <div class="form-actions">
-                <button type="submit" class="save-btn">Upload</button>
-                <button type="button" class="cancel-btn" @click="toggleAddDocument">Cancel</button>
-              </div>
-            </form>
           </div>
           
           <div v-if="profile.serviceProvider?.documents && profile.serviceProvider.documents.length > 0" class="documents-list">
@@ -325,7 +219,7 @@
               <a @click.prevent="openFileModal(doc.fileUrl, doc.title, doc.type)" class="view-btn">View Document</a>
             </div>
           </div>
-          <div v-else-if="!addingDocument" class="no-data">
+          <div v-else class="no-data">
             <p>No documents uploaded yet.</p>
             <p>Upload identity documents to complete the verification process.</p>
           </div>
@@ -335,35 +229,9 @@
         <div class="subsection">
           <div class="subsection-header">
             <h3>Portfolio</h3>
-            <button v-if="!addingPortfolio" @click="toggleAddPortfolio" class="add-btn">
+            <button @click="toggleAddPortfolio" class="add-btn">
               <i class="fas fa-plus"></i> Add Portfolio Item
             </button>
-          </div>
-          
-          <div v-if="addingPortfolio" class="add-section">
-            <form @submit.prevent="addPortfolioItem" class="add-form" enctype="multipart/form-data">
-              <div class="form-group">
-                <label>Title:</label>
-                <input v-model="portfolioForm.title" required />
-              </div>
-              <div class="form-group">
-                <label>Description:</label>
-                <textarea v-model="portfolioForm.description" rows="3"></textarea>
-              </div>
-              <div class="form-group">
-                <label>Project URL (optional):</label>
-                <input type="url" v-model="portfolioForm.projectUrl" placeholder="https://example.com" />
-              </div>
-              <div class="form-group">
-                <label>Images/Files (up to 5):</label>
-                <input type="file" multiple ref="portfolioFilesInput" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt" required />
-                <small class="form-hint">Select up to 5 files to showcase your work (images, PDFs, or documents)</small>
-              </div>
-              <div class="form-actions">
-                <button type="submit" class="save-btn">Save</button>
-                <button type="button" class="cancel-btn" @click="toggleAddPortfolio">Cancel</button>
-              </div>
-            </form>
           </div>
           
           <div v-if="profile.serviceProvider?.portfolio && profile.serviceProvider.portfolio.length > 0" class="portfolio-grid">
@@ -394,7 +262,7 @@
               </div>
             </div>
           </div>
-          <div v-else-if="!addingPortfolio" class="no-data">
+          <div v-else class="no-data">
             <p>No portfolio items added yet.</p>
             <p>Add portfolio items to showcase your work and projects.</p>
           </div>
@@ -429,12 +297,243 @@
           </div>
         </div>
       </div>
+
+      <!-- Edit Profile Modal -->
+      <div v-if="showEditProfileModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Edit Profile</h2>
+            <button class="close-btn" @click="showEditProfileModal = false">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="updatePersonalInfo" class="edit-form">
+              <div class="form-group">
+                <label>First Name:</label>
+                <input v-model.trim="personalForm.firstName" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Last Name:</label>
+                <input v-model.trim="personalForm.lastName" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Phone:</label>
+                <input v-model.trim="personalForm.phone" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Hourly Rate ($):</label>
+                <input type="number" v-model.number="personalForm.hourlyRate" min="0" step="0.01" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Headline:</label>
+                <input v-model.trim="personalForm.headline" placeholder="Short professional headline (e.g., Experienced Web Developer)" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Bio:</label>
+                <textarea v-model.trim="personalForm.bio" rows="4" placeholder="Tell clients about yourself, your skills, and experience" class="form-control"></textarea>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" @click="showEditProfileModal = false">Cancel</button>
+                <button type="submit" class="btn btn-primary" :disabled="isProcessing">
+                  {{ isProcessing ? 'Saving...' : 'Save Changes' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Experience Modal -->
+      <div v-if="showAddExperienceModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Add Work Experience</h2>
+            <button class="close-btn" @click="showAddExperienceModal = false">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="addExperience" class="add-form">
+              <div class="form-group">
+                <label>Company:</label>
+                <input v-model="experienceForm.company" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Position:</label>
+                <input v-model="experienceForm.position" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Start Date:</label>
+                <input type="date" v-model="experienceForm.startDate" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Current Position:</label>
+                <input type="checkbox" v-model="experienceForm.isCurrentPosition" />
+              </div>
+              <div v-if="!experienceForm.isCurrentPosition" class="form-group">
+                <label>End Date:</label>
+                <input type="date" v-model="experienceForm.endDate" :required="!experienceForm.isCurrentPosition" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Description:</label>
+                <textarea v-model="experienceForm.description" rows="3" class="form-control"></textarea>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" @click="showAddExperienceModal = false">Cancel</button>
+                <button type="submit" class="btn btn-primary" :disabled="isProcessing">
+                  {{ isProcessing ? 'Adding...' : 'Add Experience' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Education Modal -->
+      <div v-if="showAddEducationModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Add Education</h2>
+            <button class="close-btn" @click="showAddEducationModal = false">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="addEducation" class="add-form">
+              <div class="form-group">
+                <label>Institution:</label>
+                <input v-model="educationForm.institution" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Degree:</label>
+                <input v-model="educationForm.degree" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Field of Study:</label>
+                <input v-model="educationForm.fieldOfStudy" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Start Date:</label>
+                <input type="date" v-model="educationForm.startDate" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Currently Studying:</label>
+                <input type="checkbox" v-model="educationForm.isCurrentlyStudying" />
+              </div>
+              <div v-if="!educationForm.isCurrentlyStudying" class="form-group">
+                <label>End Date:</label>
+                <input type="date" v-model="educationForm.endDate" :required="!educationForm.isCurrentlyStudying" class="form-control" />
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" @click="showAddEducationModal = false">Cancel</button>
+                <button type="submit" class="btn btn-primary" :disabled="isProcessing">
+                  {{ isProcessing ? 'Adding...' : 'Add Education' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Skill Modal -->
+      <div v-if="showAddSkillModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Add Skill</h2>
+            <button class="close-btn" @click="showAddSkillModal = false">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="addSkill" class="add-form">
+              <div class="form-group">
+                <label>Skill Name:</label>
+                <input v-model="skillForm.skillName" required class="form-control" placeholder="e.g., JavaScript, Web Design, Photography" />
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" @click="showAddSkillModal = false">Cancel</button>
+                <button type="submit" class="btn btn-primary" :disabled="isProcessing">
+                  {{ isProcessing ? 'Adding...' : 'Add Skill' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Document Modal -->
+      <div v-if="showAddDocumentModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Upload Document</h2>
+            <button class="close-btn" @click="showAddDocumentModal = false">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="addDocument" class="add-form" enctype="multipart/form-data">
+              <div class="form-group">
+                <label>Document Title:</label>
+                <input v-model="documentForm.title" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Document Type:</label>
+                <select v-model="documentForm.type" required class="form-control">
+                  <option value="ID">ID Document</option>
+                  <option value="CERTIFICATE">Certificate</option>
+                  <option value="LICENSE">License</option>
+                  <option value="RESUME">Resume</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>File:</label>
+                <input type="file" ref="fileInput" required class="form-control" />
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" @click="showAddDocumentModal = false">Cancel</button>
+                <button type="submit" class="btn btn-primary" :disabled="isProcessing">
+                  {{ isProcessing ? 'Uploading...' : 'Upload Document' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Portfolio Modal -->
+      <div v-if="showAddPortfolioModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Add Portfolio Item</h2>
+            <button class="close-btn" @click="showAddPortfolioModal = false">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="addPortfolioItem" class="add-form" enctype="multipart/form-data">
+              <div class="form-group">
+                <label>Title:</label>
+                <input v-model="portfolioForm.title" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Description:</label>
+                <textarea v-model="portfolioForm.description" rows="3" class="form-control"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Project URL (optional):</label>
+                <input type="url" v-model="portfolioForm.projectUrl" placeholder="https://example.com" class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>Images/Files (up to 5):</label>
+                <input type="file" multiple ref="portfolioFilesInput" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt" required class="form-control" />
+                <small class="form-hint">Select up to 5 files to showcase your work (images, PDFs, or documents)</small>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" @click="showAddPortfolioModal = false">Cancel</button>
+                <button type="submit" class="btn btn-primary" :disabled="isProcessing">
+                  {{ isProcessing ? 'Adding...' : 'Add Portfolio Item' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { providerService } from '../../services/apiService';
 import apiService from '../../services/apiService';
 
@@ -464,6 +563,15 @@ export default {
     const addingSkill = ref(false);
     const addingDocument = ref(false);
     const addingPortfolio = ref(false);
+
+    // Modal state
+    const showEditProfileModal = ref(false);
+    const showAddExperienceModal = ref(false);
+    const showAddEducationModal = ref(false);
+    const showAddSkillModal = ref(false);
+    const showAddDocumentModal = ref(false);
+    const showAddPortfolioModal = ref(false);
+    const isProcessing = ref(false);
 
     // Form data
     const personalForm = reactive({
@@ -582,12 +690,12 @@ export default {
 
     // Form handlers
     const toggleEditPersonal = () => {
-      editingPersonal.value = !editingPersonal.value;
+      showEditProfileModal.value = true;
     };
 
     const updatePersonalInfo = async () => {
       try {
-        loading.value = true;
+        isProcessing.value = true;
         error.value = null;
         
         // Create the update data object from the form
@@ -608,7 +716,7 @@ export default {
         if (response.success) {
           // Update local data
           profile.value = response.data;
-          editingPersonal.value = false;
+          showEditProfileModal.value = false;
         } else {
           throw new Error(response.message || 'Failed to update profile');
         }
@@ -616,26 +724,17 @@ export default {
         console.error('Component: Error updating profile:', err);
         error.value = err.message;
       } finally {
-        loading.value = false;
+        isProcessing.value = false;
       }
     };
 
     const toggleAddExperience = () => {
-      addingExperience.value = !addingExperience.value;
-      if (!addingExperience.value) {
-        // Reset form
-        experienceForm.company = '';
-        experienceForm.position = '';
-        experienceForm.startDate = '';
-        experienceForm.endDate = '';
-        experienceForm.description = '';
-        experienceForm.isCurrentPosition = false;
-      }
+      showAddExperienceModal.value = true;
     };
 
     const addExperience = async () => {
       try {
-        loading.value = true;
+        isProcessing.value = true;
         const response = await providerService.addWorkExperience({
           company: experienceForm.company,
           position: experienceForm.position,
@@ -648,33 +747,31 @@ export default {
         if (response.success) {
           // Refresh profile data
           await fetchProfileData();
-          toggleAddExperience();
+          showAddExperienceModal.value = false;
+          // Reset form
+          experienceForm.company = '';
+          experienceForm.position = '';
+          experienceForm.startDate = '';
+          experienceForm.endDate = '';
+          experienceForm.description = '';
+          experienceForm.isCurrentPosition = false;
         } else {
           throw new Error(response.message || 'Failed to add work experience');
         }
       } catch (err) {
         error.value = err.message;
       } finally {
-        loading.value = false;
+        isProcessing.value = false;
       }
     };
 
     const toggleAddEducation = () => {
-      addingEducation.value = !addingEducation.value;
-      if (!addingEducation.value) {
-        // Reset form
-        educationForm.institution = '';
-        educationForm.degree = '';
-        educationForm.fieldOfStudy = '';
-        educationForm.startDate = '';
-        educationForm.endDate = '';
-        educationForm.isCurrentlyStudying = false;
-      }
+      showAddEducationModal.value = true;
     };
 
     const addEducation = async () => {
       try {
-        loading.value = true;
+        isProcessing.value = true;
         const response = await providerService.addEducation({
           institution: educationForm.institution,
           degree: educationForm.degree,
@@ -687,28 +784,31 @@ export default {
         if (response.success) {
           // Refresh profile data
           await fetchProfileData();
-          toggleAddEducation();
+          showAddEducationModal.value = false;
+          // Reset form
+          educationForm.institution = '';
+          educationForm.degree = '';
+          educationForm.fieldOfStudy = '';
+          educationForm.startDate = '';
+          educationForm.endDate = '';
+          educationForm.isCurrentlyStudying = false;
         } else {
           throw new Error(response.message || 'Failed to add education');
         }
       } catch (err) {
         error.value = err.message;
       } finally {
-        loading.value = false;
+        isProcessing.value = false;
       }
     };
 
     const toggleAddSkill = () => {
-      addingSkill.value = !addingSkill.value;
-      if (!addingSkill.value) {
-        // Reset form
-        skillForm.skillName = '';
-      }
+      showAddSkillModal.value = true;
     };
 
     const addSkill = async () => {
       try {
-        loading.value = true;
+        isProcessing.value = true;
         const response = await providerService.addSkill({
           skillName: skillForm.skillName
         });
@@ -716,29 +816,26 @@ export default {
         if (response.success) {
           // Refresh profile data
           await fetchProfileData();
-          toggleAddSkill();
+          showAddSkillModal.value = false;
+          // Reset form
+          skillForm.skillName = '';
         } else {
           throw new Error(response.message || 'Failed to add skill');
         }
       } catch (err) {
         error.value = err.message;
       } finally {
-        loading.value = false;
+        isProcessing.value = false;
       }
     };
 
     const toggleAddDocument = () => {
-      addingDocument.value = !addingDocument.value;
-      if (!addingDocument.value) {
-        // Reset form
-        documentForm.title = '';
-        documentForm.type = 'ID';
-      }
+      showAddDocumentModal.value = true;
     };
 
     const addDocument = async () => {
       try {
-        loading.value = true;
+        isProcessing.value = true;
         
         const fileInput = document.querySelector('input[type="file"]');
         if (!fileInput || !fileInput.files || !fileInput.files[0]) {
@@ -755,30 +852,27 @@ export default {
         if (response.success) {
           // Refresh profile data
           await fetchProfileData();
-          toggleAddDocument();
+          showAddDocumentModal.value = false;
+          // Reset form
+          documentForm.title = '';
+          documentForm.type = 'ID';
         } else {
           throw new Error(response.message || 'Failed to upload document');
         }
       } catch (err) {
         error.value = err.message;
       } finally {
-        loading.value = false;
+        isProcessing.value = false;
       }
     };
 
     const toggleAddPortfolio = () => {
-      addingPortfolio.value = !addingPortfolio.value;
-      if (!addingPortfolio.value) {
-        // Reset form
-        portfolioForm.title = '';
-        portfolioForm.description = '';
-        portfolioForm.projectUrl = '';
-      }
+      showAddPortfolioModal.value = true;
     };
 
     const addPortfolioItem = async () => {
       try {
-        loading.value = true;
+        isProcessing.value = true;
         
         const fileInput = document.querySelector('input[type="file"][multiple]');
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -805,14 +899,18 @@ export default {
         if (response.success) {
           // Refresh profile data
           await fetchProfileData();
-          toggleAddPortfolio();
+          showAddPortfolioModal.value = false;
+          // Reset form
+          portfolioForm.title = '';
+          portfolioForm.description = '';
+          portfolioForm.projectUrl = '';
         } else {
           throw new Error(response.message || 'Failed to add portfolio item');
         }
       } catch (err) {
         error.value = err.message;
       } finally {
-        loading.value = false;
+        isProcessing.value = false;
       }
     };
 
@@ -861,12 +959,10 @@ export default {
       modalFile.title = title;
       modalFile.type = type;
       showFileModal.value = true;
-      document.body.style.overflow = 'hidden'; // Prevent scrolling
     };
 
     const closeFileModal = () => {
       showFileModal.value = false;
-      document.body.style.overflow = ''; // Restore scrolling
     };
 
     const isPdfFile = (fileUrl) => {
@@ -912,6 +1008,13 @@ export default {
 
     onMounted(() => {
       fetchProfileData();
+      // Use nextTick to ensure DOM is ready
+      nextTick(() => {
+        const tabBar = document.querySelector('.profile-tabs');
+        if (tabBar) {
+          tabBar.scrollLeft = 0;
+        }
+      });
     });
 
     return {
@@ -960,7 +1063,14 @@ export default {
       triggerFileUpload,
       handleProfileImageChange,
       uploadingProfileImage,
-      profileImageInput
+      profileImageInput,
+      showEditProfileModal,
+      showAddExperienceModal,
+      showAddEducationModal,
+      showAddSkillModal,
+      showAddDocumentModal,
+      showAddPortfolioModal,
+      isProcessing
     };
   }
 };
@@ -979,6 +1089,7 @@ export default {
   color: #2d3748;
   box-sizing: border-box;
   overflow-x: hidden;
+  overflow-y: auto; /* Ensure vertical scrolling works */
 }
 
 h1 {
@@ -1035,6 +1146,7 @@ h3 {
   -ms-overflow-style: none;
   scrollbar-width: none;
   justify-content: center;
+  scroll-behavior: smooth; /* Smooth scrolling */
 }
 
 .tab {
@@ -1374,15 +1486,17 @@ h3 {
   margin-top: 20px;
 }
 
-.experience-item, .education-item {
+.experience-item, .education-item, .portfolio-item {
   padding: 30px;
   background: white;
   border-radius: 16px;
-  position: relative;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   border: 1px solid #e2e8f0;
+  position: relative;
   overflow: hidden;
+  min-width: 320px;
+  min-height: 180px;
 }
 
 .experience-item::before, .education-item::before {
@@ -1814,19 +1928,174 @@ h3 {
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden; /* Prevent body scroll when modal is open */
 }
 
 .modal-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(5px);
-  animation: fadeIn 0.3s ease;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease;
 }
 
+.modal {
+  background-color: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modalIn 0.3s ease-out;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-header {
+  padding: 20px 25px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #27ae60;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: inherit;
+  transition: transform 0.2s ease;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-btn:hover {
+  transform: rotate(90deg);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.modal-body {
+  padding: 25px;
+}
+
+.modal-body p {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.05rem;
+  color: #505a68;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #219d55, #1e8449);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.btn-secondary {
+  background-color: #f8f9fa;
+  color: #505a68;
+  border: 1px solid #e1e4e8;
+}
+
+.btn-secondary:hover {
+  background-color: #e9ecef;
+  color: #2c3e50;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-control:focus {
+  border-color: #27ae60;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+  outline: none;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* File Modal Specific Styles */
 .modal-container {
   background-color: white;
   border-radius: 20px;
@@ -1842,43 +2111,9 @@ h3 {
   border: 1px solid #e2e8f0;
 }
 
-.modal-header {
-  padding: 20px 25px;
-  border-bottom: 1px solid #edf2f7;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: white;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #27ae60;
-}
-
-.close-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.6rem;
-  cursor: pointer;
-  color: #4a5568;
-  width: 45px;
-  height: 45px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.close-btn:hover {
-  background-color: #e8f5e9;
-  color: #ef4444;
-  transform: rotate(90deg);
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-content {
@@ -1889,6 +2124,7 @@ h3 {
   align-items: center;
   justify-content: center;
   background: white;
+  max-height: calc(90vh - 80px);
 }
 
 .modal-image {
@@ -1963,17 +2199,6 @@ h3 {
   transform: translateY(-3px);
 }
 
-.profile-picture-overlay span {
-  font-size: 14px;
-  text-align: center;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 5px;
-}
-
-/* Add this to the end of the existing <style> section */
-
 .subsection {
   margin-bottom: 2.5rem;
   padding-bottom: 1.5rem;
@@ -2005,5 +2230,31 @@ h3 {
   font-weight: 500;
   color: #555;
   margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  .experience-list,
+  .education-list,
+  .portfolio-grid {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+  }
+  .experience-item,
+  .education-item,
+  .portfolio-item {
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .profile-tabs {
+    justify-content: flex-start !important;
+    scroll-padding-left: 10px;
+    scroll-snap-type: x mandatory; /* Snap to tabs */
+  }
+  
+  .tab {
+    scroll-snap-align: start; /* Snap alignment */
+  }
 }
 </style>
