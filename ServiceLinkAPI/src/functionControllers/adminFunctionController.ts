@@ -176,8 +176,56 @@ export const getAllClients = async () => {
   }
 };
 
-// Get all providers with their services, skills, etc.
+// Get all active providers with their services, skills, etc.
 export const getAllProviders = async () => {
+  try {
+    const providers = await prisma.serviceProvider.findMany({
+      where: {
+        user: {
+          isActive: true // Only include active users (exclude rejected providers)
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            profilePicture: true,
+            isActive: true,
+            isVerified: true,
+            createdAt: true
+          }
+        },
+        services: {
+          select: {
+            id: true,
+            title: true,
+            isActive: true
+          }
+        },
+        skills: true,
+        documents: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            isVerified: true
+          }
+        }
+      }
+    });
+
+    return providers;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get all providers including rejected ones (for admin management)
+export const getAllProvidersWithStatus = async () => {
   try {
     const providers = await prisma.serviceProvider.findMany({
       include: {
@@ -213,7 +261,17 @@ export const getAllProviders = async () => {
       }
     });
 
-    return providers;
+    // Add status information to each provider
+    const providersWithStatus = providers.map(provider => ({
+      ...provider,
+      status: provider.isProviderVerified 
+        ? 'Verified' 
+        : provider.user.isActive 
+          ? 'Pending Verification' 
+          : 'Rejected'
+    }));
+
+    return providersWithStatus;
   } catch (error) {
     throw error;
   }
@@ -324,18 +382,36 @@ export const rejectProviderVerification = async (
       throw new Error('Provider not found');
     }
 
+    // Mark the provider as rejected and deactivate the user account
+    // This prevents them from appearing in unverified list and shows rejected status
+    await prisma.serviceProvider.update({
+      where: { id: providerId },
+      data: {
+        isProviderVerified: false,
+        // We'll use a custom field to track rejection status
+        // For now, we'll store rejection info in a comment field or use a different approach
+      }
+    });
+
+    // Temporarily deactivate the user account to prevent them from appearing in unverified list
+    // This gives them time to fix their information before reapplying
+    await prisma.user.update({
+      where: { id: provider.userId },
+      data: { isActive: false }
+    });
+
     // Create a notification for the provider
     await prisma.notification.create({
       data: {
         receiverId: provider.userId,
         type: 'GENERAL',
         title: 'Verification Rejected',
-        message: `Your service provider verification was rejected. Reason: ${reason}. Please update your information and try again.`,
+        message: `Your service provider verification was rejected. Reason: ${reason}. Your account has been temporarily deactivated. Please update your information and contact support to reactivate your account.`,
         isRead: false
       }
     });
 
-    // Return the provider (no updates needed as we're just notifying)
+    // Return the provider (excluding sensitive information)
     const { user, ...providerData } = provider;
     const { password, ...userData } = user;
 
@@ -353,7 +429,10 @@ export const getUnverifiedProviders = async () => {
   try {
     const providers = await prisma.serviceProvider.findMany({
       where: {
-        isProviderVerified: false
+        isProviderVerified: false,
+        user: {
+          isActive: true // Only include active users
+        }
       },
       include: {
         user: {

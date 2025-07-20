@@ -1,6 +1,12 @@
 <template>
   <div class="all-providers">
-    <h2 class="page-title">All Service Providers</h2>
+    <div class="page-header">
+      <h2 class="page-title">All Service Providers</h2>
+      <button class="refresh-btn" @click="refreshProviders" :disabled="loading">
+        <i class="fa fa-refresh" :class="{ 'fa-spin': loading }"></i>
+        Refresh
+      </button>
+    </div>
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else>
@@ -22,7 +28,11 @@
             <td>{{ provider.user.firstName }} {{ provider.user.lastName }}</td>
             <td>{{ provider.user.email }}</td>
             <td>{{ provider.user.phone || 'Not provided' }}</td>
-            <td>{{ provider.isProviderVerified ? 'Verified' : 'Pending Verification' }}</td>
+            <td>
+              <span :class="getStatusClass(provider.status || (provider.isProviderVerified ? 'Verified' : 'Pending Verification'))">
+                {{ provider.status || (provider.isProviderVerified ? 'Verified' : 'Pending Verification') }}
+              </span>
+            </td>
             <td>{{ provider.services ? provider.services.length : 0 }} service(s)</td>
             <td>{{ provider.skills && provider.skills.length ? provider.skills.map(s => s.name).join(', ') : 'No skills listed' }}</td>
             <td>
@@ -173,6 +183,11 @@ const fetchProviders = async () => {
   }
 };
 
+// Refresh providers list
+const refreshProviders = () => {
+  fetchProviders();
+};
+
 const openProfileModal = async (providerId) => {
   showProfileModal.value = true;
   selectedProviderProfile.value = null;
@@ -212,6 +227,20 @@ function formatDate(dateString) {
   return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
 }
 
+// Get CSS class for status styling
+function getStatusClass(status) {
+  switch (status) {
+    case 'Verified':
+      return 'status-verified';
+    case 'Pending Verification':
+      return 'status-pending';
+    case 'Rejected':
+      return 'status-rejected';
+    default:
+      return 'status-default';
+  }
+}
+
 onMounted(fetchProviders);
 </script>
 
@@ -226,26 +255,56 @@ onMounted(fetchProviders);
   border: none;
   min-height: calc(100vh - 80px);
 }
-.page-title {
-  text-align: center;
-  color: #4a5568;
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+.page-title {
+  color: #4a5568;
+  margin: 0;
   font-size: 2.6rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   position: relative;
   padding-bottom: 15px;
-  letter-spacing: -0.02em;
 }
+
 .page-title::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   width: 80px;
   height: 4px;
   background: linear-gradient(90deg, #3498db, #2ecc71);
   border-radius: 2px;
+}
+.refresh-btn {
+  background-color: #4299e1;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.2);
+}
+.refresh-btn:hover:not(:disabled) {
+  background-color: #3182ce;
+}
+.refresh-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  color: #e2e8f0;
 }
 .loading {
   padding: 40px 0;
@@ -290,6 +349,47 @@ onMounted(fetchProviders);
 }
 .providers-table tr:hover {
   background: #f4f8f6;
+}
+
+/* Status styling */
+.status-verified {
+  background: #d4edda;
+  color: #155724;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid #c3e6cb;
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid #ffeaa7;
+}
+
+.status-rejected {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid #f5c6cb;
+}
+
+.status-default {
+  background: #e2e3e5;
+  color: #383d41;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid #d6d8db;
 }
 @media (max-width: 900px) {
   .all-providers {

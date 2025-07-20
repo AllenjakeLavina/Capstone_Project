@@ -3,7 +3,7 @@ import {
   setPassword, 
   createAdminUser, 
   getAllClients,
-  getAllProviders,
+  getAllProvidersWithStatus,
   changeUserPassword,
   getUnverifiedProviders,
   verifyProviderAccount,
@@ -155,7 +155,7 @@ export const handleGetAllProviders = async (req: Request, res: Response) => {
       return;
     }
 
-    const providers = await getAllProviders();
+    const providers = await getAllProvidersWithStatus();
 
     res.status(200).json({
       success: true,

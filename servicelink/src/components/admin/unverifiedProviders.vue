@@ -11,6 +11,7 @@
         <div v-if="providers.length === 0" class="no-services">
           <i class="fa fa-briefcase empty-icon"></i>
           <p>No providers awaiting verification</p>
+          <p class="empty-subtitle">All provider verification requests have been processed</p>
         </div>
         <div v-else class="provider-table-list">
           <div v-for="provider in providers" :key="provider.id" class="provider-table-row">
@@ -53,10 +54,20 @@
             </div>
             <div class="profile-modal-actions">
               <button class="verify-btn" @click="verifyProvider(selectedProvider.id)" :disabled="actionLoading === selectedProvider.id">
-                ✔️ Verify Provider
+                <span v-if="actionLoading === selectedProvider.id">
+                  <i class="fa fa-spinner fa-spin"></i> Processing...
+                </span>
+                <span v-else>
+                  ✔️ Verify Provider
+                </span>
               </button>
               <button class="reject-btn" @click="rejectProvider(selectedProvider.id)" :disabled="actionLoading === selectedProvider.id">
-                ❌ Reject
+                <span v-if="actionLoading === selectedProvider.id">
+                  <i class="fa fa-spinner fa-spin"></i> Processing...
+                </span>
+                <span v-else>
+                  ❌ Reject
+                </span>
               </button>
             </div>
           </div>
@@ -73,6 +84,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
+import Swal from 'sweetalert2';
 
 const API_BASE_URL = 'http://localhost:5500/api';
 const FILE_SERVER_URL = 'http://localhost:5500';
@@ -151,7 +163,19 @@ function closeModal() {
 }
 
 const verifyProvider = async (id) => {
-  if (!confirm('Are you sure you want to verify this provider?')) return;
+  const result = await Swal.fire({
+    title: 'Verify Provider',
+    text: 'Are you sure you want to verify this provider?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#2ecc71',
+    cancelButtonColor: '#95a5a6',
+    confirmButtonText: 'Yes, verify',
+    cancelButtonText: 'Cancel'
+  });
+
+  if (!result.isConfirmed) return;
+  
   actionLoading.value = id;
   try {
     const token = localStorage.getItem('token');
@@ -166,20 +190,55 @@ const verifyProvider = async (id) => {
     const data = await res.json();
     if (data.success) {
       providers.value = providers.value.filter(p => p.id !== id);
-      alert('Provider verified successfully');
+      closeModal(); // Close the modal after successful verification
+      
+      Swal.fire({
+        title: 'Success!',
+        text: 'Provider verified successfully',
+        icon: 'success',
+        confirmButtonColor: '#2ecc71',
+        timer: 2000
+      });
     } else {
-      alert(data.message || 'Failed to verify provider');
+      Swal.fire({
+        title: 'Error',
+        text: data.message || 'Failed to verify provider',
+        icon: 'error',
+        confirmButtonColor: '#e74c3c'
+      });
     }
   } catch (e) {
-    alert('Failed to verify provider');
+    Swal.fire({
+      title: 'Error',
+      text: 'Failed to verify provider. Please try again.',
+      icon: 'error',
+      confirmButtonColor: '#e74c3c'
+    });
   } finally {
     actionLoading.value = '';
   }
 };
 
 const rejectProvider = async (id) => {
-  const reason = prompt('Please provide a reason for rejection:');
-  if (!reason) return;
+  const { value: reason, isConfirmed } = await Swal.fire({
+    title: 'Reject Provider',
+    text: 'Please provide a reason for rejection:',
+    input: 'textarea',
+    inputPlaceholder: 'Enter rejection reason...',
+    inputValidator: (value) => {
+      if (!value || value.trim().length < 10) {
+        return 'Please provide a detailed reason (at least 10 characters)';
+      }
+    },
+    showCancelButton: true,
+    confirmButtonColor: '#e74c3c',
+    cancelButtonColor: '#95a5a6',
+    confirmButtonText: 'Reject',
+    cancelButtonText: 'Cancel'
+  });
+
+  if (!isConfirmed || !reason) return;
+  
   actionLoading.value = id;
   try {
     const token = localStorage.getItem('token');
@@ -194,12 +253,30 @@ const rejectProvider = async (id) => {
     const data = await res.json();
     if (data.success) {
       providers.value = providers.value.filter(p => p.id !== id);
-      alert('Provider rejection sent successfully');
+      closeModal(); // Close the modal after successful rejection
+      
+      Swal.fire({
+        title: 'Success!',
+        text: 'Provider rejection sent successfully',
+        icon: 'success',
+        confirmButtonColor: '#2ecc71',
+        timer: 2000
+      });
     } else {
-      alert(data.message || 'Failed to reject provider');
+      Swal.fire({
+        title: 'Error',
+        text: data.message || 'Failed to reject provider',
+        icon: 'error',
+        confirmButtonColor: '#e74c3c'
+      });
     }
   } catch (e) {
-    alert('Failed to reject provider');
+    Swal.fire({
+      title: 'Error',
+      text: 'Failed to reject provider. Please try again.',
+      icon: 'error',
+      confirmButtonColor: '#e74c3c'
+    });
   } finally {
     actionLoading.value = '';
   }
@@ -753,5 +830,29 @@ onMounted(fetchProviders);
 
 body.fullscreen-img-open {
   overflow: hidden !important;
+}
+
+.no-services {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-services .empty-icon {
+  font-size: 4rem;
+  color: #ddd;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.no-services p {
+  margin: 10px 0;
+  font-size: 1.2rem;
+}
+
+.no-services .empty-subtitle {
+  font-size: 1rem;
+  color: #999;
+  margin-top: 10px;
 }
 </style>

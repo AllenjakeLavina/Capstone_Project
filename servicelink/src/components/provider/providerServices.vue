@@ -72,154 +72,160 @@
         </div>
 
         <!-- Create Service Modal -->
-        <div v-if="showCreateForm" class="modal">
-          <div class="modal-content">
-            <span class="close-btn" @click="showCreateForm = false">&times;</span>
-            <h2>Create New Service</h2>
-            
-            <form @submit.prevent="createService" class="service-form">
-              <div class="form-group">
-                <label for="title">Service Title*</label>
-                <input id="title" v-model="serviceForm.title" required />
-              </div>
-              
-              <div class="form-group">
-                <label for="category">Category*</label>
-                <select id="category" v-model="serviceForm.categoryId" required>
-                  <option value="">Select a category</option>
-                  <option v-for="category in categories" :key="category.id" :value="category.id">
-                    {{ category.name }}
-                  </option>
-                </select>
-              </div>
-              
-              <div class="form-group pricing-group">
-                <div class="price-input">
-                  <label for="pricing">Price*</label>
-                  <input id="pricing" type="number" v-model="serviceForm.pricing" min="0" step="0.01" required />
+        <div v-if="showCreateForm" class="modal-overlay">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Create New Service</h2>
+              <button class="close-btn" @click="showCreateForm = false">&times;</button>
+            </div>
+            <div class="modal-body">
+              <form @submit.prevent="createService" class="service-form">
+                <div class="form-group">
+                  <label for="title">Service Title*</label>
+                  <input id="title" v-model="serviceForm.title" required class="form-control" />
                 </div>
                 
-                <div class="price-type">
-                  <label for="pricingType">Price Type*</label>
-                  <select id="pricingType" v-model="serviceForm.pricingType" required>
-                    <option value="HOURLY">Per Hour</option>
-                    <option value="FIXED">Fixed Price</option>
-                    <option value="DAILY">Per Day</option>
-                    <option value="SESSION">Per Session</option>
+                <div class="form-group">
+                  <label for="category">Category*</label>
+                  <select id="category" v-model="serviceForm.categoryId" required class="form-control">
+                    <option value="">Select a category</option>
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                      {{ category.name }}
+                    </option>
                   </select>
                 </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="description">Description*</label>
-                <textarea id="description" v-model="serviceForm.description" rows="4" required></textarea>
-              </div>
-              
-              <div class="form-group">
-                <label for="imageUrls">Image URLs (One per line)</label>
-                <textarea id="imageUrls" v-model="imageUrlsText" rows="3" placeholder="http://example.com/image1.jpg&#10;http://example.com/image2.jpg"></textarea>
-                <small>Enter each image URL on a new line</small>
-              </div>
-              
-              <div class="form-group">
-                <label>Skills</label>
-                <div class="skills-selection">
-                  <div v-if="selectedSkills.length > 0" class="selected-skills">
-                    <span v-for="(skill, index) in selectedSkills" :key="index" class="selected-skill">
-                      {{ skill }}
-                      <button type="button" @click="removeSkill(index)" class="remove-skill">×</button>
-                    </span>
+                
+                <div class="form-group pricing-group">
+                  <div class="price-input">
+                    <label for="pricing">Price*</label>
+                    <input id="pricing" type="number" v-model="serviceForm.pricing" min="0" step="0.01" required class="form-control" />
                   </div>
-                  <div class="skill-input">
-                    <input v-model="skillInput" placeholder="Add a skill" @keyup.enter="addSkillToSelection" />
-                    <button type="button" @click="addSkillToSelection" class="add-skill-btn">Add</button>
+                  
+                  <div class="price-type">
+                    <label for="pricingType">Price Type*</label>
+                    <select id="pricingType" v-model="serviceForm.pricingType" required class="form-control">
+                      <option value="HOURLY">Per Hour</option>
+                      <option value="FIXED">Fixed Price</option>
+                      <option value="DAILY">Per Day</option>
+                      <option value="SESSION">Per Session</option>
+                    </select>
                   </div>
                 </div>
-              </div>
-              
-              <div class="form-actions">
-                <button type="button" class="cancel-btn" @click="showCreateForm = false">Cancel</button>
-                <button type="submit" class="submit-btn" :disabled="isSubmitting">
-                  {{ isSubmitting ? 'Creating...' : 'Create Service' }}
-                </button>
-              </div>
-            </form>
+                
+                <div class="form-group">
+                  <label for="description">Description*</label>
+                  <textarea id="description" v-model="serviceForm.description" rows="4" required class="form-control"></textarea>
+                </div>
+                
+                <div class="form-group">
+                  <label for="imageUrls">Image URLs (One per line)</label>
+                  <textarea id="imageUrls" v-model="imageUrlsText" rows="3" placeholder="http://example.com/image1.jpg&#10;http://example.com/image2.jpg" class="form-control"></textarea>
+                  <small>Enter each image URL on a new line</small>
+                </div>
+                
+                <div class="form-group">
+                  <label>Skills</label>
+                  <div class="skills-selection">
+                    <div v-if="selectedSkills.length > 0" class="selected-skills">
+                      <span v-for="(skill, index) in selectedSkills" :key="index" class="selected-skill">
+                        {{ skill }}
+                        <button type="button" @click="removeSkill(index)" class="remove-skill">×</button>
+                      </span>
+                    </div>
+                    <div class="skill-input">
+                      <input v-model="skillInput" placeholder="Add a skill" @keyup.enter="addSkillToSelection" class="form-control" />
+                      <button type="button" @click="addSkillToSelection" class="add-skill-btn">Add</button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="modal-actions">
+                  <button type="button" class="btn btn-secondary" @click="showCreateForm = false">Cancel</button>
+                  <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                    {{ isSubmitting ? 'Creating...' : 'Create Service' }}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
 
         <!-- Edit Service Modal -->
-        <div v-if="showEditForm" class="modal">
-          <div class="modal-content">
-            <span class="close-btn" @click="showEditForm = false">&times;</span>
-            <h2>Edit Service</h2>
-            
-            <form @submit.prevent="updateService" class="service-form">
-              <div class="form-group">
-                <label for="edit-title">Service Title*</label>
-                <input id="edit-title" v-model="editServiceForm.title" required />
-              </div>
-              
-              <div class="form-group">
-                <label for="edit-category">Category*</label>
-                <select id="edit-category" v-model="editServiceForm.categoryId" required>
-                  <option value="">Select a category</option>
-                  <option v-for="category in categories" :key="category.id" :value="category.id">
-                    {{ category.name }}
-                  </option>
-                </select>
-              </div>
-              
-              <div class="form-group pricing-group">
-                <div class="price-input">
-                  <label for="edit-pricing">Price*</label>
-                  <input id="edit-pricing" type="number" v-model="editServiceForm.pricing" min="0" step="0.01" required />
+        <div v-if="showEditForm" class="modal-overlay">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Edit Service</h2>
+              <button class="close-btn" @click="showEditForm = false">&times;</button>
+            </div>
+            <div class="modal-body">
+              <form @submit.prevent="updateService" class="service-form">
+                <div class="form-group">
+                  <label for="edit-title">Service Title*</label>
+                  <input id="edit-title" v-model="editServiceForm.title" required class="form-control" />
                 </div>
                 
-                <div class="price-type">
-                  <label for="edit-pricingType">Price Type*</label>
-                  <select id="edit-pricingType" v-model="editServiceForm.pricingType" required>
-                    <option value="HOURLY">Per Hour</option>
-                    <option value="FIXED">Fixed Price</option>
-                    <option value="DAILY">Per Day</option>
-                    <option value="SESSION">Per Session</option>
+                <div class="form-group">
+                  <label for="edit-category">Category*</label>
+                  <select id="edit-category" v-model="editServiceForm.categoryId" required class="form-control">
+                    <option value="">Select a category</option>
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                      {{ category.name }}
+                    </option>
                   </select>
                 </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="edit-description">Description*</label>
-                <textarea id="edit-description" v-model="editServiceForm.description" rows="4" required></textarea>
-              </div>
-              
-              <div class="form-group">
-                <label for="edit-imageUrls">Image URLs (One per line)</label>
-                <textarea id="edit-imageUrls" v-model="editImageUrlsText" rows="3" placeholder="http://example.com/image1.jpg&#10;http://example.com/image2.jpg"></textarea>
-                <small>Enter each image URL on a new line</small>
-              </div>
-              
-              <div class="form-group">
-                <label>Skills</label>
-                <div class="skills-selection">
-                  <div v-if="editSelectedSkills.length > 0" class="selected-skills">
-                    <span v-for="(skill, index) in editSelectedSkills" :key="index" class="selected-skill">
-                      {{ skill }}
-                      <button type="button" @click="removeEditSkill(index)" class="remove-skill">×</button>
-                    </span>
+                
+                <div class="form-group pricing-group">
+                  <div class="price-input">
+                    <label for="edit-pricing">Price*</label>
+                    <input id="edit-pricing" type="number" v-model="editServiceForm.pricing" min="0" step="0.01" required class="form-control" />
                   </div>
-                  <div class="skill-input">
-                    <input v-model="editSkillInput" placeholder="Add a skill" @keyup.enter="addEditSkillToSelection" />
-                    <button type="button" @click="addEditSkillToSelection" class="add-skill-btn">Add</button>
+                  
+                  <div class="price-type">
+                    <label for="edit-pricingType">Price Type*</label>
+                    <select id="edit-pricingType" v-model="editServiceForm.pricingType" required class="form-control">
+                      <option value="HOURLY">Per Hour</option>
+                      <option value="FIXED">Fixed Price</option>
+                      <option value="DAILY">Per Day</option>
+                      <option value="SESSION">Per Session</option>
+                    </select>
                   </div>
                 </div>
-              </div>
-              
-              <div class="form-actions">
-                <button type="button" class="cancel-btn" @click="showEditForm = false">Cancel</button>
-                <button type="submit" class="submit-btn" :disabled="isSubmitting">
-                  {{ isSubmitting ? 'Updating...' : 'Update Service' }}
-                </button>
-              </div>
-            </form>
+                
+                <div class="form-group">
+                  <label for="edit-description">Description*</label>
+                  <textarea id="edit-description" v-model="editServiceForm.description" rows="4" required class="form-control"></textarea>
+                </div>
+                
+                <div class="form-group">
+                  <label for="edit-imageUrls">Image URLs (One per line)</label>
+                  <textarea id="edit-imageUrls" v-model="editImageUrlsText" rows="3" placeholder="http://example.com/image1.jpg&#10;http://example.com/image2.jpg" class="form-control"></textarea>
+                  <small>Enter each image URL on a new line</small>
+                </div>
+                
+                <div class="form-group">
+                  <label>Skills</label>
+                  <div class="skills-selection">
+                    <div v-if="editSelectedSkills.length > 0" class="selected-skills">
+                      <span v-for="(skill, index) in editSelectedSkills" :key="index" class="selected-skill">
+                        {{ skill }}
+                        <button type="button" @click="removeEditSkill(index)" class="remove-skill">×</button>
+                      </span>
+                    </div>
+                    <div class="skill-input">
+                      <input v-model="editSkillInput" placeholder="Add a skill" @keyup.enter="addEditSkillToSelection" class="form-control" />
+                      <button type="button" @click="addEditSkillToSelection" class="add-skill-btn">Add</button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="modal-actions">
+                  <button type="button" class="btn btn-secondary" @click="showEditForm = false">Cancel</button>
+                  <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                    {{ isSubmitting ? 'Updating...' : 'Update Service' }}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -857,19 +863,30 @@ export default {
 }
 
 /* Modal Styles */
-.modal {
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0,0,0,0.6);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(5px);
-  animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modalIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
@@ -877,31 +894,51 @@ export default {
   to { opacity: 1; }
 }
 
-.modal-content {
-  background-color: white;
-  border-radius: 15px;
-  padding: 30px;
-  width: 90%;
-  max-width: 700px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-  animation: slideIn 0.3s ease;
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideIn {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px 15px 25px;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-body {
+  padding: 20px 25px 25px 25px;
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e1e4e8;
 }
 
 .close-btn {
-  float: right;
-  font-size: 28px;
+  background: none;
+  border: none;
+  font-size: 24px;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s ease;
-  width: 40px;
-  height: 40px;
+  color: #888;
+  transition: color 0.2s;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -910,12 +947,79 @@ export default {
 
 .close-btn:hover {
   color: #e74c3c;
-  background-color: rgba(231, 76, 60, 0.1);
-  transform: rotate(90deg);
+  background-color: #fbeaea;
+}
+
+/* Button Styles */
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #219d55, #27ae60);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: #f8f9fa;
+  color: #505a68;
+  border: 1px solid #e1e4e8;
+}
+
+.btn-secondary:hover {
+  background-color: #e9ecef;
+  color: #2c3e50;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-control:focus {
+  border-color: #27ae60;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+  outline: none;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
 }
 
 .service-form {
-  margin-top: 30px;
+  margin-top: 0; /* Remove margin-top as it's now in modal-body */
 }
 
 .form-group {
