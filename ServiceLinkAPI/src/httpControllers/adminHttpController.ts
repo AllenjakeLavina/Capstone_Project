@@ -10,7 +10,8 @@ import {
   rejectProviderVerification,
   createCategory,
   getAllCategories,
-  editCategory
+  editCategory,
+  toggleClientStatus
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -365,63 +366,65 @@ export const handleGetAllCategories = async (req: Request, res: Response) => {
 
 export const handleEditCategory = async (req: Request, res: Response) => {
   try {
-    // Check if user has admin role
-    if (req.user.role !== 'ADMIN') {
-      res.status(403).json({
-        success: false,
-        message: 'Unauthorized: Only admins can perform this action'
-      });
-      return;
-    }
-
     const { categoryId } = req.params;
     const { name, description } = req.body;
-    
+    const imageUrl = req.file ? req.file.path : undefined;
+
     // Validate required fields
-    if (!categoryId) {
+    if (!name) {
       res.status(400).json({
         success: false,
-        message: 'Category ID is required'
+        message: 'Category name is required'
       });
       return;
     }
 
-    // Prepare update data
-    const updateData: { name?: string; description?: string; imageUrl?: string } = {};
-    
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-
-    // Handle image update if file was uploaded
-    if (req.file) {
-      updateData.imageUrl = `/uploads/category/${req.file.filename}`;
-      console.log('Updated category image:', updateData.imageUrl);
-    }
-
-    // If no update data provided, return error
-    if (Object.keys(updateData).length === 0) {
-      res.status(400).json({
-        success: false,
-        message: 'No update data provided'
-      });
-      return;
-    }
-
-    const updatedCategory = await editCategory(categoryId, updateData);
+    const updatedCategory = await editCategory(categoryId, {
+      name,
+      description,
+      imageUrl
+    });
 
     res.status(200).json({
       success: true,
       message: 'Category updated successfully',
       data: updatedCategory
     });
-    return;
   } catch (error) {
-    console.error('Error in handleEditCategory:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     res.status(400).json({
       success: false,
       message: errorMessage
     });
-    return;
+  }
+};
+
+export const handleToggleClientStatus = async (req: Request, res: Response) => {
+  try {
+    const { clientId } = req.params;
+    const { isActive } = req.body;
+
+    // Validate required fields
+    if (typeof isActive !== 'boolean') {
+      res.status(400).json({
+        success: false,
+        message: 'isActive field is required and must be a boolean'
+      });
+      return;
+    }
+
+    const updatedClient = await toggleClientStatus(clientId, isActive);
+
+    res.status(200).json({
+      success: true,
+      message: `Client ${isActive ? 'enabled' : 'disabled'} successfully`,
+      data: updatedClient
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.status(400).json({
+      success: false,
+      message: errorMessage
+    });
   }
 };

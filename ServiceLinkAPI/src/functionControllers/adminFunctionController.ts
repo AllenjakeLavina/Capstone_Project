@@ -549,3 +549,72 @@ export const editCategory = async (
     throw error;
   }
 };
+
+// Toggle client account status (Active/Inactive)
+export const toggleClientStatus = async (clientId: string, isActive: boolean) => {
+  try {
+    // Find the client by ID
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            profilePicture: true,
+            isActive: true,
+            isVerified: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    if (!client) {
+      throw new Error('Client not found');
+    }
+
+    // Update the user's isActive status
+    const updatedUser = await prisma.user.update({
+      where: { id: client.userId },
+      data: { isActive },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        profilePicture: true,
+        isActive: true,
+        isVerified: true,
+        createdAt: true
+      }
+    });
+
+    // Create a notification for the client
+    const notificationMessage = isActive 
+      ? 'Your account has been reactivated. You can now log in and use our services.'
+      : 'Your account has been temporarily suspended. Please contact support for assistance.';
+
+    await prisma.notification.create({
+      data: {
+        receiverId: client.userId,
+        type: 'GENERAL',
+        title: isActive ? 'Account Reactivated' : 'Account Suspended',
+        message: notificationMessage,
+        isRead: false
+      }
+    });
+
+    // Return the updated client data
+    return {
+      ...client,
+      user: updatedUser
+    };
+  } catch (error) {
+    throw error;
+  }
+};

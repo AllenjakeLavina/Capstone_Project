@@ -18,18 +18,27 @@
           </div>
           
           <div class="form-group">
-            <input 
-              type="password" 
-              id="password" 
-              v-model="password" 
-              required
-              placeholder="Password"
-            />
+            <div class="password-input-container">
+              <input 
+                :type="showPassword ? 'text' : 'password'" 
+                id="password" 
+                v-model="password" 
+                required
+                placeholder="Password"
+              />
+              <button 
+                type="button" 
+                class="password-toggle-btn" 
+                @click="togglePasswordVisibility"
+              >
+                <i :class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+              </button>
+            </div>
           </div>
 
           <div class="form-options">
             <label class="remember-me">
-              <input type="checkbox" />
+              <input type="checkbox" v-model="rememberMe" />
               <span>Remember me</span>
             </label>
             <router-link to="/forgot-password" class="forgot-link">Forgot Password?</router-link>
@@ -75,6 +84,39 @@ export default {
     const email = ref('');
     const password = ref('');
     const loading = ref(false);
+    const showPassword = ref(false);
+    const rememberMe = ref(false);
+
+    // Load saved credentials on component mount
+    const loadSavedCredentials = () => {
+      const savedEmail = localStorage.getItem('rememberedEmail');
+      const savedPassword = localStorage.getItem('rememberedPassword');
+      const savedRememberMe = localStorage.getItem('rememberMe');
+      
+      if (savedEmail && savedPassword && savedRememberMe === 'true') {
+        email.value = savedEmail;
+        password.value = savedPassword;
+        rememberMe.value = true;
+      }
+    };
+
+    // Save credentials if "Remember Me" is checked
+    const saveCredentials = () => {
+      if (rememberMe.value) {
+        localStorage.setItem('rememberedEmail', email.value);
+        localStorage.setItem('rememberedPassword', password.value);
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        // Clear saved credentials if "Remember Me" is unchecked
+        localStorage.removeItem('rememberedEmail');
+        localStorage.removeItem('rememberedPassword');
+        localStorage.removeItem('rememberMe');
+      }
+    };
+
+    const togglePasswordVisibility = () => {
+      showPassword.value = !showPassword.value;
+    };
 
     const handleLogin = async () => {
       loading.value = true;
@@ -88,6 +130,9 @@ export default {
           
           // Store user role in local storage
           localStorage.setItem('userRole', response.data.user.role);
+          
+          // Save credentials if "Remember Me" is checked
+          saveCredentials();
           
           // Show success message
           Swal.fire({
@@ -106,8 +151,8 @@ export default {
               router.push('/client/services');
             } else if (response.data.user.role === 'PROVIDER') {
               router.push('/provider/services');
-            } else {
-              router.push('/admin/dashboard');
+            } else if (response.data.user.role === 'ADMIN') {
+              router.push('/admin/unverified-providers');
             }
           }, 1000);
         } else {
@@ -132,11 +177,17 @@ export default {
       }
     };
 
+    // Load saved credentials when component mounts
+    loadSavedCredentials();
+
     return {
       email,
       password,
       loading,
-      handleLogin
+      handleLogin,
+      showPassword,
+      togglePasswordVisibility,
+      rememberMe
     };
   }
 };
@@ -236,6 +287,41 @@ export default {
   border-color: #106e40;
   outline: none;
   box-shadow: 0 0 0 3px rgba(16, 110, 64, 0.1);
+}
+
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-container input {
+  width: 100%;
+  padding-right: 50px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 1rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+  color: #106e40;
+}
+
+.password-toggle-btn:focus {
+  outline: none;
+  color: #106e40;
 }
 
 .form-options {

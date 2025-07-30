@@ -10,7 +10,8 @@ import {
   handleChangeUserPassword,
   handleCreateCategory,
   handleGetAllCategories,
-  handleEditCategory
+  handleEditCategory,
+  handleToggleClientStatus
 } from '../httpControllers/adminHttpController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 import { uploadFile } from '../middlewares/fileHandler';
@@ -42,6 +43,7 @@ router.get('/dashboard', authenticateToken, authorizeRoles('ADMIN'), (req, res) 
 // Protected routes - require admin authentication
 // Client management
 router.get('/clients', authenticateToken, authorizeRoles('ADMIN'), handleGetAllClients);
+router.post('/clients/:clientId/toggle-status', authenticateToken, authorizeRoles('ADMIN'), handleToggleClientStatus);
 
 // Provider management
 router.get('/providers', authenticateToken, authorizeRoles('ADMIN'), handleGetAllProviders);

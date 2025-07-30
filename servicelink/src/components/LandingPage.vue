@@ -81,12 +81,12 @@ export default {
   setup() {
     const router = useRouter();
     const categories = ref([
-      { name: 'Home Services', icon: '🏠', description: 'Expert maintenance & repairs for your home' },
-      { name: 'Professional', icon: '💼', description: 'Business & consulting services' },
-      { name: 'Health & Wellness', icon: '💪', description: 'Personal trainers & healthcare experts' },
-      { name: 'Education', icon: '📚', description: 'Professional tutoring & courses' },
-      { name: 'Creative', icon: '🎨', description: 'Design & creative services' },
-      { name: 'Tech Support', icon: '💻', description: 'IT & technical assistance' },
+      { name: 'Tutoring & Education', icon: '📚', description: 'Professional tutors, language teachers & academic support' },
+      { name: 'Home Services', icon: '🏠', description: 'Housekeeping, maintenance & home improvement experts' },
+      { name: 'Handyman Services', icon: '🔧', description: 'Repairs, installations & technical home services' },
+      { name: 'Professional Services', icon: '💼', description: 'Consulting, business & administrative support' },
+      { name: 'IT & Tech Support', icon: '💻', description: 'Technical support, troubleshooting & device setup' },
+      { name: 'Delivery & Errands', icon: '🚚', description: 'Local delivery, shopping & personal errands' },
     ]);
     const providers = ref([]);
     const loading = ref(true);
