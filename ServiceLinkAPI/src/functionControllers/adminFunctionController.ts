@@ -618,3 +618,72 @@ export const toggleClientStatus = async (clientId: string, isActive: boolean) =>
     throw error;
   }
 };
+
+// Toggle provider account status (Active/Inactive)
+export const toggleProviderStatus = async (providerId: string, isActive: boolean) => {
+  try {
+    // Find the provider by ID
+    const provider = await prisma.serviceProvider.findUnique({
+      where: { id: providerId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            profilePicture: true,
+            isActive: true,
+            isVerified: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    if (!provider) {
+      throw new Error('Provider not found');
+    }
+
+    // Update the user's isActive status
+    const updatedUser = await prisma.user.update({
+      where: { id: provider.userId },
+      data: { isActive },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        profilePicture: true,
+        isActive: true,
+        isVerified: true,
+        createdAt: true
+      }
+    });
+
+    // Create a notification for the provider
+    const notificationMessage = isActive 
+      ? 'Your account has been reactivated. You can now log in and offer services on the platform.'
+      : 'Your account has been temporarily suspended. Please contact support for assistance.';
+
+    await prisma.notification.create({
+      data: {
+        receiverId: provider.userId,
+        type: 'GENERAL',
+        title: isActive ? 'Account Reactivated' : 'Account Suspended',
+        message: notificationMessage,
+        isRead: false
+      }
+    });
+
+    // Return the updated provider data
+    return {
+      ...provider,
+      user: updatedUser
+    };
+  } catch (error) {
+    throw error;
+  }
+};

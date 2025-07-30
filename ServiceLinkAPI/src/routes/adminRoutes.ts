@@ -11,7 +11,8 @@ import {
   handleCreateCategory,
   handleGetAllCategories,
   handleEditCategory,
-  handleToggleClientStatus
+  handleToggleClientStatus,
+  handleToggleProviderStatus
 } from '../httpControllers/adminHttpController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 import { uploadFile } from '../middlewares/fileHandler';
@@ -50,6 +51,7 @@ router.get('/providers', authenticateToken, authorizeRoles('ADMIN'), handleGetAl
 router.get('/providers/unverified', authenticateToken, authorizeRoles('ADMIN'), handleGetUnverifiedProviders);
 router.post('/providers/verify', authenticateToken, authorizeRoles('ADMIN'), handleVerifyProvider);
 router.post('/providers/reject', authenticateToken, authorizeRoles('ADMIN'), handleRejectProviderVerification);
+router.post('/providers/:providerId/toggle-status', authenticateToken, authorizeRoles('ADMIN'), handleToggleProviderStatus);
 
 // User management
 router.post('/users/change-password', authenticateToken, authorizeRoles('ADMIN'), handleChangeUserPassword);

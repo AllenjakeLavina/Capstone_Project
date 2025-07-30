@@ -11,7 +11,8 @@ import {
   createCategory,
   getAllCategories,
   editCategory,
-  toggleClientStatus
+  toggleClientStatus,
+  toggleProviderStatus
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -419,6 +420,36 @@ export const handleToggleClientStatus = async (req: Request, res: Response) => {
       success: true,
       message: `Client ${isActive ? 'enabled' : 'disabled'} successfully`,
       data: updatedClient
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.status(400).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+export const handleToggleProviderStatus = async (req: Request, res: Response) => {
+  try {
+    const { providerId } = req.params;
+    const { isActive } = req.body;
+
+    // Validate required fields
+    if (typeof isActive !== 'boolean') {
+      res.status(400).json({
+        success: false,
+        message: 'isActive field is required and must be a boolean'
+      });
+      return;
+    }
+
+    const updatedProvider = await toggleProviderStatus(providerId, isActive);
+
+    res.status(200).json({
+      success: true,
+      message: `Provider ${isActive ? 'enabled' : 'disabled'} successfully`,
+      data: updatedProvider
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

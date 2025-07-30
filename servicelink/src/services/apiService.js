@@ -715,6 +715,20 @@ export const providerService = {
     } catch (error) {
       return handleApiError(error);
     }
+  },
+
+  // Toggle provider status (Active/Inactive)
+  toggleProviderStatus: async (providerId, isActive) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/providers/${providerId}/toggle-status`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ isActive: !isActive })
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
   }
 };
 

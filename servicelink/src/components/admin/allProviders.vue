@@ -36,7 +36,22 @@
             <td>{{ provider.services ? provider.services.length : 0 }} service(s)</td>
             <td>{{ provider.skills && provider.skills.length ? provider.skills.map(s => s.name).join(', ') : 'No skills listed' }}</td>
             <td>
-              <button class="view-profile-btn" @click="openProfileModal(provider.id)">View Profile</button>
+              <div class="action-buttons">
+                <button 
+                  :class="provider.user.isActive ? 'disable-btn' : 'enable-btn'"
+                  @click="toggleProviderStatus(provider)"
+                  :disabled="actionLoading === provider.id"
+                >
+                  <span v-if="actionLoading === provider.id">
+                    <i class="fa fa-spinner fa-spin"></i> Processing...
+                  </span>
+                  <span v-else>
+                    <i :class="provider.user.isActive ? 'fa fa-ban' : 'fa fa-check'"></i>
+                    {{ provider.user.isActive ? 'Disable' : 'Enable' }}
+                  </span>
+                </button>
+                <button class="view-profile-btn" @click="openProfileModal(provider.id)">View Profile</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -140,6 +155,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { providerService, getFileUrl } from '../../services/apiService';
+import Swal from 'sweetalert2';
 
 const API_BASE_URL = 'http://localhost:5500/api';
 const providers = ref([]);
@@ -151,6 +167,7 @@ const showProfileModal = ref(false);
 const selectedProviderProfile = ref(null);
 const profileLoading = ref(false);
 const profileError = ref('');
+const actionLoading = ref('');
 
 // Fullscreen image viewer for portfolio
 const fullscreenImg = ref(null);
@@ -211,6 +228,73 @@ const closeProfileModal = () => {
   showProfileModal.value = false;
   selectedProviderProfile.value = null;
   profileError.value = '';
+};
+
+const toggleProviderStatus = async (provider) => {
+  const isCurrentlyActive = provider.user.isActive;
+  const action = isCurrentlyActive ? 'disable' : 'enable';
+  const providerName = `${provider.user.firstName} ${provider.user.lastName}`;
+  
+  // Confirmation dialog
+  const result = await Swal.fire({
+    title: `${action.charAt(0).toUpperCase() + action.slice(1)} Provider`,
+    text: `Are you sure you want to ${action} ${providerName}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: isCurrentlyActive ? '#e74c3c' : '#2ecc71',
+    cancelButtonColor: '#95a5a6',
+    confirmButtonText: `Yes, ${action}`,
+    cancelButtonText: 'Cancel'
+  });
+
+  if (!result.isConfirmed) return;
+
+  actionLoading.value = provider.id;
+  
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE_URL}/admin/providers/${provider.id}/toggle-status`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        isActive: !isCurrentlyActive
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      // Update the provider status locally
+      provider.user.isActive = !isCurrentlyActive;
+      
+      Swal.fire({
+        title: 'Success!',
+        text: `${providerName} has been ${action}d successfully`,
+        icon: 'success',
+        confirmButtonColor: '#2ecc71',
+        timer: 2000
+      });
+    } else {
+      Swal.fire({
+        title: 'Error',
+        text: data.message || `Failed to ${action} provider`,
+        icon: 'error',
+        confirmButtonColor: '#e74c3c'
+      });
+    }
+  } catch (e) {
+    Swal.fire({
+      title: 'Error',
+      text: `Failed to ${action} provider. Please try again.`,
+      icon: 'error',
+      confirmButtonColor: '#e74c3c'
+    });
+  } finally {
+    actionLoading.value = '';
+  }
 };
 
 // Helper to check if a file is an image
@@ -744,5 +828,68 @@ onMounted(fetchProviders);
   font-weight: 500;
   font-size: 0.98rem;
   margin-top: 2px;
+}
+/* Action button styling */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.disable-btn, .enable-btn {
+  background-color: #e74c3c; /* Red for disable */
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+.enable-btn {
+  background-color: #2ecc71; /* Green for enable */
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.2);
+}
+
+.disable-btn:hover:not(:disabled) {
+  background-color: #c0392b; /* Darker red for disable */
+}
+
+.enable-btn:hover:not(:disabled) {
+  background-color: #27ae60; /* Darker green for enable */
+}
+
+.disable-btn:disabled, .enable-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  color: #e2e8f0;
+}
+
+.view-profile-btn {
+  background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(46,204,113,0.10);
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.13s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-profile-btn:hover {
+  background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+  box-shadow: 0 4px 16px rgba(39,174,96,0.13);
+  transform: translateY(-1px) scale(1.02);
 }
 </style>
