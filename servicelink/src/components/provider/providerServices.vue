@@ -546,28 +546,72 @@ export default {
 </script>
 
 <style scoped>
+/* Global reset for this component */
+:deep(body), :deep(html) {
+  margin: 0;
+  padding: 0;
+}
+
 .provider-services-container {
   width: 100%;
   padding: 0;
-  background-color: #f8f9fa;
-  min-height: calc(100vh - 80px);
+  background-color: #f5f5f5;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.provider-services-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  background: url("data:image/svg+xml,%3Csvg width='600' height='400' viewBox='0 0 600 400' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='120' cy='100' rx='100' ry='80' fill='%23106e40' fill-opacity='0.13'/%3E%3Crect x='400' y='220' width='160' height='120' rx='60' fill='%2338b676' fill-opacity='0.11'/%3E%3Cpolygon points='520,60 590,140 450,140' fill='%23106e40' fill-opacity='0.09'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
+}
+
+.provider-services-container::after {
+  content: "";
+  position: absolute;
+  left: -50px;
+  bottom: -50px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at 60% 40%, #38b67655 0%, transparent 80%);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .provider-services {
   width: 100%;
   margin: 0;
-  padding: 20px 30px;
+  padding: 20px 30px 0 30px;
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 10px;
+  box-sizing: border-box;
 }
 
 .page-title {
   text-align: center;
   color: #4a5568;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   font-size: 2.6rem;
   font-weight: 800;
   position: relative;
   padding-bottom: 15px;
   letter-spacing: -0.02em;
+  z-index: 1;
 }
 
 .page-title::after {
@@ -589,6 +633,8 @@ export default {
   justify-content: center;
   height: 400px;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .spinner {
@@ -610,12 +656,14 @@ export default {
   background: linear-gradient(to right, rgba(243, 156, 18, 0.1), rgba(241, 196, 15, 0.1));
   color: #d35400;
   padding: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   border-radius: 10px;
   border-left: 5px solid #f39c12;
   display: flex;
   align-items: flex-start;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 1;
 }
 
 .alert-icon {
@@ -629,9 +677,11 @@ export default {
 }
 
 .action-buttons {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   display: flex;
   justify-content: flex-end;
+  position: relative;
+  z-index: 1;
 }
 
 .primary-btn {
@@ -1184,6 +1234,8 @@ textarea.form-control {
   border-left: 5px solid #e74c3c;
   margin: 20px 0;
   font-weight: 500;
+  position: relative;
+  z-index: 1;
 }
 
 /* Responsive Styles */
