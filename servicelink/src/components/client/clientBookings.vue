@@ -65,6 +65,13 @@
             
             <button 
               v-if="booking.status === 'PENDING'"
+              class="btn btn-edit" 
+              @click="openEditModal(booking)">
+              Edit Booking
+            </button>
+            
+            <button 
+              v-if="booking.status === 'PENDING'"
               class="btn btn-cancel" 
               @click="confirmCancelBooking(booking)">
               Cancel Booking
@@ -243,6 +250,76 @@
           </div>
         </div>
       </div>
+
+      <!-- Edit Booking Modal -->
+      <div v-if="showEditModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Edit Booking</h2>
+            <button class="close-btn" @click="closeEditModal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="booking-service-details">
+              <h3>{{ selectedBooking?.title || selectedBooking?.service.title }}</h3>
+              <p class="modal-price">₱{{ Number(selectedBooking?.totalAmount || selectedBooking?.service.pricing).toFixed(2) }}</p>
+              <p>Provider: {{ getProviderName(selectedBooking) }}</p>
+            </div>
+            
+            <form @submit.prevent="submitEditBooking">
+              <div class="form-group">
+                <label for="edit-booking-date">Date & Time</label>
+                <input 
+                  type="datetime-local" 
+                  id="edit-booking-date" 
+                  v-model="editForm.dateTime" 
+                  required
+                  :min="currentDateTimeString"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label for="edit-booking-address">Address</label>
+                <div class="address-input-group">
+                  <select id="edit-booking-address" v-model="editForm.addressId" required>
+                    <option value="">-- Select an address --</option>
+                    <option v-for="address in addresses" :key="address.id" :value="address.id">
+                      {{ formatAddress(address) }}
+                    </option>
+                  </select>
+                  <button 
+                    type="button" 
+                    class="add-address-btn" 
+                    @click="showAddAddressModal = true"
+                    title="Add new address"
+                  >
+                    <i class="fa fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="edit-booking-notes">Additional Notes</label>
+                <textarea id="edit-booking-notes" v-model="editForm.notes"></textarea>
+              </div>
+              
+              <div class="booking-actions">
+                <button type="button" class="btn btn-cancel" @click="closeEditModal">Cancel</button>
+                <button type="submit" class="btn btn-confirm" :disabled="isEditing">
+                  {{ isEditing ? 'Updating...' : 'Update Booking' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Address Modal -->
+      <add-address-modal
+        v-if="showAddAddressModal"
+        :showModal="showAddAddressModal"
+        @close="closeAddAddressModal"
+        @addressAdded="handleAddressAdded"
+      />
     </div>
   </div>
 </template>
@@ -252,6 +329,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { clientService } from '@/services/apiService';
 import Swal from 'sweetalert2';
+import AddAddressModal from '@/components/modals/AddAddressModal.vue';
 
 const API_BASE_URL = 'http://localhost:5500';
 
@@ -272,6 +350,9 @@ const getFileUrl = (relativePath) => {
 
 export default {
   name: 'ClientBookings',
+  components: {
+    AddAddressModal
+  },
   setup() {
     const router = useRouter();
     const bookings = ref([]);
@@ -300,6 +381,17 @@ export default {
       comment: ''
     });
     const isSubmittingReview = ref(false);
+
+    // Edit Booking related refs
+    const showEditModal = ref(false);
+    const editForm = ref({
+      dateTime: '',
+      addressId: '',
+      notes: ''
+    });
+    const isEditing = ref(false);
+    const addresses = ref([]);
+    const showAddAddressModal = ref(false);
 
     // Status options for filtering
     const statusOptions = [
@@ -729,10 +821,87 @@ export default {
       showReviewModal.value = true;
     };
 
+    // Open edit booking modal
+    const openEditModal = (booking) => {
+      selectedBooking.value = booking;
+      editForm.value = {
+        dateTime: formatDate(booking.startTime).replace(' ', 'T'),
+        addressId: booking.address ? booking.address.id : '',
+        notes: booking.notes || ''
+      };
+      showEditModal.value = true;
+    };
+
+    // Close edit booking modal
+    const closeEditModal = () => {
+      showEditModal.value = false;
+      editForm.value = {
+        dateTime: '',
+        addressId: '',
+        notes: ''
+      };
+    };
+
+    // Submit edited booking
+    const submitEditBooking = async () => {
+      if (!editForm.value.dateTime || !editForm.value.addressId) {
+        Swal.fire({
+          title: 'Incomplete Form',
+          text: 'Please select a date and address.',
+          icon: 'warning',
+          confirmButtonColor: '#ff9800'
+        });
+        return;
+      }
+
+      isEditing.value = true;
+      try {
+        const result = await clientService.updateBooking(
+          selectedBooking.value.id,
+          {
+            startTime: editForm.value.dateTime,
+            addressId: editForm.value.addressId,
+            notes: editForm.value.notes
+          }
+        );
+
+        if (result.success) {
+          showEditModal.value = false;
+          Swal.fire({
+            title: 'Booking Updated',
+            text: 'Your booking has been successfully updated.',
+            icon: 'success',
+            confirmButtonColor: '#4CAF50',
+            timer: 3000
+          });
+          // Refresh bookings list
+          await fetchBookings();
+        } else {
+          Swal.fire({
+            title: 'Update Failed',
+            text: result.message || 'Failed to update booking',
+            icon: 'error',
+            confirmButtonColor: '#f44336'
+          });
+        }
+      } catch (error) {
+        console.error('Error submitting edit booking:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'An error occurred while updating the booking',
+          icon: 'error',
+          confirmButtonColor: '#f44336'
+        });
+      } finally {
+        isEditing.value = false;
+      }
+    };
+
     // Load data on component mount
     onMounted(() => {
       fetchBookings();
       fetchUserReviews();
+      fetchAddresses(); // Fetch addresses for the edit form
     });
     
     // Add function to fetch user reviews
@@ -746,7 +915,51 @@ export default {
         console.error('Error fetching user reviews:', err);
       }
     };
-    
+
+    // Function to fetch addresses for the edit form
+    const fetchAddresses = async () => {
+      try {
+        const response = await clientService.getAddresses();
+        if (response.success) {
+          addresses.value = response.data;
+          // If the selected booking has an address, set it as the default selected address
+          if (selectedBooking.value && selectedBooking.value.address) {
+            const index = addresses.value.findIndex(addr => addr.id === selectedBooking.value.address.id);
+            if (index !== -1) {
+              editForm.value.addressId = selectedBooking.value.address.id;
+            }
+          }
+        } else {
+          console.error('Error fetching addresses:', response.message);
+        }
+      } catch (err) {
+        console.error('Error fetching addresses:', err);
+      }
+    };
+
+    // Function to handle address added from AddAddressModal
+    const handleAddressAdded = (newAddress) => {
+      addresses.value.push(newAddress);
+      editForm.value.addressId = newAddress.id; // Set the new address as selected
+      showAddAddressModal.value = false;
+      Swal.fire({
+        title: 'Address Added',
+        text: 'Your new address has been added.',
+        icon: 'success',
+        confirmButtonColor: '#4CAF50',
+        timer: 3000
+      });
+    };
+
+    // Close add address modal
+    const closeAddAddressModal = () => {
+      showAddAddressModal.value = false;
+    };
+
+    // Get current date and time for date-time input min attribute
+    const currentDateTime = new Date();
+    const currentDateTimeString = currentDateTime.toISOString().slice(0, 16);
+
     return {
       bookings,
       loading,
@@ -787,6 +1000,17 @@ export default {
       setRating,
       userReviews,
       hasCompletedPayment,
+      showEditModal,
+      editForm,
+      isEditing,
+      addresses,
+      showAddAddressModal,
+      openEditModal,
+      closeEditModal,
+      submitEditBooking,
+      handleAddressAdded,
+      closeAddAddressModal,
+      currentDateTimeString,
     };
   }
 };
@@ -1187,14 +1411,24 @@ export default {
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
+.btn-edit {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+}
+
+.btn-edit:hover {
+  background: linear-gradient(135deg, #2980b9, #2471a3);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
 .btn-payment {
-  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  background: linear-gradient(135deg, #f39c12, #e67e22);
   color: white;
 }
 
 .btn-payment:hover {
-  background: linear-gradient(135deg, #27ae60, #219d55);
-  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+  background: linear-gradient(135deg, #e67e22, #d35400);
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
 }
 
 .btn-review {
@@ -1612,6 +1846,105 @@ textarea.form-control {
   box-sizing: border-box;
 }
 
+.booking-service-details {
+  margin-bottom: 25px;
+  padding: 15px;
+  background: linear-gradient(135deg, #f8f9fa, #f5f5f5);
+  border-radius: 10px;
+  border: 1px solid #e1e4e8;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.booking-service-details h3 {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.modal-price {
+  font-size: 1.1rem;
+  color: #2ecc71;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.address-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.address-input-group select {
+  flex: 1;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #333;
+  background-color: #fff;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.address-input-group select:focus {
+  outline: none;
+  border-color: #38b676;
+  box-shadow: 0 0 0 3px rgba(56, 182, 118, 0.1);
+}
+
+.add-address-btn {
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+  padding: 12px 18px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.add-address-btn:hover {
+  background: linear-gradient(135deg, #219d55, #1e8449);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.add-address-btn i {
+  font-size: 1rem;
+}
+
+.booking-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 25px;
+  border-top: 1px solid #eee;
+}
+
+.booking-actions .btn {
+  padding: 10px 18px;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: linear-gradient(135deg, #219d55, #1e8449);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
 @media screen and (max-width: 1600px) {
   .bookings-list {
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -1710,6 +2043,20 @@ textarea.form-control {
   
   .modal-actions .btn {
     width: 100%;
+  }
+
+  .address-input-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .address-input-group select {
+    width: 100%;
+  }
+
+  .add-address-btn {
+    width: 100%;
+    padding: 12px;
   }
 }
 

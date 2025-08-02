@@ -736,6 +736,106 @@ export const cancelBooking = async (userId: string, bookingId: string) => {
   }
 };
 
+export const updateBooking = async (
+  userId: string, 
+  bookingId: string, 
+  updateData: {
+    startTime?: Date;
+    addressId?: string;
+    notes?: string;
+  }
+) => {
+  try {
+    // Find client by userId
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { client: true }
+    });
+
+    if (!user || !user.client) {
+      throw new Error('Client not found');
+    }
+
+    // Find the booking and ensure it belongs to this client
+    const booking = await prisma.serviceBooking.findFirst({
+      where: {
+        id: bookingId,
+        clientId: user.client.id
+      },
+      include: {
+        service: true,
+        serviceProvider: {
+          include: {
+            user: true
+          }
+        },
+        address: true
+      }
+    });
+
+    if (!booking) {
+      throw new Error('Booking not found or not authorized');
+    }
+
+    // Ensure booking can be updated (only PENDING bookings)
+    if (booking.status !== 'PENDING') {
+      throw new Error(`Cannot update a booking with status: ${booking.status}. Only pending bookings can be updated.`);
+    }
+
+    // Validate address if provided
+    if (updateData.addressId) {
+      const address = await prisma.address.findFirst({
+        where: {
+          id: updateData.addressId,
+          clientId: user.client.id
+        }
+      });
+
+      if (!address) {
+        throw new Error('Address not found or not authorized');
+      }
+    }
+
+    // Update booking
+    const updatedBooking = await prisma.serviceBooking.update({
+      where: { id: bookingId },
+      data: {
+        startTime: updateData.startTime,
+        addressId: updateData.addressId,
+        notes: updateData.notes
+      },
+      include: {
+        service: true,
+        serviceProvider: {
+          include: {
+            user: true
+          }
+        },
+        address: true
+      }
+    });
+
+    // Create notification for provider about booking update
+    await prisma.notification.create({
+      data: {
+        receiverId: booking.serviceProvider.user.id,
+        type: 'GENERAL',
+        title: 'Booking Updated',
+        message: `Booking for "${booking.service.title}" has been updated by the client.`,
+        isRead: false,
+        data: JSON.stringify({
+          bookingId: booking.id,
+          serviceId: booking.service.id
+        })
+      }
+    });
+
+    return updatedBooking;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const processPayment = async (
   userId: string,
   bookingId: string,

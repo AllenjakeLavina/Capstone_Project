@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { registerClient,  updateClientProfile,
      addClientAddress, getClientAddresses, updateClientAddress, deleteClientAddress, getClientProfile,
-     bookService, getClientBookings, getBookingDetails, cancelBooking, setDefaultAddress,
+     bookService, getClientBookings, getBookingDetails, cancelBooking, updateBooking, setDefaultAddress,
      processPayment, markPaymentCompleted, getClientContracts, getClientContractDetails, signContract,
      createReview, getReviewsReceived, getReviewsGiven } from '../functionControllers/clientFunctionController';
 
@@ -447,6 +447,52 @@ export const handleCancelBooking = async (req: Request, res: Response) => {
       success: true,
       message: 'Booking cancelled successfully',
       data: cancelledBooking
+    });
+    return;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.status(400).json({
+      success: false,
+      message: errorMessage
+    });
+    return;
+  }
+};
+
+export const handleUpdateBooking = async (req: Request, res: Response) => {
+  try {
+    // Get the user ID from the JWT token
+    const userId = req.user.id;
+    const { bookingId } = req.params;
+    const { startTime, addressId, notes } = req.body;
+    
+    if (!userId || !bookingId) {
+      res.status(400).json({
+        success: false,
+        message: 'User ID and Booking ID are required'
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!startTime) {
+      res.status(400).json({
+        success: false,
+        message: 'Start time is required'
+      });
+      return;
+    }
+
+    const updatedBooking = await updateBooking(userId, bookingId, {
+      startTime: new Date(startTime),
+      addressId,
+      notes
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Booking updated successfully',
+      data: updatedBooking
     });
     return;
   } catch (error) {

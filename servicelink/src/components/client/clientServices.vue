@@ -146,12 +146,22 @@
               
               <div class="form-group">
                 <label for="booking-address">Address</label>
-                <select id="booking-address" v-model="bookingForm.addressId" required>
-                  <option value="">-- Select an address --</option>
-                  <option v-for="address in addresses" :key="address.id" :value="address.id">
-                    {{ formatAddress(address) }}
-                  </option>
-                </select>
+                <div class="address-input-group">
+                  <select id="booking-address" v-model="bookingForm.addressId" required>
+                    <option value="">-- Select an address --</option>
+                    <option v-for="address in addresses" :key="address.id" :value="address.id">
+                      {{ formatAddress(address) }}
+                    </option>
+                  </select>
+                  <button 
+                    type="button" 
+                    class="add-address-btn" 
+                    @click="showAddAddressModal = true"
+                    title="Add new address"
+                  >
+                    <i class="fa fa-plus"></i>
+                  </button>
+                </div>
               </div>
               
               <div class="form-group">
@@ -198,6 +208,14 @@
         :provider="selectedProvider"
         @close="closeProviderModal"
       />
+
+      <!-- Add Address Modal -->
+      <add-address-modal
+        v-if="showAddAddressModal"
+        :showModal="showAddAddressModal"
+        @close="closeAddAddressModal"
+        @addressAdded="handleAddressAdded"
+      />
     </div>
   </div>
 </template>
@@ -207,6 +225,7 @@ import { FILE_SERVER_URL, serviceService, clientService, providerService } from 
 import { useRouter } from 'vue-router';
 import { ref, onMounted, computed } from 'vue';
 import ProviderDetailsModal from '@/components/modals/ProviderDetailsModal.vue';
+import AddAddressModal from '@/components/modals/AddAddressModal.vue';
 
 const API_BASE_URL = FILE_SERVER_URL;
 const getFileUrl = (relativePath) => {
@@ -224,7 +243,8 @@ const getFileUrl = (relativePath) => {
 export default {
   name: 'ClientServices',
   components: {
-    ProviderDetailsModal
+    ProviderDetailsModal,
+    AddAddressModal
   },
   setup() {
     const router = useRouter();
@@ -248,6 +268,9 @@ export default {
     // Provider details modal state
     const showProviderModal = ref(false);
     const selectedProvider = ref(null);
+
+    // Add Address modal state
+    const showAddAddressModal = ref(false);
 
     // Get current date and time in ISO format for min attribute
     const currentDateTimeString = new Date().toISOString().slice(0, 16);
@@ -430,6 +453,20 @@ export default {
       showProviderModal.value = false;
       selectedProvider.value = null;
     };
+
+    // Close add address modal
+    const closeAddAddressModal = () => {
+      showAddAddressModal.value = false;
+    };
+
+    // Handle address added
+    const handleAddressAdded = async () => {
+      await fetchAddresses();
+      // Auto-select the newly added address (assuming it's the last one)
+      if (addresses.value.length > 0) {
+        bookingForm.value.addressId = addresses.value[addresses.value.length - 1].id;
+      }
+    };
     
     // Load data on component mount
     onMounted(() => {
@@ -482,6 +519,7 @@ export default {
       currentDateTimeString,
       showProviderModal,
       selectedProvider,
+      showAddAddressModal,
       selectCategory,
       backToCategories,
       formatAddress,
@@ -500,6 +538,8 @@ export default {
       showAllServices,
       initialServiceCount,
       handleImageError,
+      closeAddAddressModal,
+      handleAddressAdded,
     };
   }
 };
@@ -1260,6 +1300,36 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.address-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.add-address-btn {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.add-address-btn:hover {
+  background: linear-gradient(135deg, #2980b9, #2471a3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+}
+
+.add-address-btn i {
+  font-size: 1rem;
 }
 
 @media screen and (max-width: 1600px) {

@@ -834,6 +834,18 @@ export const clientService = {
     }
   },
 
+  getAddresses: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/client/address`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
   updateClientProfile: async (profileData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/client/profile`, {
@@ -902,6 +914,19 @@ export const clientService = {
     try {
       const response = await fetch(`${API_BASE_URL}/client/booking`, {
         method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(bookingData)
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  updateBooking: async (bookingId, bookingData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/client/booking/${bookingId}`, {
+        method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(bookingData)
       });

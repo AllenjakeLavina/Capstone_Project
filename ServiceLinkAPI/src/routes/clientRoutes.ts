@@ -3,7 +3,7 @@ import {
   handleRegisterClient, handleUpdateClientProfile, handleGetClientProfile, 
   handleAddClientAddress, handleGetClientAddresses, handleUpdateClientAddress, 
   handleDeleteClientAddress, handleBookService, handleGetClientBookings, 
-  handleGetBookingDetails, handleCancelBooking, handleSetDefaultAddress,
+  handleGetBookingDetails, handleCancelBooking, handleUpdateBooking, handleSetDefaultAddress,
   handleProcessPayment, handleMarkPaymentCompleted,
   getContractsController, getContractDetailsController, signContractController,
   createReviewController, getReviewsReceivedController, getReviewsGivenController
@@ -32,6 +32,7 @@ router.patch('/address/:addressId/default', authenticateToken, handleSetDefaultA
 router.post('/booking', authenticateToken, handleBookService);
 router.get('/booking', authenticateToken, handleGetClientBookings);
 router.get('/booking/:bookingId', authenticateToken, handleGetBookingDetails);
+router.put('/booking/:bookingId', authenticateToken, handleUpdateBooking);
 router.post('/booking/:bookingId/cancel', authenticateToken, handleCancelBooking);
 
 // Payment management
