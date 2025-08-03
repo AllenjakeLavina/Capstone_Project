@@ -152,7 +152,7 @@ export default {
             } else if (response.data.user.role === 'PROVIDER') {
               router.push('/provider/services');
             } else if (response.data.user.role === 'ADMIN') {
-              router.push('/admin/unverified-providers');
+              router.push('/admin/dashboard');
             }
           }, 1000);
         } else {

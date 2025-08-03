@@ -2,10 +2,10 @@
   <div class="admin-dashboard">
     <div class="page-header">
       <h2 class="page-title">Admin Dashboard</h2>
-      <button class="refresh-btn" @click="loadDashboardData" :disabled="loading">
-        <i class="fa fa-refresh" :class="{ 'fa-spin': loading }"></i>
-        Refresh
-      </button>
+      <div class="time-date-display">
+        <div class="time">{{ currentTime }}</div>
+        <div class="date">{{ currentDate }}</div>
+      </div>
     </div>
 
     <!-- Summary Cards -->
@@ -127,8 +127,31 @@ export default {
     const recentBookings = ref([]);
     const lineChart = ref(null);
     const pieChart = ref(null);
+    const currentTime = ref('');
+    const currentDate = ref('');
+    const timeInterval = ref(null);
     let lineChartInstance = null;
     let pieChartInstance = null;
+
+    const updateTimeAndDate = () => {
+      const now = new Date();
+      
+      // Format time (HH:MM:SS AM/PM)
+      currentTime.value = now.toLocaleTimeString('en-US', {
+        hour12: true,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      // Format date (Day, Month DD, YYYY)
+      currentDate.value = now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    };
 
     const loadDashboardData = async () => {
       try {
@@ -281,6 +304,13 @@ export default {
     };
 
     onMounted(() => {
+      // Initialize time and date
+      updateTimeAndDate();
+      
+      // Set up interval to update time every second
+      timeInterval.value = setInterval(updateTimeAndDate, 1000);
+      
+      // Load dashboard data
       loadDashboardData();
     });
 
@@ -290,12 +320,20 @@ export default {
       recentBookings,
       lineChart,
       pieChart,
+      currentTime,
+      currentDate,
+      timeInterval,
       getClientName,
       getProviderName,
       getStatusClass,
-      formatDate,
-      loadDashboardData
+      formatDate
     };
+  },
+  beforeUnmount() {
+    // Clean up interval on component unmount
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+    }
   }
 };
 </script>
@@ -342,30 +380,23 @@ export default {
   border-radius: 2px;
 }
 
-.refresh-btn {
-  background-color: #00C853;
-  color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  border: none;
+.time-date-display {
+  text-align: right;
+  color: #4a5568;
+}
+
+.time {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #00C853;
+  margin-bottom: 4px;
+  font-family: 'Courier New', monospace;
+}
+
+.date {
   font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 200, 83, 0.2);
-}
-
-.refresh-btn:hover:not(:disabled) {
-  background-color: #009688;
-}
-
-.refresh-btn:disabled {
-  background-color: #a0aec0;
-  cursor: not-allowed;
-  color: #e2e8f0;
+  color: #666;
+  font-weight: 500;
 }
 
 .summary-cards {
@@ -599,8 +630,26 @@ tr:hover {
     padding: 10px 15px;
   }
   
+  .page-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
   .page-title {
     font-size: 2rem;
+  }
+  
+  .time-date-display {
+    text-align: left;
+  }
+  
+  .time {
+    font-size: 1.5rem;
+  }
+  
+  .date {
+    font-size: 0.9rem;
   }
   
   .summary-cards {
@@ -648,12 +697,6 @@ tr:hover {
 @media (max-width: 480px) {
   .admin-dashboard {
     padding: 8px 10px;
-  }
-  
-  .page-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
   }
   
   .summary-cards {
