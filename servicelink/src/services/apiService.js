@@ -1223,6 +1223,33 @@ export const uploadProfilePicture = async (file) => {
   }
 };
 
+// Admin related functions
+export const adminService = {
+  getDashboardStats: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  getRecentBookings: async (limit = 10) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard/recent-bookings?limit=${limit}`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+};
+
 // Export all services
 export default {
   auth: authService,
@@ -1232,6 +1259,7 @@ export default {
   chat: chatService,
   client: clientService,
   notifications: notificationService,
+  admin: adminService,
   uploadProfilePicture,
   getFileUrl
 };

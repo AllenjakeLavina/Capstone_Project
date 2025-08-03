@@ -687,3 +687,138 @@ export const toggleProviderStatus = async (providerId: string, isActive: boolean
     throw error;
   }
 };
+
+// Dashboard Statistics Functions
+export const getDashboardStats = async () => {
+  try {
+    // Get total counts
+    const totalBookings = await prisma.serviceBooking.count();
+    const totalClients = await prisma.client.count();
+    const totalProviders = await prisma.serviceProvider.count();
+    
+    // Calculate total revenue from completed bookings
+    const completedBookings = await prisma.serviceBooking.findMany({
+      where: {
+        status: 'COMPLETED',
+        totalAmount: {
+          not: null
+        }
+      },
+      select: {
+        totalAmount: true
+      }
+    });
+    
+    const totalRevenue = completedBookings.reduce((sum, booking) => {
+      return sum + Number(booking.totalAmount || 0);
+    }, 0);
+
+    // Get bookings over the past 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const bookingsLast7Days = await prisma.serviceBooking.findMany({
+      where: {
+        createdAt: {
+          gte: sevenDaysAgo
+        }
+      },
+      select: {
+        createdAt: true,
+        status: true
+      }
+    });
+
+    // Group bookings by date for the line chart
+    const bookingsByDate: { [key: string]: number } = {};
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      bookingsByDate[dateKey] = 0;
+    }
+
+    bookingsLast7Days.forEach(booking => {
+      const dateKey = booking.createdAt.toISOString().split('T')[0];
+      if (bookingsByDate[dateKey] !== undefined) {
+        bookingsByDate[dateKey]++;
+      }
+    });
+
+    // Get booking status distribution
+    const bookingStatusCounts = await prisma.serviceBooking.groupBy({
+      by: ['status'],
+      _count: {
+        status: true
+      }
+    });
+
+    const statusDistribution = bookingStatusCounts.map(item => ({
+      status: item.status,
+      count: item._count.status
+    }));
+
+    return {
+      summary: {
+        totalBookings,
+        totalClients,
+        totalProviders,
+        totalRevenue: parseFloat(totalRevenue.toFixed(2))
+      },
+      bookingsLast7Days: Object.entries(bookingsByDate).reverse().map(([date, count]) => ({
+        date,
+        count
+      })),
+      statusDistribution
+    };
+  } catch (error) {
+    console.error('Error getting dashboard stats:', error);
+    throw error;
+  }
+};
+
+export const getRecentBookings = async (limit = 10) => {
+  try {
+    const recentBookings = await prisma.serviceBooking.findMany({
+      take: limit,
+      orderBy: {
+        createdAt: 'desc'
+      },
+      include: {
+        client: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
+        serviceProvider: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
+        service: {
+          select: {
+            title: true,
+            pricing: true
+          }
+        }
+      }
+    });
+
+    return recentBookings;
+  } catch (error) {
+    console.error('Error getting recent bookings:', error);
+    throw error;
+  }
+};

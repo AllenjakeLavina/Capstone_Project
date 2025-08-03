@@ -46,6 +46,10 @@
           
           <!-- Admin links -->
           <template v-if="userRole === 'ADMIN'">
+            <router-link to="/admin/dashboard" class="nav-item">
+              <div class="icon"><i class="fas fa-chart-line"></i></div>
+              <span>Dashboard</span>
+            </router-link>
             <router-link to="/admin/unverified-providers" class="nav-item">
               <div class="icon"><i class="fas fa-user-times"></i></div>
               <span>Unverified Providers</span>
@@ -370,6 +374,10 @@
       
       <!-- Admin links -->
       <template v-if="userRole === 'ADMIN'">
+        <router-link to="/admin/dashboard" class="mobile-nav-item" :class="{ 'active': isRouteActive('admin/dashboard') }">
+          <div class="icon"><i class="fas fa-chart-line"></i></div>
+          <span>Dashboard</span>
+        </router-link>
         <router-link to="/admin/unverified-providers" class="mobile-nav-item" :class="{ 'active': isRouteActive('admin/unverified-providers') }">
           <div class="icon"><i class="fas fa-user-times"></i></div>
           <span>Unverified</span>

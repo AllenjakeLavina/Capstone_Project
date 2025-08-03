@@ -12,7 +12,9 @@ import {
   getAllCategories,
   editCategory,
   toggleClientStatus,
-  toggleProviderStatus
+  toggleProviderStatus,
+  getDashboardStats,
+  getRecentBookings
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -454,6 +456,43 @@ export const handleToggleProviderStatus = async (req: Request, res: Response) =>
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     res.status(400).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+export const handleGetDashboardStats = async (req: Request, res: Response) => {
+  try {
+    const stats = await getDashboardStats();
+
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in handleGetDashboardStats:', error);
+    res.status(500).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+export const handleGetRecentBookings = async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const bookings = await getRecentBookings(limit);
+
+    res.status(200).json({
+      success: true,
+      data: bookings
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in handleGetRecentBookings:', error);
+    res.status(500).json({
       success: false,
       message: errorMessage
     });

@@ -17,6 +17,7 @@ import ClientBookingDetails from '../components/client/clientBookingDetails.vue'
 import ProviderBookings from '../components/provider/providerBookings.vue';
 import ProviderBookingDetails from '../components/provider/providerBookingDetails.vue';
 import message from '../components/shared/message.vue';
+import AdminDashboard from '../components/admin/adminDashboard.vue';
 import UnverifiedProviders from '../components/admin/unverifiedProviders.vue';
 import AllProviders from '../components/admin/allProviders.vue';
 import AllClients from '../components/admin/allClients.vue';
@@ -131,6 +132,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, roles: ['ADMIN'] }
+  },
+  {
     path: '/admin/unverified-providers',
     name: 'UnverifiedProviders',
     component: UnverifiedProviders,
@@ -177,6 +184,9 @@ router.beforeEach((to, from, next) => {
     next('/login');
   } else if (requiresAuth && to.meta.roles && !to.meta.roles.includes(userRole)) {
     next('/');
+  } else if (token && userRole === 'ADMIN' && to.path === '/') {
+    // Redirect admins to dashboard when they visit the home page
+    next('/admin/dashboard');
   } else {
     next();
   }
