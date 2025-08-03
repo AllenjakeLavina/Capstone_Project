@@ -125,6 +125,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/messages/:conversationId',
+    name: 'MessagesWithConversation',
+    component: message,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/admin/unverified-providers',
     name: 'UnverifiedProviders',
     component: UnverifiedProviders,

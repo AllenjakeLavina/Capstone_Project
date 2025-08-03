@@ -265,10 +265,14 @@
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { io } from 'socket.io-client';
 import { FILE_SERVER_URL, chatService } from '@/services/apiService';
+import { useRoute, useRouter } from 'vue-router';
 
 export default {
   name: 'MessageChat',
   setup() {
+    const route = useRoute();
+    const router = useRouter();
+    
     // State variables
     const conversations = ref([]);
     const selectedConversation = ref(null);
@@ -343,6 +347,20 @@ export default {
               conversationActive.value = updatedConversation.isActive !== false;
             }
           }
+          
+          // Check if we have a conversation ID in the route and select it
+          const conversationIdFromRoute = route.params.conversationId;
+          if (conversationIdFromRoute && !selectedConversation.value) {
+            const conversationToSelect = conversations.value.find(
+              c => c.id === conversationIdFromRoute
+            );
+            if (conversationToSelect) {
+              await selectConversation(conversationToSelect);
+            } else {
+              // If conversation not found, redirect to messages without ID
+              router.push('/messages');
+            }
+          }
         } else {
           throw new Error(response.message || 'Failed to load conversations');
         }
@@ -367,6 +385,9 @@ export default {
       // Set the selected conversation
       selectedConversation.value = conversation;
       recipient.value = conversation.otherUser;
+      
+      // Update the route to include the conversation ID
+      router.push(`/messages/${conversation.id}`);
       
       // Join the conversation room in socket
       if (socket.value && isConnected.value) {

@@ -252,6 +252,8 @@ export default {
             case 'NEW_MESSAGE':
               if (data.conversationId) {
                 router.push(`/messages/${data.conversationId}`);
+              } else {
+                router.push('/messages');
               }
               break;
               
