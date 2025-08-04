@@ -1,6 +1,8 @@
 <template>
   <div class="category-management">
-    <h2 class="page-title">Category Management</h2>
+    <div class="page-header">
+      <h2 class="page-title">Category Management</h2>
+    </div>
     
     <!-- Create New Category Button -->
     <div class="category-action-bar">
@@ -456,24 +458,30 @@ button:disabled {
   margin-top: 15px;
 }
 
-.page-title {
-  margin-top: 20px;
-  text-align: center;
-  color: #4a5568;
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.page-title {
+  color: #4a5568;
+  margin: 0;
   font-size: 2.6rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   position: relative;
   padding-bottom: 15px;
-  letter-spacing: -0.02em;
 }
 
 .page-title::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   width: 80px;
   height: 4px;
   background: linear-gradient(90deg, #3498db, #2ecc71);

@@ -1,84 +1,115 @@
 <template>
   <div class="provider-services-container">
     <div class="provider-services">
-      <h2 class="page-title">Providers Awaiting Verification</h2>
-      <div v-if="loading" class="loading">
-        <div class="spinner"></div>
-        <p>Loading...</p>
+      <div class="page-header">
+        <h2 class="page-title">Providers Awaiting Verification</h2>
+        <button class="refresh-btn" @click="fetchProviders" :disabled="loading">
+          <i class="fa fa-refresh" :class="{ 'fa-spin': loading }"></i>
+          Refresh
+        </button>
       </div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
-        <div v-if="providers.length === 0" class="no-services">
-          <i class="fa fa-briefcase empty-icon"></i>
-          <p>No providers awaiting verification</p>
-          <p class="empty-subtitle">All provider verification requests have been processed</p>
-        </div>
-        <div v-else class="provider-table-list">
-          <div v-for="provider in providers" :key="provider.id" class="provider-table-row">
-            <div class="provider-table-name">
-              <span class="provider-name-text">{{ provider.user.firstName }} {{ provider.user.lastName }}</span>
-            </div>
-            <div class="provider-table-actions">
-              <button class="view-profile-btn" @click="openProfileModal(provider)"><i class="fa fa-eye"></i> View Profile</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div v-if="showModal" class="modal">
-        <div class="modal-content">
-          <span class="close-btn" @click="closeModal">&times;</span>
-          <div v-if="selectedProvider" class="profile-modal-card-modern">
-            <div class="profile-section-card" style="margin-bottom:18px;">
-              <div class="profile-name-modern">{{ selectedProvider.user.firstName }} {{ selectedProvider.user.lastName }}</div>
-              <div class="profile-info-chips">
-                <div class="profile-chip"><i class="fa fa-envelope"></i> {{ selectedProvider.user.email }}</div>
-                <div class="profile-chip"><i class="fa fa-phone"></i> {{ selectedProvider.user.phone || 'Not provided' }}</div>
-              </div>
-            </div>
-            <div class="profile-section-card">
-              <div class="profile-section-label">Documents</div>
-              <div class="profile-docs-section">
-                <div v-if="uniqueDocs.length" class="profile-docs-grid">
-                  <div v-for="doc in uniqueDocs" :key="doc.id" class="profile-doc-card">
-                    <template v-if="isImage(doc.fileUrl)">
-                      <img :src="getFileUrl(doc.fileUrl)" :alt="doc.title || 'Document'" class="profile-doc-img-modern" @error="onImgError" @click="openFullscreenImg(getFileUrl(doc.fileUrl))" style="cursor:pointer;" />
-                      <div class="profile-doc-caption-modern">{{ doc.title || doc.fileUrl }}</div>
-                    </template>
-                    <template v-else>
-                      <a :href="getFileUrl(doc.fileUrl)" target="_blank" class="profile-doc-link-modern">{{ doc.title || doc.fileUrl }}</a>
-                    </template>
-                  </div>
+      <div v-if="loading" class="loading">Loading...</div>
+      <div v-else-if="error" class="error">{{ error }}</div>
+      <div v-else>
+        <div v-if="providers.length === 0">No providers found</div>
+        <table v-else class="providers-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Documents</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="provider in providers" :key="provider.id">
+              <td>{{ provider.user.firstName }} {{ provider.user.lastName }}</td>
+              <td>{{ provider.user.email }}</td>
+              <td>{{ provider.user.phone || 'Not provided' }}</td>
+              <td>{{ provider.documents ? provider.documents.length : 0 }} document(s)</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="view-profile-btn" @click="openProfileModal(provider)">View Profile</button>
                 </div>
-                <div v-else class="profile-no-docs-modern">No documents uploaded</div>
-              </div>
-            </div>
-            <div class="profile-modal-actions">
-              <button class="verify-btn" @click="verifyProvider(selectedProvider.id)" :disabled="actionLoading === selectedProvider.id">
-                <span v-if="actionLoading === selectedProvider.id">
-                  <i class="fa fa-spinner fa-spin"></i> Processing...
-                </span>
-                <span v-else>
-                  ✔️ Verify Provider
-                </span>
-              </button>
-              <button class="reject-btn" @click="rejectProvider(selectedProvider.id)" :disabled="actionLoading === selectedProvider.id">
-                <span v-if="actionLoading === selectedProvider.id">
-                  <i class="fa fa-spinner fa-spin"></i> Processing...
-                </span>
-                <span v-else>
-                  ❌ Reject
-                </span>
-              </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- Provider Profile Modal -->
+  <div v-if="showModal" class="profile-modal-overlay">
+    <div class="profile-modal-container">
+      <button class="close-modal-btn" @click="closeModal">&times;</button>
+      <div v-if="selectedProvider" class="modal-profile-content">
+        <div class="modal-profile-top">
+          <div class="modal-profile-avatar">
+            <img v-if="selectedProvider.profilePicture" :src="getFileUrl(selectedProvider.profilePicture)" alt="Profile Picture" />
+            <div v-else class="modal-placeholder-img"><i class="fas fa-user"></i></div>
+          </div>
+          <div class="modal-profile-name-email">
+            <h2>{{ selectedProvider.user.firstName }} {{ selectedProvider.user.lastName }}</h2>
+            <div class="modal-profile-email">{{ selectedProvider.user.email }}</div>
+          </div>
+        </div>
+        <div class="modal-section-card">
+          <h3><i class="fas fa-id-card"></i> Personal Information</h3>
+          <div class="modal-profile-details-grid">
+            <div><span class="modal-label">Phone:</span> {{ selectedProvider.user.phone || 'Not provided' }}</div>
+            <div><span class="modal-label">Headline:</span> {{ selectedProvider.headline || '—' }}</div>
+            <div><span class="modal-label">Hourly Rate:</span> ${{ selectedProvider.hourlyRate || 0 }}/hr</div>
+            <div class="modal-bio"><span class="modal-label">Bio:</span> {{ selectedProvider.bio || '—' }}</div>
+          </div>
+        </div>
+        <div class="modal-section-card">
+          <h3><i class="fas fa-file-alt"></i> Documents</h3>
+          <div v-if="uniqueDocs.length" class="modal-docs-grid">
+            <div v-for="doc in uniqueDocs" :key="doc.id" class="modal-doc-item">
+              <template v-if="isImage(doc.fileUrl)">
+                <img :src="getFileUrl(doc.fileUrl)" :alt="doc.title || 'Document'" class="modal-doc-img" @click="openFullscreenImg(getFileUrl(doc.fileUrl))" style="cursor:pointer;" />
+                <div class="modal-doc-caption">{{ doc.title || doc.fileUrl }}</div>
+              </template>
+              <template v-else>
+                <a :href="getFileUrl(doc.fileUrl)" target="_blank" class="modal-doc-link">{{ doc.title || doc.fileUrl }}</a>
+              </template>
             </div>
           </div>
-          <!-- Fullscreen Image Overlay -->
-          <div v-if="fullscreenImg" class="fullscreen-img-overlay" @click.self="closeFullscreenImg">
-            <img :src="fullscreenImg" class="fullscreen-img" />
-            <button class="fullscreen-img-close" @click="closeFullscreenImg">&times;</button>
+          <div v-else class="modal-no-data">No documents uploaded</div>
+        </div>
+        <div class="modal-section-card">
+          <h3><i class="fas fa-tools"></i> Skills</h3>
+          <div v-if="selectedProvider.skills?.length" class="modal-skills-list">
+            <span v-for="skill in selectedProvider.skills" :key="skill.id" class="modal-skill-tag">{{ skill.name }}</span>
           </div>
+          <div v-else class="modal-no-data">No skills listed</div>
+        </div>
+        <div class="profile-modal-actions">
+          <button class="verify-btn" @click="verifyProvider(selectedProvider.id)" :disabled="actionLoading === selectedProvider.id">
+            <span v-if="actionLoading === selectedProvider.id">
+              <i class="fa fa-spinner fa-spin"></i> Processing...
+            </span>
+            <span v-else>
+              ✔️ Verify Provider
+            </span>
+          </button>
+          <button class="reject-btn" @click="rejectProvider(selectedProvider.id)" :disabled="actionLoading === selectedProvider.id">
+            <span v-if="actionLoading === selectedProvider.id">
+              <i class="fa fa-spinner fa-spin"></i> Processing...
+            </span>
+            <span v-else>
+              ❌ Reject
+            </span>
+          </button>
         </div>
       </div>
     </div>
+  </div>
+  <!-- Fullscreen Image Overlay -->
+  <div v-if="fullscreenImg" class="fullscreen-img-overlay" @click.self="closeFullscreenImg">
+    <img :src="fullscreenImg" class="fullscreen-img" />
+    <button class="fullscreen-img-close" @click="closeFullscreenImg">&times;</button>
   </div>
 </template>
 
@@ -146,10 +177,6 @@ function getFileUrl(path) {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   return FILE_SERVER_URL + path;
-}
-
-function onImgError(e) {
-  e.target.style.display = 'none';
 }
 
 function openProfileModal(provider) {
@@ -308,125 +335,350 @@ onMounted(fetchProviders);
   padding: 20px 30px;
 }
 
-.page-title {
-  text-align: center;
-  color: #4a5568;
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.page-title {
+  color: #4a5568;
+  margin: 0;
   font-size: 2.6rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   position: relative;
   padding-bottom: 15px;
-  letter-spacing: -0.02em;
 }
 
 .page-title::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   width: 80px;
   height: 4px;
   background: linear-gradient(90deg, #3498db, #2ecc71);
   border-radius: 2px;
 }
 
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
+/* Responsive table and modal */
+.providers-table {
   width: 100%;
-}
-
-.spinner {
-  border: 4px solid rgba(52, 152, 219, 0.2);
-  border-radius: 50%;
-  border-top: 4px solid #3498db;
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 15px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.provider-table-list {
-  width: 100%;
-  max-width: 1500px;
-  margin: 32px auto 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  background: none;
-}
-
-.provider-table-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  border-collapse: separate;
+  border-spacing: 0;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 18px rgba(44, 62, 80, 0.07);
-  margin-bottom: 18px;
-  padding: 0 32px 0 24px;
-  min-height: 72px;
-  transition: box-shadow 0.18s;
-  border: 1.5px solid #e3e9f0;
+  margin-top: 18px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(44, 62, 80, 0.06);
 }
 
-.provider-table-row:hover {
-  box-shadow: 0 8px 32px rgba(56,183,118,0.13);
+.providers-table th, .providers-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #ececec;
+  text-align: left;
+  font-size: 1rem;
 }
 
-.provider-table-name {
-  flex: 1 1 0%;
-  display: flex;
-  align-items: center;
-  font-size: 1.18rem;
+.providers-table th {
+  background: #f8f9fa;
   font-weight: 700;
-  color: #222;
-  letter-spacing: -0.5px;
+  color: #1976d2;
+  border-bottom: 2px solid #ececec;
 }
 
-.provider-name-text {
-  padding: 0 0 0 2px;
+.providers-table tr:last-child td {
+  border-bottom: none;
 }
 
-.provider-table-actions {
+.providers-table tr:hover {
+  background: #f4f8f6;
+}
+
+/* Action button styling */
+.action-buttons {
   display: flex;
+  gap: 8px;
   align-items: center;
-  gap: 0;
 }
 
 .view-profile-btn {
   background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
   color: #fff;
   border: none;
-  border-radius: 24px;
-  padding: 10px 28px;
-  font-size: 1.08rem;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(46,204,113,0.10);
   cursor: pointer;
   transition: background 0.18s, box-shadow 0.18s, transform 0.13s;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.view-profile-btn i {
-  font-size: 1.1rem;
+  gap: 6px;
 }
 
 .view-profile-btn:hover {
   background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
   box-shadow: 0 4px 16px rgba(39,174,96,0.13);
-  transform: translateY(-2px) scale(1.04);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.refresh-btn {
+  background-color: #4299e1;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.2);
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: #3182ce;
+}
+
+.refresh-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  color: #e2e8f0;
+}
+
+.loading {
+  padding: 40px 0;
+  text-align: center;
+  color: #888;
+}
+
+.error {
+  color: #e74c3c;
+  background: #fff5f5;
+  border-radius: 8px;
+  padding: 18px 0;
+  text-align: center;
+  margin-bottom: 18px;
+  font-weight: 500;
+  border-left: 5px solid #e74c3c;
+}
+
+/* Modal Styles */
+.profile-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-modal-container {
+  background: #fff;
+  border-radius: 18px;
+  max-width: 700px;
+  width: 95vw;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 0 0 32px 0;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  border: 1.5px solid #e0e0e0;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 18px;
+  right: 28px;
+  font-size: 2.2rem;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s;
+}
+
+.close-modal-btn:hover { 
+  color: #e74c3c; 
+}
+
+.modal-profile-content {
+  padding: 0 32px;
+  margin-top: 32px;
+}
+
+.modal-profile-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.modal-profile-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e0e0e0;
+  box-shadow: 0 2px 12px rgba(39,174,96,0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.modal-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.modal-placeholder-img {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2rem;
+  color: #aaa;
+}
+
+.modal-profile-name-email h2 {
+  margin: 0 0 4px 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #222;
+  text-align: center;
+}
+
+.modal-profile-email {
+  color: #27ae60;
+  font-size: 1.05rem;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.modal-section-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(39,174,96,0.04);
+  padding: 22px 22px 12px 22px;
+  margin-bottom: 18px;
+  border: 1px solid #e0e0e0;
+}
+
+.modal-section-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #27ae60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-profile-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 24px;
+  margin-bottom: 8px;
+}
+
+.modal-label {
+  color: #888;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.modal-bio {
+  grid-column: 1 / -1;
+  color: #444;
+  margin-top: 4px;
+}
+
+.modal-docs-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.modal-doc-item {
+  background: #fafafa;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
+  padding: 10px 8px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 90px;
+  max-width: 120px;
+  border: 1px solid #ececec;
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.modal-doc-img {
+  max-width: 70px;
+  max-height: 60px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
+}
+
+.modal-doc-caption {
+  font-size: 0.95rem;
+  color: #555;
+  margin-top: 2px;
+  text-align: center;
+  word-break: break-all;
+  font-weight: 500;
+}
+
+.modal-doc-link {
+  color: #1976d2;
+  text-decoration: underline;
+  font-size: 0.97rem;
+  word-break: break-all;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.modal-no-data {
+  color: #888;
+  font-style: italic;
+  margin: 8px 0;
+  padding-left: 2px;
+}
+
+.modal-skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.modal-skill-tag {
+  display: inline-block;
+  background: #e8f5e9;
+  color: #27ae60;
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(39,174,96,0.07);
+  border: 1px solid #b2dfdb;
 }
 
 .profile-modal-actions {
@@ -471,284 +723,48 @@ onMounted(fetchProviders);
 }
 
 @media (max-width: 900px) {
-  .provider-table-list {
+  .providers-table {
     max-width: 99vw;
     padding: 0 2vw;
   }
-  .provider-table-row {
-    padding: 0 10px 0 10px;
+  .providers-table th,
+  .providers-table td {
+    padding: 10px 10px;
   }
 }
 
 @media (max-width: 600px) {
-  .provider-table-row {
+  .providers-table {
+    max-width: 98vw;
+    padding: 0 2vw;
+  }
+  .providers-table th,
+  .providers-table td {
+    padding: 8px 8px;
+  }
+  .providers-table tr {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
     min-height: 60px;
-    padding: 10px 8px;
     gap: 8px;
-}
-  .provider-table-actions {
-    width: 100%;
-    justify-content: flex-end;
+  }
+  .providers-table th {
+    display: none;
+  }
+  .providers-table td {
+    text-align: left;
+    border-bottom: 1px solid #e3e9f0;
+  }
+  .providers-table td:last-child {
+    border-bottom: none;
+  }
+  .providers-table tr:hover {
+    background-color: #f1f3f5;
   }
   .profile-modal-actions {
     flex-direction: column;
     gap: 10px;
-  }
-}
-
-/* Modal Styles */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal-content {
-  background: #fff;
-  border-radius: 12px;
-  padding: 32px 24px;
-  width: 100%;
-  max-width: 540px;
-  box-shadow: 0 2px 16px rgba(44, 62, 80, 0.10);
-  overflow-y: auto;
-  border: 1px solid #ececec;
-  animation: fadeIn 0.2s;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Card style for inner sections, like the Home Cleaning card in the screenshot */
-.profile-section-card {
-  background: #fff;
-  border: 1px solid #ececec;
-  border-radius: 10px;
-  box-shadow: 0 1px 6px rgba(44, 62, 80, 0.06);
-  padding: 16px 14px;
-  margin-bottom: 18px;
-  width: 100%;
-}
-
-.profile-modal-card-modern {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 0;
-  min-width: 0;
-  max-width: 100%;
-  margin: 0;
-}
-
-.profile-name-modern {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #222;
-  margin-bottom: 2px;
-  text-align: left;
-  margin-top: 0;
-  align-self: flex-start;
-}
-
-.profile-info-chips {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  margin-bottom: 12px;
-  margin-top: 0;
-}
-.profile-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  color: #444;
-  background: none;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
-  font-weight: 500;
-}
-.profile-chip i {
-  color: #888;
-  font-size: 1.1rem;
-}
-
-.section-divider {
-  width: 100%;
-  height: 1px;
-  background: #ececec;
-  margin: 18px 0 14px 0;
-  border: none;
-}
-
-.profile-section-label {
-  font-size: 1.08rem;
-  font-weight: 700;
-  color: #222;
-  margin-bottom: 8px;
-  margin-top: 0;
-}
-
-.profile-docs-section {
-  width: 100%;
-  margin-top: 0;
-}
-.profile-docs-label {
-  font-size: 1.08rem;
-  font-weight: 700;
-  color: #222;
-  margin-bottom: 8px;
-  margin-top: 0;
-  text-align: left;
-  width: 100%;
-  letter-spacing: 0.1px;
-}
-.profile-docs-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 0;
-}
-.profile-doc-card {
-  background: #fafafa;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
-  padding: 10px 8px 6px 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 90px;
-  max-width: 120px;
-  border: 1px solid #ececec;
-  transition: box-shadow 0.2s, transform 0.2s;
-  position: relative;
-}
-.profile-doc-img-modern {
-  max-width: 70px;
-  max-height: 60px;
-  border-radius: 6px;
-  margin-bottom: 4px;
-  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
-}
-.profile-doc-caption-modern {
-  font-size: 0.95rem;
-  color: #555;
-  margin-top: 2px;
-  text-align: center;
-  word-break: break-all;
-  font-weight: 500;
-}
-.profile-doc-link-modern {
-  color: #1976d2;
-  text-decoration: underline;
-  font-size: 0.97rem;
-  word-break: break-all;
-  margin-top: 4px;
-  font-weight: 500;
-}
-.profile-no-docs-modern {
-  color: #e53e3e;
-  background: #fff5f5;
-  border-radius: 6px;
-  padding: 6px 10px;
-  margin-top: 4px;
-  font-size: 0.97rem;
-  text-align: center;
-}
-
-.close-btn {
-  float: right;
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: #888;
-  background: #f3f3f3;
-  margin-left: auto;
-  margin-bottom: 8px;
-}
-.close-btn:hover {
-  color: #e74c3c;
-  background-color: #fbeaea;
-  transform: rotate(90deg);
-}
-
-@media (max-width: 600px) {
-  .modal-content {
-    padding: 10px 2vw;
-    border-radius: 8px;
-    max-width: 98vw;
-    min-width: 0;
-    width: 98vw;
-    margin: 0 1vw;
-  }
-  .profile-modal-card-modern {
-    padding: 0 2vw 0 2vw;
-    min-width: 0;
-    max-width: 100vw;
-    width: 100%;
-  }
-  .profile-avatar-img {
-    width: 38px;
-    height: 38px;
-  }
-  .profile-info-chips {
-    gap: 4px;
-    font-size: 0.95rem;
-  }
-  .profile-docs-grid {
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
-  }
-  .profile-doc-card {
-    min-width: 0;
-    max-width: 100%;
-    width: 100%;
-    padding: 6px 4px 4px 4px;
-  }
-  .profile-doc-img-modern {
-    max-width: 90vw;
-    max-height: 30vw;
-    min-width: 0;
-    min-height: 0;
-  }
-  .profile-modal-actions {
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-    margin-top: 12px;
-  }
-  .close-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 1.5rem;
-    margin-bottom: 4px;
   }
 }
 

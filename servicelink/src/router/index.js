@@ -184,9 +184,6 @@ router.beforeEach((to, from, next) => {
     next('/login');
   } else if (requiresAuth && to.meta.roles && !to.meta.roles.includes(userRole)) {
     next('/');
-  } else if (token && userRole === 'ADMIN' && to.path === '/') {
-    // Redirect admins to dashboard when they visit the home page
-    next('/admin/dashboard');
   } else {
     next();
   }
