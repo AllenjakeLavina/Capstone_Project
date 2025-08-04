@@ -43,47 +43,105 @@
   <div v-if="showModal" class="profile-modal-overlay">
     <div class="profile-modal-container">
       <button class="close-modal-btn" @click="closeModal">&times;</button>
-      <div v-if="selectedProvider" class="modal-profile-content">
+      <div v-if="profileLoading" class="modal-loading">Loading profile...</div>
+      <div v-else-if="profileError" class="modal-error">{{ profileError }}</div>
+      <div v-else-if="selectedProvider" class="modal-profile-content">
         <div class="modal-profile-top">
           <div class="modal-profile-avatar">
             <img v-if="selectedProvider.profilePicture" :src="getFileUrl(selectedProvider.profilePicture)" alt="Profile Picture" />
             <div v-else class="modal-placeholder-img"><i class="fas fa-user"></i></div>
           </div>
           <div class="modal-profile-name-email">
-            <h2>{{ selectedProvider.user.firstName }} {{ selectedProvider.user.lastName }}</h2>
-            <div class="modal-profile-email">{{ selectedProvider.user.email }}</div>
+            <h2>{{ selectedProvider.firstName }} {{ selectedProvider.lastName }}</h2>
+            <div class="modal-profile-email">{{ selectedProvider.email }}</div>
           </div>
         </div>
         <div class="modal-section-card">
           <h3><i class="fas fa-id-card"></i> Personal Information</h3>
           <div class="modal-profile-details-grid">
-            <div><span class="modal-label">Phone:</span> {{ selectedProvider.user.phone || 'Not provided' }}</div>
+            <div><span class="modal-label">Phone:</span> {{ selectedProvider.phone || 'Not provided' }}</div>
             <div><span class="modal-label">Headline:</span> {{ selectedProvider.headline || '—' }}</div>
             <div><span class="modal-label">Hourly Rate:</span> ${{ selectedProvider.hourlyRate || 0 }}/hr</div>
             <div class="modal-bio"><span class="modal-label">Bio:</span> {{ selectedProvider.bio || '—' }}</div>
           </div>
         </div>
         <div class="modal-section-card">
-          <h3><i class="fas fa-file-alt"></i> Documents</h3>
-          <div v-if="uniqueDocs.length" class="modal-docs-grid">
-            <div v-for="doc in uniqueDocs" :key="doc.id" class="modal-doc-item">
-              <template v-if="isImage(doc.fileUrl)">
-                <img :src="getFileUrl(doc.fileUrl)" :alt="doc.title || 'Document'" class="modal-doc-img" @click="openFullscreenImg(getFileUrl(doc.fileUrl))" style="cursor:pointer;" />
-                <div class="modal-doc-caption">{{ doc.title || doc.fileUrl }}</div>
-              </template>
-              <template v-else>
-                <a :href="getFileUrl(doc.fileUrl)" target="_blank" class="modal-doc-link">{{ doc.title || doc.fileUrl }}</a>
-              </template>
+          <h3><i class="fas fa-briefcase"></i> Work Experience</h3>
+          <div v-if="selectedProvider.workExperience?.length">
+            <div v-for="exp in selectedProvider.workExperience" :key="exp.id" class="modal-exp-item-redesign">
+              <div class="exp-header">
+                <div class="exp-title">{{ exp.position }}</div>
+                <div class="exp-dates">{{ exp.startDate ? formatDate(exp.startDate) : '' }}<span v-if="exp.startDate || exp.endDate"> - </span>{{ exp.isCurrentPosition ? 'Present' : (exp.endDate ? formatDate(exp.endDate) : '') }}</div>
+              </div>
+              <div v-if="exp.company" class="exp-company">{{ exp.company }}</div>
+              <div v-if="exp.description" class="exp-desc">{{ exp.description }}</div>
             </div>
           </div>
-          <div v-else class="modal-no-data">No documents uploaded</div>
+          <div v-else class="modal-no-data">No work experience listed.</div>
+        </div>
+        <div class="modal-section-card">
+          <h3><i class="fas fa-graduation-cap"></i> Education</h3>
+          <div v-if="selectedProvider.education?.length">
+            <div v-for="edu in selectedProvider.education" :key="edu.id" class="modal-edu-item-redesign">
+              <div class="edu-header">
+                <div class="edu-title">{{ edu.degree }}</div>
+                <div class="edu-dates">{{ edu.startDate ? formatDate(edu.startDate) : '' }}<span v-if="edu.startDate || edu.endDate"> - </span>{{ edu.isCurrentlyStudying ? 'Present' : (edu.endDate ? formatDate(edu.endDate) : '') }}</div>
+              </div>
+              <div v-if="edu.fieldOfStudy" class="edu-field">{{ edu.fieldOfStudy }}</div>
+              <div v-if="edu.institution" class="edu-school">{{ edu.institution }}</div>
+            </div>
+          </div>
+          <div v-else class="modal-no-data">No education listed.</div>
         </div>
         <div class="modal-section-card">
           <h3><i class="fas fa-tools"></i> Skills</h3>
           <div v-if="selectedProvider.skills?.length" class="modal-skills-list">
             <span v-for="skill in selectedProvider.skills" :key="skill.id" class="modal-skill-tag">{{ skill.name }}</span>
           </div>
-          <div v-else class="modal-no-data">No skills listed</div>
+          <div v-else class="modal-no-data">No skills listed.</div>
+        </div>
+        <div class="modal-section-card">
+          <h3><i class="fas fa-folder-open"></i> Documents & Portfolio</h3>
+          <div v-if="uniqueDocs.length || selectedProvider.portfolio?.length" class="modal-docs-portfolio-section">
+            <!-- Documents -->
+            <div v-if="uniqueDocs.length" class="modal-subsection">
+              <h4><i class="fas fa-file-alt"></i> Verification Documents</h4>
+              <div class="modal-docs-grid">
+                <div v-for="doc in uniqueDocs" :key="doc.id" class="modal-doc-item">
+                  <template v-if="isImage(doc.fileUrl)">
+                    <img :src="getFileUrl(doc.fileUrl)" :alt="doc.title || 'Document'" class="modal-doc-img" @click="openFullscreenImg(getFileUrl(doc.fileUrl))" style="cursor:pointer;" />
+                    <div class="modal-doc-caption">{{ doc.title || doc.fileUrl }}</div>
+                  </template>
+                  <template v-else>
+                    <a :href="getFileUrl(doc.fileUrl)" target="_blank" class="modal-doc-link">{{ doc.title || doc.fileUrl }}</a>
+                  </template>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Portfolio -->
+            <div v-if="selectedProvider.portfolio?.length" class="modal-subsection">
+              <h4><i class="fas fa-briefcase"></i> Portfolio Work</h4>
+              <div v-for="item in selectedProvider.portfolio" :key="item.id" class="modal-portfolio-item">
+                <div class="modal-portfolio-title">{{ item.title }}</div>
+                <div class="modal-portfolio-desc">{{ item.description }}</div>
+                <div v-if="item.projectUrl" class="modal-portfolio-link"><a :href="item.projectUrl" target="_blank">View Project</a></div>
+                <div v-if="item.files && item.files.length" class="modal-portfolio-files">
+                  <ul>
+                    <li v-for="file in item.files" :key="file.id">
+                      <template v-if="isImageFile(file.fileUrl)">
+                        <img :src="getFileUrl(file.fileUrl)" :alt="file.fileUrl.split('/').pop()" style="max-width: 120px; max-height: 90px; border-radius: 8px; margin-bottom: 4px; display: block; cursor:pointer;" @click="openFullscreenImg(getFileUrl(file.fileUrl))" />
+                      </template>
+                      <template v-else>
+                        <a :href="getFileUrl(file.fileUrl)" target="_blank">{{ file.fileUrl.split('/').pop() }}</a>
+                      </template>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="modal-no-data">No documents or portfolio items uploaded</div>
         </div>
         <div class="profile-modal-actions">
           <button class="verify-btn" @click="verifyProvider(selectedProvider.id)" :disabled="actionLoading === selectedProvider.id">
@@ -126,6 +184,8 @@ const actionLoading = ref('');
 
 const showModal = ref(false);
 const selectedProvider = ref(null);
+const profileLoading = ref(false);
+const profileError = ref('');
 
 // Fullscreen image viewer
 const fullscreenImg = ref(null);
@@ -173,16 +233,46 @@ function isImage(url) {
   return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 }
 
+function isImageFile(url) {
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  const month = date.toLocaleString('default', { month: 'numeric' });
+  const year = date.toLocaleString('default', { year: 'numeric' });
+  return `${month}/${year}`;
+}
+
 function getFileUrl(path) {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   return FILE_SERVER_URL + path;
 }
 
-function openProfileModal(provider) {
+const openProfileModal = async (provider) => {
   selectedProvider.value = provider;
   showModal.value = true;
-}
+  profileLoading.value = true;
+  profileError.value = '';
+  
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE_URL}/admin/providers/${provider.id}/details`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      selectedProvider.value = data.data;
+    } else {
+      profileError.value = data.message || 'Failed to load profile';
+    }
+  } catch (e) {
+    profileError.value = 'Failed to load profile';
+  } finally {
+    profileLoading.value = false;
+  }
+};
 
 function closeModal() {
   showModal.value = false;
@@ -512,6 +602,24 @@ onMounted(fetchProviders);
   color: #e74c3c; 
 }
 
+.modal-loading, .modal-error {
+  padding: 20px 32px;
+  text-align: center;
+  color: #888;
+  font-size: 1.1rem;
+}
+
+.modal-error {
+  color: #e74c3c;
+  background: #fff5f5;
+  border-radius: 8px;
+  padding: 18px 0;
+  text-align: center;
+  margin-bottom: 18px;
+  font-weight: 500;
+  border-left: 5px solid #e74c3c;
+}
+
 .modal-profile-content {
   padding: 0 32px;
   margin-top: 32px;
@@ -679,6 +787,120 @@ onMounted(fetchProviders);
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(39,174,96,0.07);
   border: 1px solid #b2dfdb;
+}
+
+.modal-exp-item-redesign, .modal-edu-item-redesign {
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
+}
+
+.exp-header, .edu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.exp-title, .edu-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #27ae60;
+  margin-bottom: 4px;
+}
+
+.exp-dates, .edu-dates {
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.exp-company, .edu-field, .edu-school {
+  font-size: 0.95rem;
+  color: #333;
+  margin-top: 4px;
+}
+
+.exp-desc, .edu-desc {
+  font-size: 0.9rem;
+  color: #444;
+  margin-top: 4px;
+}
+
+.modal-portfolio-item {
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
+}
+
+.modal-portfolio-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #27ae60;
+  margin-bottom: 8px;
+}
+
+.modal-portfolio-desc {
+  font-size: 0.95rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.modal-portfolio-link {
+  font-size: 0.9rem;
+  color: #1976d2;
+  text-decoration: underline;
+  margin-bottom: 10px;
+}
+
+.modal-portfolio-files ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modal-portfolio-files li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.modal-portfolio-files img {
+  max-width: 120px;
+  max-height: 90px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.modal-portfolio-files a {
+  font-size: 0.9rem;
+  color: #1976d2;
+  text-decoration: underline;
+}
+
+.modal-docs-portfolio-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-subsection h4 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #27ae60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .profile-modal-actions {

@@ -460,6 +460,82 @@ export const getUnverifiedProviders = async () => {
   }
 };
 
+// Get detailed profile of unverified provider for admin review
+export const getUnverifiedProviderDetails = async (providerId: string) => {
+  try {
+    const provider = await prisma.serviceProvider.findFirst({
+      where: {
+        id: providerId,
+        isProviderVerified: false,
+        user: {
+          isActive: true
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            profilePicture: true,
+            createdAt: true
+          }
+        },
+        workExperience: {
+          orderBy: {
+            startDate: 'desc'
+          }
+        },
+        education: {
+          orderBy: {
+            startDate: 'desc'
+          }
+        },
+        skills: true,
+        portfolio: {
+          include: {
+            files: true
+          }
+        },
+        documents: {
+          where: {
+            type: 'ID'
+          }
+        }
+      }
+    });
+
+    if (!provider) {
+      throw new Error('Provider not found or already verified');
+    }
+
+    // Transform the data to match the expected format
+    const transformedProvider = {
+      id: provider.id,
+      firstName: provider.user.firstName,
+      lastName: provider.user.lastName,
+      email: provider.user.email,
+      phone: provider.user.phone,
+      profilePicture: provider.user.profilePicture,
+      headline: provider.headline,
+      bio: provider.bio,
+      hourlyRate: provider.hourlyRate,
+      workExperience: provider.workExperience,
+      education: provider.education,
+      skills: provider.skills,
+      portfolio: provider.portfolio,
+      documents: provider.documents,
+      createdAt: provider.user.createdAt
+    };
+
+    return transformedProvider;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const createCategory = async (
   name: string,
   description?: string,

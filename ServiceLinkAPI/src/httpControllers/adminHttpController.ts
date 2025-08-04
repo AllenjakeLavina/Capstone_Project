@@ -14,7 +14,8 @@ import {
   toggleClientStatus,
   toggleProviderStatus,
   getDashboardStats,
-  getRecentBookings
+  getRecentBookings,
+  getUnverifiedProviderDetails
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -250,24 +251,12 @@ export const handleVerifyProvider = async (req: Request, res: Response) => {
 export const handleRejectProviderVerification = async (req: Request, res: Response) => {
   try {
     const { providerId, reason } = req.body;
+    const adminId = (req as any).user.id;
 
-    // Admin making the request
-    const adminId = req.user.id;
-
-    // Validate required fields
     if (!providerId || !reason) {
       res.status(400).json({
         success: false,
         message: 'Provider ID and rejection reason are required'
-      });
-      return;
-    }
-
-    // Check if user has admin role
-    if (req.user.role !== 'ADMIN') {
-      res.status(403).json({
-        success: false,
-        message: 'Unauthorized: Only admins can perform this action'
       });
       return;
     }
@@ -279,14 +268,40 @@ export const handleRejectProviderVerification = async (req: Request, res: Respon
       message: 'Provider verification rejected successfully',
       data: result
     });
-    return;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    res.status(400).json({
+  } catch (error: any) {
+    console.error('Error rejecting provider verification:', error);
+    res.status(500).json({
       success: false,
-      message: errorMessage
+      message: error.message || 'Failed to reject provider verification'
     });
-    return;
+  }
+};
+
+export const handleGetUnverifiedProviderDetails = async (req: Request, res: Response) => {
+  try {
+    const { providerId } = req.params;
+
+    if (!providerId) {
+      res.status(400).json({
+        success: false,
+        message: 'Provider ID is required'
+      });
+      return;
+    }
+
+    const providerDetails = await getUnverifiedProviderDetails(providerId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Provider details retrieved successfully',
+      data: providerDetails
+    });
+  } catch (error: any) {
+    console.error('Error getting unverified provider details:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get provider details'
+    });
   }
 };
 
