@@ -45,7 +45,7 @@
           <i class="fas fa-dollar-sign"></i>
         </div>
         <div class="card-content">
-          <h3>${{ stats.summary?.totalRevenue || 0 }}</h3>
+          <h3>₱{{ stats.summary?.totalRevenue || 0 }}</h3>
           <p>Total Revenue</p>
         </div>
       </div>
@@ -95,7 +95,7 @@
                   {{ booking.status }}
                 </span>
               </td>
-              <td>${{ booking.totalAmount || booking.service?.pricing || 'N/A' }}</td>
+              <td>₱{{ booking.totalAmount || booking.service?.pricing || 'N/A' }}</td>
               <td>{{ formatDate(booking.createdAt) }}</td>
             </tr>
           </tbody>

@@ -61,7 +61,7 @@
           <div class="modal-profile-details-grid">
             <div><span class="modal-label">Phone:</span> {{ selectedProvider.phone || 'Not provided' }}</div>
             <div><span class="modal-label">Headline:</span> {{ selectedProvider.headline || '—' }}</div>
-            <div><span class="modal-label">Hourly Rate:</span> ${{ selectedProvider.hourlyRate || 0 }}/hr</div>
+            <div><span class="modal-label">Hourly Rate:</span> ₱{{ selectedProvider.hourlyRate || 0 }}/hr</div>
             <div class="modal-bio"><span class="modal-label">Bio:</span> {{ selectedProvider.bio || '—' }}</div>
           </div>
         </div>

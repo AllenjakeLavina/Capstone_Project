@@ -70,7 +70,7 @@
             <div class="detail-item">
               <h3>Professional Info</h3>
               <p><strong>Headline:</strong> {{ profile.serviceProvider?.headline || '' }}</p>
-              <p><strong>Hourly Rate:</strong> ${{ profile.serviceProvider?.hourlyRate || 0 }}/hr</p>
+              <p><strong>Hourly Rate:</strong> ₱{{ profile.serviceProvider?.hourlyRate || 0 }}/hr</p>
             </div>
             
             <div class="detail-item">

@@ -80,7 +80,7 @@
           <div class="modal-profile-details-grid">
             <div><span class="modal-label">Phone:</span> {{ selectedProviderProfile.phone || 'Not provided' }}</div>
             <div><span class="modal-label">Headline:</span> {{ selectedProviderProfile.headline || '—' }}</div>
-            <div><span class="modal-label">Hourly Rate:</span> ${{ selectedProviderProfile.hourlyRate || 0 }}/hr</div>
+            <div><span class="modal-label">Hourly Rate:</span> ₱{{ selectedProviderProfile.hourlyRate || 0 }}/hr</div>
             <div class="modal-bio"><span class="modal-label">Bio:</span> {{ selectedProviderProfile.bio || '—' }}</div>
           </div>
         </div>
@@ -154,7 +154,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { providerService, getFileUrl } from '../../services/apiService';
+import { getFileUrl } from '../../services/apiService';
 import Swal from 'sweetalert2';
 
 const API_BASE_URL = 'http://localhost:5500/api';
@@ -211,11 +211,15 @@ const openProfileModal = async (providerId) => {
   profileLoading.value = true;
   profileError.value = '';
   try {
-    const res = await providerService.getProviderDetails(providerId);
-    if (res.success) {
-      selectedProviderProfile.value = res.data;
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE_URL}/admin/providers/${providerId}/details`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      selectedProviderProfile.value = data.data;
     } else {
-      profileError.value = res.message || 'Failed to load profile';
+      profileError.value = data.message || 'Failed to load profile';
     }
   } catch (e) {
     profileError.value = 'Failed to load profile';

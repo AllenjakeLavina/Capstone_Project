@@ -15,7 +15,8 @@ import {
   toggleProviderStatus,
   getDashboardStats,
   getRecentBookings,
-  getUnverifiedProviderDetails
+  getUnverifiedProviderDetails,
+  getProviderDetailsForAdmin
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -302,6 +303,21 @@ export const handleGetUnverifiedProviderDetails = async (req: Request, res: Resp
       success: false,
       message: error.message || 'Failed to get provider details'
     });
+  }
+};
+
+export const handleGetProviderDetailsForAdmin = async (req: Request, res: Response) => {
+  try {
+    const { providerId } = req.params;
+    if (!providerId) {
+      res.status(400).json({ success: false, message: 'Provider ID is required' });
+      return;
+    }
+    const providerDetails = await getProviderDetailsForAdmin(providerId);
+    res.status(200).json({ success: true, message: 'Provider details retrieved successfully', data: providerDetails });
+  } catch (error: any) {
+    console.error('Error getting provider details for admin:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to get provider details' });
   }
 };
 

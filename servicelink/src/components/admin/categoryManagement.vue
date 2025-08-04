@@ -290,9 +290,13 @@ onMounted(fetchCategories);
 <style scoped>
 .category-management {
   width: 100%;
-  padding: 0;
   margin: 0;
-  /* Remove max-width, center, etc */
+  background: #fff;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 20px 30px;
+  border: none;
+  min-height: calc(100vh - 80px);
 }
 
 .form-container {
@@ -308,7 +312,7 @@ onMounted(fetchCategories);
   background: none;
   box-shadow: none;
   border-radius: 0;
-  padding: 20px 30px;
+  padding: 0;
   margin: 0;
 }
 

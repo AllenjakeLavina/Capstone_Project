@@ -1222,7 +1222,7 @@ export const completeService = async (userId: string, bookingId: string) => {
         receiverId: booking.client.userId,
         type: 'SERVICE_COMPLETED',
         title: 'Service Completed',
-        message: `Your booked service "${booking.service.title}" has been completed. Total hours: ${durationHours.toFixed(2)}, Total amount: $${totalAmount.toFixed(2)}.`,
+        message: `Your booked service "${booking.service.title}" has been completed. Total hours: ${durationHours.toFixed(2)}, Total amount: ₱${totalAmount.toFixed(2)}.`,
         isRead: false,
         data: JSON.stringify({
           bookingId: booking.id,

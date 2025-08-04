@@ -352,11 +352,11 @@
                 <p><strong>Client Email:</strong> ${booking.client.user.email}</p>
                 <p><strong>Client Phone:</strong> ${booking.client.user.phone || 'Not provided'}</p>
                 <p><strong>Service Category:</strong> ${booking.service.category.name}</p>
-                <p><strong>Pricing:</strong> $${booking.service.pricing} (${booking.service.pricingType})</p>
+                <p><strong>Pricing:</strong> ₱${booking.service.pricing} (${booking.service.pricingType})</p>
                 <p><strong>Start Time:</strong> ${new Date(booking.startTime).toLocaleString()}</p>
                 <p><strong>End Time:</strong> ${booking.endTime ? new Date(booking.endTime).toLocaleString() : 'Not completed'}</p>
                 <p><strong>Total Hours:</strong> ${booking.totalHours || 'Not calculated yet'}</p>
-                <p><strong>Total Amount:</strong> ${booking.totalAmount ? '$' + booking.totalAmount : 'Not calculated yet'}</p>
+                <p><strong>Total Amount:</strong> ${booking.totalAmount ? '₱' + booking.totalAmount : 'Not calculated yet'}</p>
                 
                 <h4>Address</h4>
                 <p>${booking.address.street}, ${booking.address.city}, ${booking.address.state} ${booking.address.postalCode}</p>

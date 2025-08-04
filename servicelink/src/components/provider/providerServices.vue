@@ -41,7 +41,7 @@
             
             <div class="service-details">
               <p class="category"><i class="fa fa-folder"></i> <strong>Category:</strong> {{ service.category.name }}</p>
-              <p class="pricing"><i class="fa fa-tag"></i> <strong>Pricing:</strong> ${{ service.pricing }} / {{ formatPricingType(service.pricingType) }}</p>
+              <p class="pricing"><i class="fa fa-tag"></i> <strong>Pricing:</strong> ₱{{ service.pricing }} / {{ formatPricingType(service.pricingType) }}</p>
               <p class="description">{{ truncateText(service.description, 150) }}</p>
               
               <div class="service-skills" v-if="service.skills && service.skills.length > 0">

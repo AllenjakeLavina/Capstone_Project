@@ -6,6 +6,7 @@ import {
   handleVerifyProvider, 
   handleRejectProviderVerification,
   handleGetUnverifiedProviderDetails,
+  handleGetProviderDetailsForAdmin,
   handleGetAllClients,
   handleGetAllProviders,
   handleChangeUserPassword,
@@ -56,7 +57,7 @@ router.post('/clients/:clientId/toggle-status', authenticateToken, authorizeRole
 // Provider management
 router.get('/providers', authenticateToken, authorizeRoles('ADMIN'), handleGetAllProviders);
 router.get('/providers/unverified', authenticateToken, authorizeRoles('ADMIN'), handleGetUnverifiedProviders);
-router.get('/providers/:providerId/details', authenticateToken, authorizeRoles('ADMIN'), handleGetUnverifiedProviderDetails);
+router.get('/providers/:providerId/details', authenticateToken, authorizeRoles('ADMIN'), handleGetProviderDetailsForAdmin);
 router.post('/providers/verify', authenticateToken, authorizeRoles('ADMIN'), handleVerifyProvider);
 router.post('/providers/reject', authenticateToken, authorizeRoles('ADMIN'), handleRejectProviderVerification);
 router.post('/providers/:providerId/toggle-status', authenticateToken, authorizeRoles('ADMIN'), handleToggleProviderStatus);
