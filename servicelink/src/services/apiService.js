@@ -1247,6 +1247,18 @@ export const adminService = {
     } catch (error) {
       return handleApiError(error);
     }
+  },
+
+  getProviderRatings: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard/provider-ratings`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
   }
 };
 
