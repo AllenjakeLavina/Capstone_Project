@@ -899,6 +899,73 @@ export const getRecentBookings = async (limit = 10) => {
   }
 };
 
+export const getProviderRatings = async () => {
+  try {
+    // Get all providers with their user data and received reviews
+    const providersWithReviews = await prisma.serviceProvider.findMany({
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            isActive: true,
+            receivedReviews: {
+              select: {
+                rating: true,
+                comment: true,
+                createdAt: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Calculate average rating for each provider
+    const providersWithRatings = providersWithReviews.map(provider => {
+      const totalReviews = provider.user.receivedReviews.length;
+      const averageRating = totalReviews > 0
+        ? provider.user.receivedReviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / totalReviews
+        : 0;
+
+      return {
+        id: provider.id,
+        firstName: provider.user.firstName,
+        lastName: provider.user.lastName,
+        email: provider.user.email,
+        totalReviews,
+        averageRating: parseFloat(averageRating.toFixed(2)),
+        isActive: provider.user.isActive
+      };
+    });
+
+    // Sort by average rating (highest first)
+    providersWithRatings.sort((a, b) => b.averageRating - a.averageRating);
+
+    // Calculate overall statistics
+    const totalProviders = providersWithRatings.length;
+    const providersWithReviewsCount = providersWithRatings.filter(p => p.totalReviews > 0).length;
+    const overallAverageRating = providersWithReviewsCount > 0
+      ? providersWithRatings
+          .filter(p => p.totalReviews > 0)
+          .reduce((sum: number, p: { averageRating: number }) => sum + p.averageRating, 0) / providersWithReviewsCount
+      : 0;
+
+    return {
+      providers: providersWithRatings,
+      statistics: {
+        totalProviders,
+        providersWithReviews: providersWithReviewsCount,
+        overallAverageRating: parseFloat(overallAverageRating.toFixed(2))
+      }
+    };
+  } catch (error) {
+    console.error('Error getting provider ratings:', error);
+    throw error;
+  }
+};
+
 export const getProviderDetailsForAdmin = async (providerId: string) => {
   try {
     const provider = await prisma.serviceProvider.findFirst({

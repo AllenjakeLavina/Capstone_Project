@@ -16,7 +16,8 @@ import {
   getDashboardStats,
   getRecentBookings,
   getUnverifiedProviderDetails,
-  getProviderDetailsForAdmin
+  getProviderDetailsForAdmin,
+  getProviderRatings
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -523,6 +524,24 @@ export const handleGetRecentBookings = async (req: Request, res: Response) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     console.error('Error in handleGetRecentBookings:', error);
+    res.status(500).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+export const handleGetProviderRatings = async (req: Request, res: Response) => {
+  try {
+    const ratings = await getProviderRatings();
+
+    res.status(200).json({
+      success: true,
+      data: ratings
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in handleGetProviderRatings:', error);
     res.status(500).json({
       success: false,
       message: errorMessage

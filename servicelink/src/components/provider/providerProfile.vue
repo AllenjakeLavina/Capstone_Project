@@ -269,6 +269,88 @@
         </div>
       </div>
 
+      <!-- Reviews & Ratings Tab -->
+      <div v-show="activeTab === 'reviews'" class="tab-content section">
+        <div class="section-header">
+          <h2>Reviews & Ratings</h2>
+        </div>
+
+        <!-- Overall Rating Summary -->
+        <div class="rating-summary">
+          <div class="overall-rating">
+            <div class="rating-display">
+              <div class="rating-number">{{ averageRating.toFixed(1) }}</div>
+              <div class="rating-stars">
+                <i v-for="i in 5" :key="i" 
+                   :class="['fas', i <= Math.round(averageRating) ? 'fa-star' : 'fa-star-o']">
+                </i>
+              </div>
+              <div class="rating-text">
+                {{ totalReviews }} {{ totalReviews === 1 ? 'review' : 'reviews' }}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Rating Distribution -->
+          <div class="rating-distribution">
+            <div v-for="i in 5" :key="i" class="rating-bar">
+              <span class="star-label">{{ 6 - i }}★</span>
+              <div class="bar-container">
+                <div class="bar-fill" :style="{ width: getRatingPercentage(6 - i) + '%' }"></div>
+              </div>
+              <span class="count">{{ getRatingCount(6 - i) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reviews List -->
+        <div class="reviews-section">
+          <h3>Recent Reviews</h3>
+          <div v-if="reviews.length > 0" class="reviews-list">
+            <div v-for="review in reviews" :key="review.id" class="review-card">
+              <div class="review-header">
+                <div class="reviewer-info">
+                  <img 
+                    v-if="review.giver.profilePicture" 
+                    :src="getFullFileUrl(review.giver.profilePicture)" 
+                    :alt="review.giver.firstName"
+                    class="reviewer-avatar"
+                  />
+                  <div v-else class="reviewer-avatar placeholder">
+                    <i class="fas fa-user"></i>
+                  </div>
+                  <div class="reviewer-details">
+                    <div class="reviewer-name">
+                      {{ review.giver.firstName }} {{ review.giver.lastName }}
+                    </div>
+                    <div class="review-date">
+                      {{ formatDate(review.createdAt) }}
+                    </div>
+                  </div>
+                </div>
+                <div class="review-rating">
+                  <i v-for="i in 5" :key="i" 
+                     :class="['fas', i <= review.rating ? 'fa-star' : 'fa-star-o']">
+                  </i>
+                </div>
+              </div>
+              <div v-if="review.comment" class="review-comment">
+                {{ review.comment }}
+              </div>
+              <div v-if="review.imageUrls" class="review-images">
+                <div v-for="(imageUrl, index) in JSON.parse(review.imageUrls)" :key="index" class="review-image">
+                  <img :src="getFullFileUrl(imageUrl)" :alt="`Review image ${index + 1}`" @click="openFileModal(imageUrl, 'Review Image', 'image')" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="no-data">
+            <p>No reviews yet.</p>
+            <p>Reviews from clients will appear here once they rate your services.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- File View Modal -->
       <div v-if="showFileModal" class="file-modal">
         <div class="modal-overlay" @click="closeFileModal"></div>
@@ -554,6 +636,7 @@ export default {
       { id: 'experience', name: 'Work Experience', icon: 'fas fa-briefcase' },
       { id: 'education', name: 'Education', icon: 'fas fa-graduation-cap' },
       { id: 'skillsportfolio', name: 'Skills & Portfolio', icon: 'fas fa-tools' },
+      { id: 'reviews', name: 'Reviews & Ratings', icon: 'fas fa-star' },
     ];
 
     // UI state
@@ -616,6 +699,12 @@ export default {
       description: '',
       projectUrl: ''
     });
+
+    // Reviews data
+    const reviews = ref([]);
+    const averageRating = ref(0);
+    const totalReviews = ref(0);
+    const ratingDistribution = ref({});
 
     // Computed properties
     const verificationStatusText = computed(() => {
@@ -1006,8 +1095,40 @@ export default {
       }
     };
 
+    // Reviews functions
+    const fetchReviews = async () => {
+      try {
+        const response = await providerService.getReviewsReceived();
+        if (response.success) {
+          reviews.value = response.data.reviews || [];
+          averageRating.value = response.data.averageRating || 0;
+          totalReviews.value = response.data.totalReviews || 0;
+          
+          // Calculate rating distribution
+          const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+          reviews.value.forEach(review => {
+            distribution[review.rating] = (distribution[review.rating] || 0) + 1;
+          });
+          ratingDistribution.value = distribution;
+        }
+      } catch (err) {
+        console.error('Error fetching reviews:', err);
+      }
+    };
+
+    const getRatingPercentage = (rating) => {
+      if (totalReviews.value === 0) return 0;
+      const count = ratingDistribution.value[rating] || 0;
+      return Math.round((count / totalReviews.value) * 100);
+    };
+
+    const getRatingCount = (rating) => {
+      return ratingDistribution.value[rating] || 0;
+    };
+
     onMounted(() => {
       fetchProfileData();
+      fetchReviews();
       // Use nextTick to ensure DOM is ready
       nextTick(() => {
         const tabBar = document.querySelector('.profile-tabs');
@@ -1070,7 +1191,14 @@ export default {
       showAddSkillModal,
       showAddDocumentModal,
       showAddPortfolioModal,
-      isProcessing
+      isProcessing,
+      reviews,
+      averageRating,
+      totalReviews,
+      ratingDistribution,
+      fetchReviews,
+      getRatingPercentage,
+      getRatingCount
     };
   }
 };
@@ -2232,6 +2360,207 @@ textarea.form-control {
   margin-bottom: 1rem;
 }
 
+/* Reviews & Ratings Styles */
+.rating-summary {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.overall-rating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+}
+
+.rating-display {
+  text-align: center;
+}
+
+.rating-number {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #f39c12;
+  line-height: 1;
+}
+
+.rating-stars {
+  margin: 0.5rem 0;
+}
+
+.rating-stars i {
+  color: #f39c12;
+  font-size: 1.5rem;
+  margin: 0 2px;
+}
+
+.rating-text {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.rating-distribution {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rating-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.star-label {
+  min-width: 30px;
+  font-weight: 600;
+  color: #333;
+}
+
+.bar-container {
+  flex: 1;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f39c12, #e67e22);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.count {
+  min-width: 30px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.reviews-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.reviews-section h3 {
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.review-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fafafa;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.reviewer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.reviewer-avatar.placeholder {
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+.reviewer-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.reviewer-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.review-date {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.review-rating {
+  display: flex;
+  gap: 2px;
+}
+
+.review-rating i {
+  color: #f39c12;
+  font-size: 0.9rem;
+}
+
+.review-comment {
+  color: #555;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+
+.review-images {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.review-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid #e0e0e0;
+  transition: border-color 0.2s ease;
+}
+
+.review-image:hover {
+  border-color: #f39c12;
+}
+
+.review-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 @media (max-width: 600px) {
   .experience-list,
   .education-list,
@@ -2255,6 +2584,34 @@ textarea.form-control {
   
   .tab {
     scroll-snap-align: start; /* Snap alignment */
+  }
+  
+  /* Mobile styles for reviews */
+  .rating-summary {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .overall-rating {
+    min-width: auto;
+  }
+  
+  .rating-number {
+    font-size: 2.5rem;
+  }
+  
+  .rating-stars i {
+    font-size: 1.2rem;
+  }
+  
+  .review-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .review-rating {
+    align-self: flex-end;
   }
 }
 </style>

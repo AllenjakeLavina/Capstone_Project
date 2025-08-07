@@ -1673,7 +1673,17 @@ export const getReviewsReceived = async (userId: string) => {
     }
   });
 
-  return reviews;
+  // Calculate average rating and total reviews
+  const totalReviews = reviews.length;
+  const averageRating = totalReviews > 0 
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
+    : 0;
+
+  return {
+    reviews,
+    averageRating,
+    totalReviews
+  };
 };
 
 export const getReviewsGiven = async (userId: string) => {
@@ -1697,7 +1707,17 @@ export const getReviewsGiven = async (userId: string) => {
     }
   });
 
-  return reviews;
+  // Calculate average rating and total reviews
+  const totalReviews = reviews.length;
+  const averageRating = totalReviews > 0 
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
+    : 0;
+
+  return {
+    reviews,
+    averageRating,
+    totalReviews
+  };
 };
 
 export const getServiceProviderReviews = async (providerId: string) => {

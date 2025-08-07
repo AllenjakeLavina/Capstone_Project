@@ -70,6 +70,68 @@
       </div>
     </div>
 
+    <!-- Provider Ratings Section -->
+    <div class="provider-ratings-section">
+      <div class="ratings-summary">
+        <h3>Provider Ratings Overview</h3>
+        <div class="summary-stats">
+          <div class="stat-item">
+            <div class="stat-value">{{ providerRatingsStats.overallAverageRating || 0 }}</div>
+            <div class="stat-label">Overall Average Rating</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ providerRatingsStats.providersWithReviews || 0 }}</div>
+            <div class="stat-label">Providers with Reviews</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ providerRatingsStats.totalProviders || 0 }}</div>
+            <div class="stat-label">Total Providers</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="top-providers">
+        <h3>Top Rated Providers</h3>
+        <div class="providers-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Provider Name</th>
+                <th>Email</th>
+                <th>Average Rating</th>
+                <th>Total Reviews</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="provider in topProviders" :key="provider.id">
+                <td>{{ provider.firstName }} {{ provider.lastName }}</td>
+                <td>{{ provider.email }}</td>
+                <td>
+                  <div class="rating-display">
+                    <span class="rating-value">{{ provider.averageRating }}</span>
+                    <div class="stars">
+                      <i 
+                        v-for="star in 5" 
+                        :key="star"
+                        :class="['fas', 'fa-star', star <= provider.averageRating ? 'star-filled' : 'star-empty']"
+                      ></i>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ provider.totalReviews }}</td>
+                <td>
+                  <span :class="['status-badge', provider.isActive ? 'status-active' : 'status-inactive']">
+                    {{ provider.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- Recent Bookings Table -->
     <div class="recent-bookings">
       <h3>Recent Bookings</h3>
@@ -125,6 +187,9 @@ export default {
     const loading = ref(true);
     const stats = ref({});
     const recentBookings = ref([]);
+    const providerRatings = ref({});
+    const providerRatingsStats = ref({});
+    const topProviders = ref([]);
     const lineChart = ref(null);
     const pieChart = ref(null);
     const currentTime = ref('');
@@ -167,6 +232,14 @@ export default {
         const bookingsResponse = await adminService.getRecentBookings(10);
         if (bookingsResponse.success) {
           recentBookings.value = bookingsResponse.data;
+        }
+
+        // Load provider ratings
+        const ratingsResponse = await adminService.getProviderRatings();
+        if (ratingsResponse.success) {
+          providerRatings.value = ratingsResponse.data;
+          providerRatingsStats.value = ratingsResponse.data.statistics;
+          topProviders.value = ratingsResponse.data.providers.slice(0, 10); // Show top 10 providers
         }
         
         // Wait for DOM to update, then create charts
@@ -318,6 +391,9 @@ export default {
       loading,
       stats,
       recentBookings,
+      providerRatings,
+      providerRatingsStats,
+      topProviders,
       lineChart,
       pieChart,
       currentTime,
@@ -478,6 +554,113 @@ export default {
   position: relative;
   height: 350px;
   width: 100%;
+}
+
+.provider-ratings-section {
+  margin-bottom: 25px;
+}
+
+.ratings-summary {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 1px 6px rgba(44, 62, 80, 0.06);
+  border: 1px solid #ececec;
+  margin-bottom: 20px;
+}
+
+.ratings-summary h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #00C853;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.top-providers {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 1px 6px rgba(44, 62, 80, 0.06);
+  border: 1px solid #ececec;
+}
+
+.top-providers h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.providers-table {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #ececec;
+}
+
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rating-value {
+  font-weight: 600;
+  color: #333;
+  min-width: 30px;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.star-filled {
+  color: #FFD700;
+}
+
+.star-empty {
+  color: #ddd;
+}
+
+.status-active {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-inactive {
+  background: #f5c6cb;
+  color: #721c24;
+  border: 1px solid #f1b0b7;
 }
 
 .recent-bookings {
@@ -682,6 +865,29 @@ tr:hover {
   
   .chart-wrapper {
     height: 250px;
+  }
+  
+  .ratings-summary {
+    padding: 20px;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .top-providers {
+    padding: 20px;
+  }
+  
+  .rating-display {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
   }
   
   .recent-bookings {
