@@ -603,27 +603,19 @@ export default {
 }
 
 .page-title {
-  text-align: center;
-  color: #4a5568;
   margin-bottom: 20px;
+  color: #4a5568;
   font-size: 2.6rem;
   font-weight: 800;
+  border-left: 5px solid #27ae60;
+  padding-left: 15px;
+  transition: all 0.3s ease;
   position: relative;
-  padding-bottom: 15px;
-  letter-spacing: -0.02em;
   z-index: 1;
 }
 
-.page-title::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(90deg, #3498db, #2ecc71);
-  border-radius: 2px;
+.page-title:hover {
+  transform: translateX(5px);
 }
 
 .loading {

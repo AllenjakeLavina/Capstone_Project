@@ -1129,6 +1129,16 @@ export default {
     onMounted(() => {
       fetchProfileData();
       fetchReviews();
+      // If navigated with ?tab=reviews, focus Reviews tab
+      try {
+        const url = new URL(window.location.href);
+        const tabQuery = url.searchParams.get('tab');
+        if (tabQuery === 'reviews') {
+          activeTab.value = 'reviews';
+        }
+        } catch (_) {
+          console.debug('ProviderProfile: unable to parse URL for tab query');
+        }
       // Use nextTick to ensure DOM is ready
       nextTick(() => {
         const tabBar = document.querySelector('.profile-tabs');

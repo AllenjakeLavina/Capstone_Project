@@ -92,9 +92,12 @@ export default {
     const loading = ref(true);
     const error = ref(null);
 
+    const DEFAULT_AVATAR =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'><rect width='128' height='128' fill='%23e0e0e0'/><circle cx='64' cy='50' r='26' fill='%239e9e9e'/><rect x='24' y='84' width='80' height='28' rx='14' fill='%239e9e9e'/></svg>";
+
     const getProfileImage = (profilePicture) => {
       if (!profilePicture) {
-        return '/default-avatar.png';
+        return DEFAULT_AVATAR;
       }
       return apiService.getFileUrl(profilePicture);
     };

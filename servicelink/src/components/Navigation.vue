@@ -2,10 +2,8 @@
   <div class="navigation-container" v-if="shouldShowNav">
     <div class="nav-content">
       <!-- Logo aligned to the left -->
-      <div class="logo">
-        <router-link to="/">
-          <img src="../assets/logo.png" alt="ServiceLink" />
-        </router-link>
+      <div class="logo" aria-label="ServiceLink">
+        <img src="../assets/logo.png" alt="ServiceLink" />
       </div>
 
       <!-- All navigation items moved to the right side -->
@@ -182,10 +180,8 @@
     
     <!-- Top navbar with logo and profile -->
     <div class="mobile-top-navbar">
-      <div class="mobile-logo">
-        <router-link to="/">
-          <img src="../assets/logo.png" alt="ServiceLink" />
-        </router-link>
+      <div class="mobile-logo" aria-label="ServiceLink">
+        <img src="../assets/logo.png" alt="ServiceLink" />
       </div>
 
       <div class="mobile-actions">
@@ -429,7 +425,10 @@ export default {
     const isAuthenticated = ref(false);
     const userName = ref('');
     const userEmail = ref('');
-    const userAvatar = ref('/default-avatar.png');
+    // Inline SVG placeholder to avoid 404s when no avatar exists
+    const DEFAULT_AVATAR =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'><rect width='128' height='128' fill='%23e0e0e0'/><circle cx='64' cy='50' r='26' fill='%239e9e9e'/><rect x='24' y='84' width='80' height='28' rx='14' fill='%239e9e9e'/></svg>";
+    const userAvatar = ref(DEFAULT_AVATAR);
     
     // Get route and router
     const route = useRoute();
@@ -646,9 +645,9 @@ export default {
                 
               case 'REVIEW_RECEIVED':
                 if (userRole.value === 'PROVIDER') {
-                  router.push('/provider/reviews');
+                  router.push({ path: '/provider/profile', query: { tab: 'reviews' } });
                 } else {
-                  router.push('/client/reviews');
+                  router.push({ path: '/client/profile', query: { tab: 'reviews' } });
                 }
                 break;
                 
@@ -731,6 +730,8 @@ export default {
               // Handle profile picture
               if (userData.profilePicture) {
                 userAvatar.value = getFileUrl(userData.profilePicture);
+              } else {
+                userAvatar.value = DEFAULT_AVATAR;
               }
             }
           } else if (userRole.value === 'PROVIDER') {
@@ -743,6 +744,8 @@ export default {
               // Handle profile picture
               if (userData.profilePicture) {
                 userAvatar.value = getFileUrl(userData.profilePicture);
+              } else {
+                userAvatar.value = DEFAULT_AVATAR;
               }
             }
           } else {
