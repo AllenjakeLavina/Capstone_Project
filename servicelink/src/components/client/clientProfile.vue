@@ -37,10 +37,16 @@
             <div class="profile-header-name">{{ user.firstName }} {{ user.lastName }}</div>
             <div class="profile-header-role">Client</div>
             <div class="profile-header-meta">
-              <span><i class="fas fa-envelope"></i> {{ user.email }}</span>
-              <span v-if="user.phone"><i class="fas fa-phone"></i> {{ user.phone }}</span>
+              <div class="meta-item">
+                <i class="fas fa-envelope"></i>
+                <span class="meta-text">{{ user.email }}</span>
+              </div>
+              <div v-if="user.phone" class="meta-item">
+                <i class="fas fa-phone"></i>
+                <span class="meta-text">{{ user.phone }}</span>
+              </div>
             </div>
-            <button class="edit-profile-btn profile-btn-card" @click="isEditingProfile = true"><i class="fas fa-edit"></i> Edit Profile</button>
+            <button class="edit-profile-btn profile-btn-card" @click="startEditProfile"><i class="fas fa-edit"></i> Edit Profile</button>
           </div>
         </div>
       </div>
@@ -1211,23 +1217,35 @@ h2 {
   color: #2d3748;
 }
 .profile-header-role {
-  font-size: 1.1rem;
+  font-size: 2.1rem;
   color: #27ae60;
   font-weight: 600;
   margin-top: 20px;
 }
 .profile-header-meta {
-  margin-top: 10px;
-  color: #555;
-  font-size: 1rem;
+  margin-top: 15px;
   display: flex;
-  gap: 1px;
+  gap: 10px;
   justify-content: flex-start;
   flex-wrap: wrap;
 }
-.profile-header-meta i {
-  margin-right: 6px;
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3fbf6;
+  color: #2d3748;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+.meta-item i {
   color: #27ae60;
+}
+
+.meta-text {
+  font-size: 0.95rem;
 }
 .profile-header-row {
   display: flex;
