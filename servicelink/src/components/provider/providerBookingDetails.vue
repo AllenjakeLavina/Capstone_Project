@@ -177,8 +177,15 @@ export default {
       try {
         const response = await providerService.getReviewsGiven();
         if (response.success) {
-          isBookingRated.value = response.data.some(
-            review => review.serviceBookingId === route.params.bookingId
+          // Normalize response shape: it may be an array or an object with { reviews }
+          const reviewsList = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response.data?.reviews)
+              ? response.data.reviews
+              : [];
+
+          isBookingRated.value = reviewsList.some(
+            (review) => String(review?.serviceBookingId) === String(route.params.bookingId)
           );
         }
       } catch (err) {

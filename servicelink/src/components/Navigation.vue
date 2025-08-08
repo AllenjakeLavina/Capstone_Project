@@ -62,10 +62,7 @@
               <div class="icon"><i class="fas fa-users"></i></div>
               <span>All Clients</span>
             </router-link>
-            <router-link to="/admin/user-management" class="nav-item">
-              <div class="icon"><i class="fas fa-user-cog"></i></div>
-              <span>User Management</span>
-            </router-link>
+            
             <router-link to="/admin/category-management" class="nav-item">
               <div class="icon"><i class="fas fa-th-list"></i></div>
               <span>Category Management</span>
@@ -390,10 +387,7 @@
           <div class="icon"><i class="fas fa-users"></i></div>
           <span>Clients</span>
         </router-link>
-        <router-link to="/admin/user-management" class="mobile-nav-item" :class="{ 'active': isRouteActive('admin/user-management') }">
-          <div class="icon"><i class="fas fa-user-cog"></i></div>
-          <span>Users</span>
-        </router-link>
+        
         <router-link to="/admin/category-management" class="mobile-nav-item" :class="{ 'active': isRouteActive('admin/category-management') }">
           <div class="icon"><i class="fas fa-th-list"></i></div>
           <span>Categories</span>

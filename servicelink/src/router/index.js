@@ -21,7 +21,6 @@ import AdminDashboard from '../components/admin/adminDashboard.vue';
 import UnverifiedProviders from '../components/admin/unverifiedProviders.vue';
 import AllProviders from '../components/admin/allProviders.vue';
 import AllClients from '../components/admin/allClients.vue';
-import UserManagement from '../components/admin/userManagement.vue';
 import CategoryManagement from '../components/admin/categoryManagement.vue';
 
 const routes = [
@@ -156,10 +155,7 @@ const routes = [
     meta: { requiresAuth: true, roles: ['ADMIN'] }
   },
   {
-    path: '/admin/user-management',
-    name: 'UserManagement',
-    component: UserManagement,
-    meta: { requiresAuth: true, roles: ['ADMIN'] }
+    // removed user-management route
   },
   {
     path: '/admin/category-management',

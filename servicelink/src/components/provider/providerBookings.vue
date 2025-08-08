@@ -1006,16 +1006,22 @@ export default {
         const response = await providerService.getReviewsGiven();
         
         if (response.success) {
+          // Normalize response shape: it may be an array or an object with { reviews }
+          const reviewsList = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response.data?.reviews)
+              ? response.data.reviews
+              : [];
+
           // Create a map of booking IDs to ratings
           const ratings = {};
-          
-          response.data.forEach(review => {
-            // Only add reviews that have a serviceBookingId
-            if (review.serviceBookingId) {
+
+          reviewsList.forEach((review) => {
+            if (review?.serviceBookingId) {
               ratings[review.serviceBookingId] = review.rating;
             }
           });
-          
+
           bookingRatings.value = ratings;
           console.log('Fetched reviews for bookings:', ratings);
         }

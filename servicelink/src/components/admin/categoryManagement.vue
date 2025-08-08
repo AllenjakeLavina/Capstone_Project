@@ -89,7 +89,7 @@
           <div class="form-group">
             <label for="edit-category-image">Category Image:</label>
             <div v-if="editingCategory.imageUrl" class="current-image">
-              <img :src="editingCategory.imageUrl" width="100" :alt="editingCategory.name">
+              <img :src="getFileUrl(editingCategory.imageUrl)" width="100" :alt="editingCategory.name">
               <p><small>Current image</small></p>
             </div>
             <input type="file" id="edit-category-image" @change="handleEditImageChange" accept="image/*">
