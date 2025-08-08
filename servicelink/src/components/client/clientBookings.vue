@@ -360,6 +360,7 @@ export default {
     const error = ref('');
     const currentFilter = ref('ALL');
     const userReviews = ref([]);
+    const reviewedBookingIds = ref(new Set());
     
     // Modal states
     const showCancelModal = ref(false);
@@ -745,6 +746,10 @@ export default {
 
         if (result.success) {
           showReviewModal.value = false;
+          // Optimistically mark this booking as reviewed so the button hides immediately
+          const updatedReviewed = new Set(reviewedBookingIds.value);
+          updatedReviewed.add(selectedBooking.value.id);
+          reviewedBookingIds.value = updatedReviewed;
           // Show success message
           Swal.fire({
             title: 'Review Submitted!',
@@ -753,8 +758,8 @@ export default {
             confirmButtonColor: '#4CAF50',
             timer: 3000
           });
-          // Refresh bookings list
-          await fetchBookings();
+          // Sync reviews from server (no need to refetch bookings)
+          await fetchUserReviews();
         } else {
           Swal.fire({
             title: 'Submission Failed',
@@ -783,12 +788,8 @@ export default {
 
     // Function to check if user has already reviewed
     const hasReviewed = (booking) => {
-      if (!booking || !userReviews.value.length) return false;
-      
-      // Only check for reviews linked directly to this booking
-      return userReviews.value.some(review => 
-        review.serviceBooking && review.serviceBooking.id === booking.id
-      );
+      if (!booking) return false;
+      return reviewedBookingIds.value.has(booking.id);
     };
 
     // Function to check if payment is completed
@@ -909,7 +910,18 @@ export default {
       try {
         const response = await clientService.getReviewsGiven();
         if (response.success) {
-          userReviews.value = response.data;
+          const reviewsList = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response.data?.reviews)
+              ? response.data.reviews
+              : [];
+          userReviews.value = reviewsList;
+          const ids = new Set();
+          reviewsList.forEach((review) => {
+            const id = review?.serviceBookingId || review?.serviceBooking?.id;
+            if (id) ids.add(id);
+          });
+          reviewedBookingIds.value = ids;
         }
       } catch (err) {
         console.error('Error fetching user reviews:', err);
