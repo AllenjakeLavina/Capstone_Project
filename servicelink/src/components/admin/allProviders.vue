@@ -157,7 +157,7 @@ import { ref, onMounted } from 'vue';
 import { getFileUrl } from '../../services/apiService';
 import Swal from 'sweetalert2';
 
-const API_BASE_URL = 'http://localhost:5500/api';
+const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:5500/api';
 const providers = ref([]);
 const loading = ref(true);
 const error = ref('');

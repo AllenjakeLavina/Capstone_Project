@@ -174,8 +174,8 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import Swal from 'sweetalert2';
 
-const API_BASE_URL = 'http://localhost:5500/api';
-const FILE_SERVER_URL = 'http://localhost:5500';
+const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:5500/api';
+const FILE_SERVER_URL = process.env.VUE_APP_FILE_URL || (API_BASE_URL ? API_BASE_URL.replace(/\/?api\/?$/, '') : 'http://localhost:5500');
 const providers = ref([]);
 const loading = ref(true);
 const error = ref('');

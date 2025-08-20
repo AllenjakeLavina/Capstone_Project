@@ -115,7 +115,7 @@
 import { ref, onMounted } from 'vue';
 import { getFileUrl as apiGetFileUrl } from '../../services/apiService';
 
-const API_BASE_URL = 'http://localhost:5500/api';
+const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:5500/api';
 const categories = ref([]);
 const loadingCategories = ref(true);
 const categoriesError = ref('');

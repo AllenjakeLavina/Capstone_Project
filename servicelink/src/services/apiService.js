@@ -1,5 +1,8 @@
-const API_BASE_URL = 'http://localhost:5500/api';
-export const FILE_SERVER_URL = 'http://localhost:5500';
+// Use environment variables injected at build time by Vue CLI
+export const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:5500/api';
+export const FILE_SERVER_URL = process.env.VUE_APP_FILE_URL 
+  || (process.env.VUE_APP_API_URL ? process.env.VUE_APP_API_URL.replace(/\/?api\/?$/, '') : null)
+  || 'http://localhost:5500';
 
 // Helper function to convert relative file paths to absolute URLs
 const getFileUrl = (relativePath) => {

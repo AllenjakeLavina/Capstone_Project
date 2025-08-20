@@ -331,7 +331,7 @@ import { clientService } from '@/services/apiService';
 import Swal from 'sweetalert2';
 import AddAddressModal from '@/components/modals/AddAddressModal.vue';
 
-const API_BASE_URL = 'http://localhost:5500';
+const API_BASE_URL = process.env.VUE_APP_FILE_URL || (process.env.VUE_APP_API_URL ? process.env.VUE_APP_API_URL.replace(/\/?api\/?$/, '') : 'http://localhost:5500');
 
 // Helper function to get file URL
 const getFileUrl = (relativePath) => {

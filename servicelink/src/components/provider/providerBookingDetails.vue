@@ -125,7 +125,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { providerService } from '@/services/apiService';
 
-const API_BASE_URL = 'http://localhost:5500';
+const API_BASE_URL = process.env.VUE_APP_FILE_URL || (process.env.VUE_APP_API_URL ? process.env.VUE_APP_API_URL.replace(/\/?api\/?$/, '') : 'http://localhost:5500');
 
 const getFileUrl = (relativePath) => {
   if (!relativePath) return '';
