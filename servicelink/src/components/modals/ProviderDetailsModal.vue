@@ -189,12 +189,11 @@ export default {
 
     const formatPriceType = (type) => {
       const types = {
-        HOURLY: 'hour',
         FIXED: 'fixed',
         DAILY: 'day',
         SESSION: 'session'
       };
-      return types[type] || type.toLowerCase();
+      return types[type] || (type ? type.toLowerCase() : '');
     };
 
     return {

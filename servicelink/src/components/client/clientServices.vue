@@ -329,11 +329,10 @@ export default {
     // Format pricing type for display
     const formatPriceType = (type) => {
       switch (type) {
-        case 'HOURLY': return 'hour';
         case 'FIXED': return 'fixed';
         case 'DAILY': return 'day';
         case 'SESSION': return 'session';
-        default: return type.toLowerCase();
+        default: return (type || '').toLowerCase();
       }
     };
     

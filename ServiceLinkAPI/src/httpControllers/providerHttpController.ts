@@ -90,7 +90,7 @@ export const handleUpdateProviderProfile = async (req: Request, res: Response) =
     }
 
     // Extract fields from request body
-    const { firstName, lastName, phone, bio, headline, hourlyRate } = req.body;
+    const { firstName, lastName, phone, bio, headline } = req.body;
     
     const updateData: {
       firstName?: string;
@@ -99,7 +99,7 @@ export const handleUpdateProviderProfile = async (req: Request, res: Response) =
       profilePicture?: string;
       bio?: string;
       headline?: string;
-      hourlyRate?: number;
+      // hourlyRate removed
     } = {
       firstName,
       lastName,
@@ -107,7 +107,7 @@ export const handleUpdateProviderProfile = async (req: Request, res: Response) =
       profilePicture,
       bio,
       headline,
-      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined
+      
     };
     
     console.log('Filtered update data:', updateData);

@@ -80,7 +80,7 @@
           <div class="modal-profile-details-grid">
             <div><span class="modal-label">Phone:</span> {{ selectedProviderProfile.phone || 'Not provided' }}</div>
             <div><span class="modal-label">Headline:</span> {{ selectedProviderProfile.headline || '—' }}</div>
-            <div><span class="modal-label">Hourly Rate:</span> ₱{{ selectedProviderProfile.hourlyRate || 0 }}/hr</div>
+            <!-- Removed hourly rate display per new pricing policy -->
             <div class="modal-bio"><span class="modal-label">Bio:</span> {{ selectedProviderProfile.bio || '—' }}</div>
           </div>
         </div>

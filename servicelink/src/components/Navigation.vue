@@ -1,9 +1,14 @@
 <template>
   <div class="navigation-container" v-if="shouldShowNav">
     <div class="nav-content">
-      <!-- Logo aligned to the left -->
-      <div class="logo" aria-label="ServiceLink">
-        <img src="../assets/logo.png" alt="ServiceLink" />
+      <!-- Left area: Logo + Welcome chip -->
+      <div class="left-content">
+        <div class="logo" aria-label="ServiceLink">
+          <img src="../assets/logo.png" alt="ServiceLink" />
+        </div>
+        <div v-if="isAuthenticated && roleName" class="welcome-holder">
+          <span class="welcome-text-simple">Welcome, {{ roleName }}</span>
+        </div>
       </div>
 
       <!-- All navigation items moved to the right side -->
@@ -182,6 +187,10 @@
     <div class="mobile-top-navbar">
       <div class="mobile-logo" aria-label="ServiceLink">
         <img src="../assets/logo.png" alt="ServiceLink" />
+      </div>
+
+      <div class="mobile-welcome" v-if="isAuthenticated && roleName">
+        <span class="welcome-text-simple">Welcome, {{ roleName }}</span>
       </div>
 
       <div class="mobile-actions">
@@ -438,6 +447,21 @@ export default {
     const isRouteActive = (path) => {
       return route.path.includes(path);
     };
+    
+    const roleName = computed(() => {
+      switch (userRole.value) {
+        case 'CLIENT':
+          return 'Client';
+        case 'PROVIDER':
+          return 'Provider';
+        case 'ADMIN':
+          return 'Admin';
+        default:
+          return '';
+      }
+    });
+
+    // Role class no longer needed for simple text indicator
     
     // Notification state
     const notificationCount = ref(0);
@@ -831,6 +855,9 @@ export default {
       toggleUserMenu,
       handleLogout,
       
+      // Role indicator
+      roleName,
+      
       // Notification related
       notificationCount,
       showNotificationDropdown,
@@ -882,14 +909,30 @@ export default {
 .nav-content {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Space between logo and right content */
+  justify-content: space-between; /* Space between left group and right content */
   width: 100%; /* Full width */
   padding: 0; /* Remove padding */
   height: 80px;
 }
 
+.left-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .logo {
   padding-left: 30px; /* Add padding to logo container instead */
+}
+
+.welcome-holder { display: flex; align-items: center; }
+.welcome-text-simple { 
+  margin-left: 6px;
+  font-weight: 600;
+  color: #ffffff;
+  opacity: 0.95;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  white-space: nowrap;
 }
 
 /* Right side content container */
@@ -1346,6 +1389,15 @@ export default {
 .mobile-logo img {
   height: 75px; /* Increased for 90px navbar */
 }
+
+.mobile-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.mobile-welcome .welcome-text-simple { font-size: 13px; }
 
 .mobile-actions {
   display: flex;

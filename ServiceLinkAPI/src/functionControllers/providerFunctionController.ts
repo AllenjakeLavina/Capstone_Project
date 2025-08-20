@@ -1178,15 +1178,8 @@ export const completeService = async (userId: string, bookingId: string) => {
     const startTime = new Date(timeRecordToUpdate.startTime);
     const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // in hours
     
-    // Calculate total amount based on pricing type
-    let totalAmount = booking.service.pricing;
-    
-    if (booking.service.pricingType === 'HOURLY') {
-      // For hourly pricing, multiply by duration
-      // Convert the result to a Decimal that Prisma can handle
-      const amount = Number(booking.service.pricing) * durationHours;
-      totalAmount = new Prisma.Decimal(amount.toString());
-    }
+    // Calculate total amount without hourly computation (per day/session/fixed)
+    const totalAmount = booking.service.pricing;
     
     // Transaction to update everything at once
     const result = await prisma.$transaction(async (tx) => {
@@ -1222,12 +1215,11 @@ export const completeService = async (userId: string, bookingId: string) => {
         receiverId: booking.client.userId,
         type: 'SERVICE_COMPLETED',
         title: 'Service Completed',
-        message: `Your booked service "${booking.service.title}" has been completed. Total hours: ${durationHours.toFixed(2)}, Total amount: ₱${totalAmount.toFixed(2)}.`,
+        message: `Your booked service "${booking.service.title}" has been completed. Total amount: ₱${totalAmount.toFixed(2)}.`,
         isRead: false,
         data: JSON.stringify({
           bookingId: booking.id,
           serviceId: booking.service.id,
-          totalHours: durationHours,
           totalAmount
         })
       }

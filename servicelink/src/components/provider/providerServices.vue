@@ -104,7 +104,6 @@
                   <div class="price-type">
                     <label for="pricingType">Price Type*</label>
                     <select id="pricingType" v-model="serviceForm.pricingType" required class="form-control">
-                      <option value="HOURLY">Per Hour</option>
                       <option value="FIXED">Fixed Price</option>
                       <option value="DAILY">Per Day</option>
                       <option value="SESSION">Per Session</option>
@@ -183,7 +182,6 @@
                   <div class="price-type">
                     <label for="edit-pricingType">Price Type*</label>
                     <select id="edit-pricingType" v-model="editServiceForm.pricingType" required class="form-control">
-                      <option value="HOURLY">Per Hour</option>
                       <option value="FIXED">Fixed Price</option>
                       <option value="DAILY">Per Day</option>
                       <option value="SESSION">Per Session</option>
@@ -257,7 +255,7 @@ export default {
       description: '',
       categoryId: '',
       pricing: 0,
-      pricingType: 'HOURLY',
+      pricingType: 'DAILY',
       imageUrls: [],
       skillIds: []
     });
@@ -267,7 +265,7 @@ export default {
       description: '',
       categoryId: '',
       pricing: 0,
-      pricingType: 'HOURLY',
+      pricingType: 'DAILY',
       imageUrls: [],
       skillIds: []
     });
@@ -411,7 +409,7 @@ export default {
       serviceForm.description = '';
       serviceForm.categoryId = '';
       serviceForm.pricing = 0;
-      serviceForm.pricingType = 'HOURLY';
+      serviceForm.pricingType = 'DAILY';
       serviceForm.imageUrls = [];
       selectedSkills.value = [];
     };
@@ -500,10 +498,10 @@ export default {
 
     const formatPricingType = (type) => {
       switch (type) {
-        case 'HOURLY': return 'Hour';
         case 'FIXED': return 'Fixed Price';
         case 'DAILY': return 'Day';
         case 'SESSION': return 'Session';
+        case 'HOURLY': return 'Day'; // legacy mapping to avoid showing per hour
         default: return type;
       }
     };

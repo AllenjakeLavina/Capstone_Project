@@ -521,7 +521,7 @@ export const getUnverifiedProviderDetails = async (providerId: string) => {
       profilePicture: provider.user.profilePicture,
       headline: provider.headline,
       bio: provider.bio,
-      hourlyRate: provider.hourlyRate,
+      // hourlyRate removed
       workExperience: provider.workExperience,
       education: provider.education,
       skills: provider.skills,
@@ -1002,7 +1002,7 @@ export const getProviderDetailsForAdmin = async (providerId: string) => {
       profilePicture: provider.user.profilePicture,
       headline: provider.headline,
       bio: provider.bio,
-      hourlyRate: provider.hourlyRate,
+      // hourlyRate removed
       workExperience: provider.workExperience,
       education: provider.education,
       skills: provider.skills,

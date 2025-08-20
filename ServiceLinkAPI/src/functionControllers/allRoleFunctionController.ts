@@ -772,7 +772,7 @@ export const searchProviders = async (
         profilePicture: provider.user.profilePicture,
         headline: provider.headline,
         bio: provider.bio,
-        hourlyRate: provider.hourlyRate,
+        // hourlyRate removed
         skills: provider.skills,
         services: provider.services.map(service => ({
           id: service.id,
@@ -922,7 +922,7 @@ export const getProviderDetails = async (providerId: string) => {
       email: provider.user.email,
       headline: provider.headline,
       bio: provider.bio,
-      hourlyRate: provider.hourlyRate,
+      // hourlyRate removed
       skills: provider.skills,
       portfolio,
       workExperience: provider.workExperience,

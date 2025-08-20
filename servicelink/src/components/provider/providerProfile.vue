@@ -70,7 +70,7 @@
             <div class="detail-item">
               <h3>Professional Info</h3>
               <p><strong>Headline:</strong> {{ profile.serviceProvider?.headline || '' }}</p>
-              <p><strong>Hourly Rate:</strong> ₱{{ profile.serviceProvider?.hourlyRate || 0 }}/hr</p>
+              <!-- Removed hourly rate display per new pricing policy -->
             </div>
             
             <div class="detail-item">
@@ -93,10 +93,7 @@
             <label>Phone:</label>
             <input v-model.trim="personalForm.phone" />
           </div>
-          <div class="form-group">
-            <label>Hourly Rate ($):</label>
-            <input type="number" v-model.number="personalForm.hourlyRate" min="0" step="0.01" />
-          </div>
+          <!-- Removed hourly rate input per new pricing policy -->
           <div class="form-group">
             <label>Headline:</label>
             <input v-model.trim="personalForm.headline" placeholder="Short professional headline (e.g., Experienced Web Developer)" />
@@ -401,10 +398,7 @@
                 <label>Phone:</label>
                 <input v-model.trim="personalForm.phone" class="form-control" />
               </div>
-              <div class="form-group">
-                <label>Hourly Rate ($):</label>
-                <input type="number" v-model.number="personalForm.hourlyRate" min="0" step="0.01" class="form-control" />
-              </div>
+              <!-- Removed hourly rate input per new pricing policy -->
               <div class="form-group">
                 <label>Headline:</label>
                 <input v-model.trim="personalForm.headline" placeholder="Short professional headline (e.g., Experienced Web Developer)" class="form-control" />
@@ -663,8 +657,7 @@ export default {
       phone: '',
       profilePicture: '',
       bio: '',
-      headline: '',
-      hourlyRate: 0
+      headline: ''
     });
 
     const experienceForm = reactive({
@@ -751,7 +744,7 @@ export default {
           // ServiceProvider properties
           personalForm.bio = profile.value.serviceProvider?.bio || '';
           personalForm.headline = profile.value.serviceProvider?.headline || '';
-          personalForm.hourlyRate = profile.value.serviceProvider?.hourlyRate || 0;
+          // hourly rate removed per pricing policy
           
           // Set verification status based on profile data
           verificationStatus.value = {
@@ -793,8 +786,7 @@ export default {
           lastName: personalForm.lastName,
           phone: personalForm.phone,
           bio: personalForm.bio,
-          headline: personalForm.headline,
-          hourlyRate: personalForm.hourlyRate ? parseFloat(personalForm.hourlyRate) : undefined
+          headline: personalForm.headline
         };
         
         console.log('Component: Update data to send:', updateData);

@@ -337,8 +337,7 @@
         // Format price based on pricing type
         function formatPrice(price, pricingType) {
             switch(pricingType) {
-                case 'HOURLY':
-                    return `$${price}/hr`;
+                // HOURLY removed
                 case 'FIXED':
                     return `$${price}`;
                 case 'DAILY':

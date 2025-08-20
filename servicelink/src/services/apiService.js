@@ -290,7 +290,7 @@ export const providerService = {
         if (profileData.phone !== undefined) cleanData.phone = profileData.phone;
         if (profileData.bio !== undefined) cleanData.bio = profileData.bio;
         if (profileData.headline !== undefined) cleanData.headline = profileData.headline;
-        if (profileData.hourlyRate !== undefined) cleanData.hourlyRate = profileData.hourlyRate;
+        // hourlyRate removed per new pricing policy
         // Add any other fields that might be needed
       }
       
