@@ -176,7 +176,7 @@
                 class="btn btn-primary" 
                 @click="confirmPayment()" 
                 :disabled="isProcessingPayment">
-                {{ isProcessingPayment ? 'Processing...' : 'Confirm Booking' }}
+                {{ isProcessingPayment ? 'Processing...' : 'Process Payment' }}
               </button>
             </div>
           </div>

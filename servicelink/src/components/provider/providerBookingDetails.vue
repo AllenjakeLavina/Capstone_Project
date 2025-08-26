@@ -124,6 +124,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { providerService } from '@/services/apiService';
+import Swal from 'sweetalert2';
 
 const API_BASE_URL = process.env.VUE_APP_FILE_URL || (process.env.VUE_APP_API_URL ? process.env.VUE_APP_API_URL.replace(/\/?api\/?$/, '') : 'http://localhost:5500');
 
@@ -260,84 +261,268 @@ export default {
     };
 
     const confirmAcceptBooking = async () => {
-      if (confirm('Are you sure you want to accept this booking?')) {
+      const result = await Swal.fire({
+        title: 'Accept Booking',
+        text: 'Are you sure you want to accept this booking?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4CAF50',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Accept',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (result.isConfirmed) {
         try {
           const response = await providerService.acceptBooking(booking.value.id);
           if (response.success) {
             booking.value.status = 'CONFIRMED';
+            
+            // Show success message
+            Swal.fire({
+              title: 'Booking Accepted!',
+              text: 'You have successfully accepted the booking request',
+              icon: 'success',
+              confirmButtonColor: '#4CAF50',
+              timer: 3000
+            });
           } else {
             error.value = response.message || 'Failed to accept booking';
+            
+            // Show error message
+            Swal.fire({
+              title: 'Failed to Accept Booking',
+              text: response.message || 'Failed to accept booking',
+              icon: 'error',
+              confirmButtonColor: '#f44336'
+            });
           }
         } catch (err) {
           console.error('Error accepting booking:', err);
           error.value = 'Unable to accept booking. Please try again later.';
+          
+          // Show error message
+          Swal.fire({
+            title: 'Error',
+            text: 'Unable to accept booking. Please try again later.',
+            icon: 'error',
+            confirmButtonColor: '#f44336'
+          });
         }
       }
     };
 
     const confirmDeclineBooking = async () => {
-      const reason = prompt('Please provide a reason for declining (optional):');
-      if (reason !== null) {
+      const { value: reason } = await Swal.fire({
+        title: 'Decline Booking',
+        text: 'Please provide a reason for declining (optional):',
+        input: 'text',
+        inputPlaceholder: 'Enter reason...',
+        showCancelButton: true,
+        confirmButtonColor: '#f44336',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Decline',
+        cancelButtonText: 'Cancel',
+        inputValidator: () => {
+          // Allow empty reason
+          return null;
+        }
+      });
+
+      if (reason !== undefined) {
         try {
           const response = await providerService.declineBooking(booking.value.id, reason);
           if (response.success) {
             booking.value.status = 'CANCELLED';
+            
+            // Show success message
+            Swal.fire({
+              title: 'Booking Declined',
+              text: 'You have successfully declined the booking request',
+              icon: 'success',
+              confirmButtonColor: '#4CAF50',
+              timer: 3000
+            });
           } else {
             error.value = response.message || 'Failed to decline booking';
+            
+            // Show error message
+            Swal.fire({
+              title: 'Failed to Decline Booking',
+              text: response.message || 'Failed to decline booking',
+              icon: 'error',
+              confirmButtonColor: '#f44336'
+            });
           }
         } catch (err) {
           console.error('Error declining booking:', err);
           error.value = 'Unable to decline booking. Please try again later.';
+          
+          // Show error message
+          Swal.fire({
+            title: 'Error',
+            text: 'Unable to decline booking. Please try again later.',
+            icon: 'error',
+            confirmButtonColor: '#f44336'
+          });
         }
       }
     };
 
     const confirmStartService = async () => {
-      if (confirm('Are you ready to start this service?')) {
+      const result = await Swal.fire({
+        title: 'Start Service',
+        text: 'Are you ready to start this service?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4CAF50',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Start',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (result.isConfirmed) {
         try {
           const response = await providerService.startService(booking.value.id);
           if (response.success) {
             booking.value.status = 'IN_PROGRESS';
+            
+            // Show success message
+            Swal.fire({
+              title: 'Service Started!',
+              text: 'You have successfully started the service',
+              icon: 'success',
+              confirmButtonColor: '#4CAF50',
+              timer: 3000
+            });
           } else {
             error.value = response.message || 'Failed to start service';
+            
+            // Show error message
+            Swal.fire({
+              title: 'Failed to Start Service',
+              text: response.message || 'Failed to start service',
+              icon: 'error',
+              confirmButtonColor: '#f44336'
+            });
           }
         } catch (err) {
           console.error('Error starting service:', err);
           error.value = 'Unable to start service. Please try again later.';
+          
+          // Show error message
+          Swal.fire({
+            title: 'Error',
+            text: 'Unable to start service. Please try again later.',
+            icon: 'error',
+            confirmButtonColor: '#f44336'
+          });
         }
       }
     };
 
     const confirmCompleteService = async () => {
-      if (confirm('Are you sure you want to mark this service as completed?')) {
+      const result = await Swal.fire({
+        title: 'Complete Service',
+        text: 'Are you sure you want to mark this service as completed?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4CAF50',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Complete',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (result.isConfirmed) {
         try {
           const response = await providerService.completeService(booking.value.id);
           if (response.success) {
             booking.value.status = 'COMPLETED';
+            
+            // Show success message
+            Swal.fire({
+              title: 'Service Completed!',
+              text: 'You have successfully completed the service',
+              icon: 'success',
+              confirmButtonColor: '#4CAF50',
+              timer: 3000
+            });
           } else {
             error.value = response.message || 'Failed to complete service';
+            
+            // Show error message
+            Swal.fire({
+              title: 'Failed to Complete Service',
+              text: response.message || 'Failed to complete service',
+              icon: 'error',
+              confirmButtonColor: '#f44336'
+            });
           }
         } catch (err) {
           console.error('Error completing service:', err);
           error.value = 'Unable to complete service. Please try again later.';
+          
+          // Show error message
+          Swal.fire({
+            title: 'Error',
+            text: 'Unable to complete service. Please try again later.',
+            icon: 'error',
+            confirmButtonColor: '#f44336'
+          });
         }
       }
     };
 
     const confirmMarkPaymentCompleted = async () => {
-      if (confirm('Are you sure you want to mark the payment as received?')) {
+      const result = await Swal.fire({
+        title: 'Mark Payment Received',
+        text: 'Are you sure you want to mark the payment as received?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4CAF50',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, Mark Received',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (result.isConfirmed) {
         try {
           const response = await providerService.markPaymentReceived(booking.value.id);
           if (response.success) {
             if (booking.value.payment) {
               booking.value.payment.status = 'COMPLETED';
             }
+            
+            // Show success message
+            Swal.fire({
+              title: 'Payment Marked as Received!',
+              text: 'The payment has been successfully marked as received',
+              icon: 'success',
+              confirmButtonColor: '#4CAF50',
+              timer: 3000
+            });
           } else {
             error.value = response.message || 'Failed to mark payment as received';
+            
+            // Show error message
+            Swal.fire({
+              title: 'Failed to Mark Payment',
+              text: response.message || 'Failed to mark payment as received',
+              icon: 'error',
+              confirmButtonColor: '#f44336'
+            });
           }
         } catch (err) {
           console.error('Error marking payment as received:', err);
           error.value = 'Unable to mark payment as received. Please try again later.';
+          
+          // Show error message
+          Swal.fire({
+            title: 'Error',
+            text: 'Unable to mark payment as received. Please try again later.',
+            icon: 'error',
+            confirmButtonColor: '#f44336'
+          });
         }
       }
     };

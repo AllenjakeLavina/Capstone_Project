@@ -1603,10 +1603,11 @@ export const createClientReview = async (
     throw new Error('Cannot review a booking that is not completed');
   }
 
-  // Check if a review already exists for this booking
+  // Check if this provider has already reviewed this booking
   const existingReview = await prisma.review.findFirst({
     where: {
-      serviceBookingId: bookingId
+      serviceBookingId: bookingId,
+      giverId: user.id
     }
   });
 
