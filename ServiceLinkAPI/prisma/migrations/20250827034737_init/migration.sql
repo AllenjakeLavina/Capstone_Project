@@ -25,6 +25,7 @@ CREATE TABLE `ServiceProvider` (
     `headline` VARCHAR(191) NULL,
     `hourlyRate` DECIMAL(10, 2) NULL,
     `rating` DOUBLE NULL DEFAULT 0,
+    `isProviderVerified` BOOLEAN NOT NULL DEFAULT false,
 
     UNIQUE INDEX `ServiceProvider_userId_key`(`userId`),
     PRIMARY KEY (`id`)
@@ -81,9 +82,20 @@ CREATE TABLE `Portfolio` (
     `serviceProviderId` VARCHAR(191) NOT NULL,
     `title` VARCHAR(191) NOT NULL,
     `description` TEXT NULL,
-    `imageUrls` TEXT NULL,
     `projectUrl` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `PortfolioFile` (
+    `id` VARCHAR(191) NOT NULL,
+    `portfolioId` VARCHAR(191) NOT NULL,
+    `fileUrl` VARCHAR(191) NOT NULL,
+    `fileName` VARCHAR(191) NULL,
+    `fileType` VARCHAR(191) NULL,
+    `uploadedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -207,25 +219,29 @@ CREATE TABLE `TimeRecord` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `ChatRoom` (
+CREATE TABLE `Conversation` (
     `id` VARCHAR(191) NOT NULL,
-    `serviceBookingId` VARCHAR(191) NOT NULL,
+    `user1Id` VARCHAR(191) NOT NULL,
+    `user2Id` VARCHAR(191) NOT NULL,
+    `serviceBookingId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `ChatRoom_serviceBookingId_key`(`serviceBookingId`),
+    UNIQUE INDEX `Conversation_serviceBookingId_key`(`serviceBookingId`),
+    UNIQUE INDEX `Conversation_user1Id_user2Id_key`(`user1Id`, `user2Id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `Message` (
     `id` VARCHAR(191) NOT NULL,
-    `chatRoomId` VARCHAR(191) NOT NULL,
+    `conversationId` VARCHAR(191) NOT NULL,
     `senderId` VARCHAR(191) NOT NULL,
     `receiverId` VARCHAR(191) NOT NULL,
     `content` TEXT NOT NULL,
-    `attachments` TEXT NULL,
-    `isRead` BOOLEAN NOT NULL DEFAULT false,
+    `imageUrl` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `isRead` BOOLEAN NOT NULL DEFAULT false,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -241,6 +257,7 @@ CREATE TABLE `Payment` (
     `paymentDate` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `paymentProofUrl` VARCHAR(191) NULL,
 
     UNIQUE INDEX `Payment_serviceBookingId_key`(`serviceBookingId`),
     PRIMARY KEY (`id`)
@@ -268,8 +285,10 @@ CREATE TABLE `Review` (
     `rating` DOUBLE NOT NULL,
     `comment` TEXT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `imageUrls` TEXT NULL,
     `giverId` VARCHAR(191) NOT NULL,
     `receiverId` VARCHAR(191) NOT NULL,
+    `serviceBookingId` VARCHAR(191) NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -391,6 +410,9 @@ ALTER TABLE `Education` ADD CONSTRAINT `Education_serviceProviderId_fkey` FOREIG
 ALTER TABLE `Portfolio` ADD CONSTRAINT `Portfolio_serviceProviderId_fkey` FOREIGN KEY (`serviceProviderId`) REFERENCES `ServiceProvider`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `PortfolioFile` ADD CONSTRAINT `PortfolioFile_portfolioId_fkey` FOREIGN KEY (`portfolioId`) REFERENCES `Portfolio`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Document` ADD CONSTRAINT `Document_serviceProviderId_fkey` FOREIGN KEY (`serviceProviderId`) REFERENCES `ServiceProvider`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -433,10 +455,16 @@ ALTER TABLE `ServiceBooking` ADD CONSTRAINT `ServiceBooking_serviceRequestId_fke
 ALTER TABLE `TimeRecord` ADD CONSTRAINT `TimeRecord_serviceBookingId_fkey` FOREIGN KEY (`serviceBookingId`) REFERENCES `ServiceBooking`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChatRoom` ADD CONSTRAINT `ChatRoom_serviceBookingId_fkey` FOREIGN KEY (`serviceBookingId`) REFERENCES `ServiceBooking`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Conversation` ADD CONSTRAINT `Conversation_user1Id_fkey` FOREIGN KEY (`user1Id`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Message` ADD CONSTRAINT `Message_chatRoomId_fkey` FOREIGN KEY (`chatRoomId`) REFERENCES `ChatRoom`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Conversation` ADD CONSTRAINT `Conversation_user2Id_fkey` FOREIGN KEY (`user2Id`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Conversation` ADD CONSTRAINT `Conversation_serviceBookingId_fkey` FOREIGN KEY (`serviceBookingId`) REFERENCES `ServiceBooking`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Message` ADD CONSTRAINT `Message_conversationId_fkey` FOREIGN KEY (`conversationId`) REFERENCES `Conversation`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Message` ADD CONSTRAINT `Message_senderId_fkey` FOREIGN KEY (`senderId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -455,6 +483,9 @@ ALTER TABLE `Review` ADD CONSTRAINT `Review_giverId_fkey` FOREIGN KEY (`giverId`
 
 -- AddForeignKey
 ALTER TABLE `Review` ADD CONSTRAINT `Review_receiverId_fkey` FOREIGN KEY (`receiverId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Review` ADD CONSTRAINT `Review_serviceBookingId_fkey` FOREIGN KEY (`serviceBookingId`) REFERENCES `ServiceBooking`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Notification` ADD CONSTRAINT `Notification_receiverId_fkey` FOREIGN KEY (`receiverId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

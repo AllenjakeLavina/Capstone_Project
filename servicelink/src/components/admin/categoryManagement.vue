@@ -32,7 +32,7 @@
             <label for="category-image">Category Image:</label>
             <input type="file" id="category-image" @change="handleImageChange" accept="image/*">
             <div v-if="newCategory.image" class="image-preview">
-              <img :src="URL.createObjectURL(newCategory.image)" alt="Preview" />
+              <img :src="newCategoryImagePreview" alt="Preview" />
             </div>
           </div>
           <button type="submit" :disabled="loading" class="submit-btn">Create Category</button>
@@ -94,7 +94,7 @@
             </div>
             <input type="file" id="edit-category-image" @change="handleEditImageChange" accept="image/*">
             <div v-if="editingCategory.image" class="image-preview">
-              <img :src="URL.createObjectURL(editingCategory.image)" alt="Preview" />
+              <img :src="editingCategoryImagePreview" alt="Preview" />
             </div>
             <p><small>Leave empty to keep current image</small></p>
           </div>
@@ -112,7 +112,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { getFileUrl as apiGetFileUrl } from '../../services/apiService';
 
 const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:5500/api';
@@ -143,6 +143,21 @@ const showCreateForm = ref(false);
 
 const getFileUrl = apiGetFileUrl;
 
+// Computed properties for image previews
+const newCategoryImagePreview = computed(() => {
+  if (newCategory.value.image && typeof URL !== 'undefined') {
+    return URL.createObjectURL(newCategory.value.image);
+  }
+  return '';
+});
+
+const editingCategoryImagePreview = computed(() => {
+  if (editingCategory.value.image && typeof URL !== 'undefined') {
+    return URL.createObjectURL(editingCategory.value.image);
+  }
+  return '';
+});
+
 const fetchCategories = async () => {
   loadingCategories.value = true;
   categoriesError.value = '';
@@ -169,10 +184,18 @@ const fetchCategories = async () => {
 };
 
 const handleImageChange = (event) => {
+  // Clean up previous object URL if it exists
+  if (newCategory.value.image && newCategoryImagePreview.value) {
+    URL.revokeObjectURL(newCategoryImagePreview.value);
+  }
   newCategory.value.image = event.target.files[0];
 };
 
 const handleEditImageChange = (event) => {
+  // Clean up previous object URL if it exists
+  if (editingCategory.value.image && editingCategoryImagePreview.value) {
+    URL.revokeObjectURL(editingCategoryImagePreview.value);
+  }
   editingCategory.value.image = event.target.files[0];
 };
 
@@ -285,6 +308,16 @@ const updateCategory = async () => {
 };
 
 onMounted(fetchCategories);
+
+onUnmounted(() => {
+  // Clean up object URLs to prevent memory leaks
+  if (newCategory.value.image && newCategoryImagePreview.value) {
+    URL.revokeObjectURL(newCategoryImagePreview.value);
+  }
+  if (editingCategory.value.image && editingCategoryImagePreview.value) {
+    URL.revokeObjectURL(editingCategoryImagePreview.value);
+  }
+});
 </script>
 
 <style scoped>
