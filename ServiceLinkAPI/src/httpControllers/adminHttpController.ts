@@ -11,6 +11,7 @@ import {
   createCategory,
   getAllCategories,
   editCategory,
+  deleteCategory,
   toggleClientStatus,
   toggleProviderStatus,
   getDashboardStats,
@@ -431,6 +432,30 @@ export const handleEditCategory = async (req: Request, res: Response) => {
       success: false,
       message: errorMessage
     });
+  }
+};
+
+export const handleDeleteCategory = async (req: Request, res: Response) => {
+  try {
+    const { categoryId } = req.params;
+
+    if (!categoryId) {
+      res.status(400).json({ success: false, message: 'Category ID is required' });
+      return;
+    }
+
+    // Role guard
+    if (req.user.role !== 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Unauthorized: Only admins can perform this action' });
+      return;
+    }
+
+    const result = await deleteCategory(categoryId);
+
+    res.status(200).json({ success: true, message: 'Category deleted successfully', data: result });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.status(400).json({ success: false, message: errorMessage });
   }
 };
 

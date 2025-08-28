@@ -101,6 +101,7 @@
           <div class="form-actions">
             <button type="button" @click="closeEditModal" class="cancel-btn">Cancel</button>
             <button type="submit" :disabled="updating" class="save-btn">Save Changes</button>
+            <button type="button" class="delete-btn" @click="confirmDeleteCategory" :disabled="updating">Delete Category</button>
           </div>
           <div v-if="editResult" :class="['result', editResult.success ? 'success' : 'error']">
             {{ editResult.message }}
@@ -114,6 +115,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { getFileUrl as apiGetFileUrl } from '../../services/apiService';
+import Swal from 'sweetalert2';
 
 const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:5500/api';
 const categories = ref([]);
@@ -293,6 +295,15 @@ const updateCategory = async () => {
 
     if (data.success) {
       editResult.value = { success: true, message: 'Category updated successfully' };
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Category Updated',
+          text: 'Changes have been saved successfully.',
+          icon: 'success',
+          confirmButtonColor: '#4CAF50',
+          timer: 2000
+        });
+      }
       setTimeout(() => {
         fetchCategories();
         closeEditModal();
@@ -302,6 +313,64 @@ const updateCategory = async () => {
     }
   } catch (e) {
     editResult.value = { success: false, message: 'Failed to update category' };
+  } finally {
+    updating.value = false;
+  }
+};
+
+const confirmDeleteCategory = async () => {
+  if (!editingCategory.value.id) return;
+
+  try {
+    const confirmed = typeof Swal !== 'undefined'
+      ? (await Swal.fire({
+          title: 'Delete Category?',
+          text: 'This action cannot be undone.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Yes, delete it',
+          cancelButtonText: 'Cancel'
+        })).isConfirmed
+      : confirm('Delete this category?');
+
+    if (!confirmed) return;
+
+    updating.value = true;
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE_URL}/admin/category/${editingCategory.value.id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && (data.success === undefined || data.success === true)) {
+      if (typeof Swal !== 'undefined') {
+        await Swal.fire({
+          title: 'Deleted!',
+          text: 'Category has been removed.',
+          icon: 'success',
+          confirmButtonColor: '#4CAF50',
+          timer: 1800
+        });
+      }
+      await fetchCategories();
+      closeEditModal();
+    } else {
+      const message = data.message || 'Failed to delete category';
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ title: 'Error', text: message, icon: 'error', confirmButtonColor: '#f44336' });
+      } else {
+        alert(message);
+      }
+    }
+  } catch (e) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({ title: 'Error', text: 'Failed to delete category', icon: 'error', confirmButtonColor: '#f44336' });
+    } else {
+      alert('Failed to delete category');
+    }
   } finally {
     updating.value = false;
   }
@@ -411,6 +480,13 @@ button:disabled {
 
 .save-btn {
   background-color: #2196F3;
+}
+
+.delete-btn {
+  background-color: #e53935;
+}
+.delete-btn:hover:not(:disabled) {
+  background-color: #c62828;
 }
 
 .loading {

@@ -13,6 +13,7 @@ import {
   handleCreateCategory,
   handleGetAllCategories,
   handleEditCategory,
+  handleDeleteCategory,
   handleToggleClientStatus,
   handleToggleProviderStatus,
   handleGetDashboardStats,
@@ -82,6 +83,13 @@ router.patch(
   authorizeRoles('ADMIN'),
   uploadFile.single('categoryImage'),
   handleEditCategory
+);
+
+router.delete(
+  '/category/:categoryId',
+  authenticateToken,
+  authorizeRoles('ADMIN'),
+  handleDeleteCategory
 );
 
 // Add this comment to remind yourself to secure or remove these routes

@@ -626,6 +626,28 @@ export const editCategory = async (
   }
 };
 
+// Delete a category
+export const deleteCategory = async (categoryId: string) => {
+  try {
+    const existingCategory = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!existingCategory) {
+      throw new Error('Category not found');
+    }
+
+    // Optional safeguard: prevent delete if referenced by services
+    // If you want stricter enforcement, uncomment below and adjust relation as needed
+    // const relatedServiceCount = await prisma.service.count({ where: { categoryId } });
+    // if (relatedServiceCount > 0) {
+    //   throw new Error('Cannot delete category with existing services');
+    // }
+
+    await prisma.category.delete({ where: { id: categoryId } });
+    return { id: categoryId };
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Toggle client account status (Active/Inactive)
 export const toggleClientStatus = async (clientId: string, isActive: boolean) => {
   try {
