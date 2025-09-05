@@ -9,7 +9,7 @@
         <p class="hero-tagline">Connect with top-rated professionals in your area</p>
         <div class="hero-actions">
           <router-link to="/login" class="primary-btn">Find Services</router-link>
-          <router-link to="/register" class="outline-btn">Join as Provider</router-link>
+          <router-link to="/register" class="outline-btn">Join Us</router-link>
         </div>
       </div>
     </section>

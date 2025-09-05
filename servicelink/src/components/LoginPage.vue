@@ -50,9 +50,9 @@
         </form>
 
         <div class="footer-links">
-          <span>Privacy Policy</span>
+          <router-link to="/terms-and-conditions" class="footer-link">Privacy Policy</router-link>
           <span class="dot">•</span>
-          <span>Terms & Conditions</span>
+          <router-link to="/terms-and-conditions" class="footer-link">Terms & Conditions</router-link>
         </div>
       </div>
 
@@ -381,6 +381,17 @@ export default {
 
 .footer-links .dot {
   margin: 0 8px;
+}
+
+.footer-link {
+  color: #106e40;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #0c5730;
+  text-decoration: underline;
 }
 
 .welcome-side {

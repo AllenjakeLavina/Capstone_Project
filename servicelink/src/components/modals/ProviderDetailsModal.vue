@@ -101,14 +101,21 @@
                   <h4>{{ item.title }}</h4>
                   <p>{{ item.description }}</p>
                   <div class="portfolio-files">
-                    <a v-for="file in item.files" 
-                       :key="file.id"
-                       :href="getFileUrl(file.fileUrl)"
-                       target="_blank"
-                       class="file-link">
-                      <i :class="getFileIcon(file.fileType)"></i>
-                      {{ file.fileName }}
-                    </a>
+                    <template v-for="file in item.files" :key="file.id">
+                      <img 
+                        v-if="isImage(file)"
+                        :src="getFileUrl(file.fileUrl)"
+                        :alt="file.fileName"
+                        class="portfolio-image"
+                      />
+                      <a v-else
+                         :href="getFileUrl(file.fileUrl)"
+                         target="_blank"
+                         class="file-link">
+                        <i :class="getFileIcon(file.fileType)"></i>
+                        {{ file.fileName }}
+                      </a>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -208,6 +215,12 @@ export default {
       if (!relativePath) return '';
       if (relativePath.startsWith('http')) return relativePath;
       return `${FILE_SERVER_URL}${relativePath}`;
+    },
+    isImage(file) {
+      const type = (file?.fileType || '').toLowerCase();
+      if (type === 'image') return true;
+      const name = (file?.fileName || '').toLowerCase();
+      return /(\.png|\.jpe?g|\.gif|\.webp|\.bmp|\.svg)$/.test(name);
     },
     getFileIcon(fileType) {
       const icons = {
@@ -460,6 +473,15 @@ export default {
 
 .file-link:hover {
   text-decoration: underline;
+}
+
+.portfolio-image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  object-fit: cover;
 }
 
 .reviews-list {

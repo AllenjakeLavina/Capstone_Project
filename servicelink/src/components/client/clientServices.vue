@@ -224,6 +224,7 @@
 import { FILE_SERVER_URL, serviceService, clientService, providerService } from '@/services/apiService';
 import { useRouter } from 'vue-router';
 import { ref, onMounted, computed } from 'vue';
+import Swal from 'sweetalert2';
 import ProviderDetailsModal from '@/components/modals/ProviderDetailsModal.vue';
 import AddAddressModal from '@/components/modals/AddAddressModal.vue';
 
@@ -386,7 +387,25 @@ export default {
     // Submit booking
     const submitBooking = async () => {
       if (!bookingForm.value.dateTime || !bookingForm.value.addressId) {
-        alert('Please fill in all required fields');
+        Swal.fire({
+          title: 'Incomplete Form',
+          text: 'Please select a date/time and an address.',
+          icon: 'warning',
+          confirmButtonColor: '#ff9800'
+        });
+        return;
+      }
+
+      // Guard: prevent past date/time
+      const selected = new Date(bookingForm.value.dateTime);
+      const now = new Date();
+      if (isNaN(selected.getTime()) || selected.getTime() < now.getTime()) {
+        Swal.fire({
+          title: 'Invalid Start Time',
+          text: 'Please choose a future date and time.',
+          icon: 'error',
+          confirmButtonColor: '#f44336'
+        });
         return;
       }
       
@@ -412,11 +431,22 @@ export default {
           closeBookingModal();
           showBookingSuccess.value = true;
         } else {
-          alert('Failed to create booking: ' + (response.message || 'Unknown error'));
+          Swal.fire({
+            title: 'Failed to create booking',
+            text: response.message || 'Unknown error',
+            icon: 'error',
+            confirmButtonColor: '#f44336'
+          });
         }
       } catch (err) {
         console.error('Error creating booking:', err);
-        alert('Failed to create booking. Please try again later.');
+        const serverMessage = err?.response?.data?.message || err?.message || 'Please try again later.';
+        Swal.fire({
+          title: 'Failed to create booking',
+          text: serverMessage,
+          icon: 'error',
+          confirmButtonColor: '#f44336'
+        });
       } finally {
         isBookingSubmitting.value = false;
       }

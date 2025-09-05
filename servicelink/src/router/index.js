@@ -22,6 +22,7 @@ import UnverifiedProviders from '../components/admin/unverifiedProviders.vue';
 import AllProviders from '../components/admin/allProviders.vue';
 import AllClients from '../components/admin/allClients.vue';
 import CategoryManagement from '../components/admin/categoryManagement.vue';
+import TermsAndConditions from '../components/TermsAndConditions.vue';
 
 const routes = [
   {
@@ -162,6 +163,11 @@ const routes = [
     name: 'CategoryManagement',
     component: CategoryManagement,
     meta: { requiresAuth: true, roles: ['ADMIN'] }
+  },
+  {
+    path: '/terms-and-conditions',
+    name: 'TermsAndConditions',
+    component: TermsAndConditions
   }
 ];
 

@@ -139,7 +139,7 @@
             v-model="acceptTerms" 
             required
           />
-          <label for="terms">I agree to the <a href="/terms" target="_blank">Terms and Conditions</a></label>
+          <label for="terms">I agree to the <router-link to="/terms-and-conditions" target="_blank">Terms and Conditions</router-link></label>
         </div>
         
         <div class="form-group form-checkbox">

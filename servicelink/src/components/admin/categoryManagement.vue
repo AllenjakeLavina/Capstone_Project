@@ -89,7 +89,7 @@
           <div class="form-group">
             <label for="edit-category-image">Category Image:</label>
             <div v-if="editingCategory.imageUrl" class="current-image">
-              <img :src="getFileUrl(editingCategory.imageUrl)" width="100" :alt="editingCategory.name">
+              <img :src="getFileUrl(editingCategory.imageUrl)" :alt="editingCategory.name" class="current-image-preview">
               <p><small>Current image</small></p>
             </div>
             <input type="file" id="edit-category-image" @change="handleEditImageChange" accept="image/*">
@@ -203,7 +203,12 @@ const handleEditImageChange = (event) => {
 
 const createCategory = async () => {
   if (!newCategory.value.name.trim()) {
-    createResult.value = { success: false, message: 'Category name is required' };
+    Swal.fire({
+      title: 'Missing Information',
+      text: 'Category name is required',
+      icon: 'warning',
+      confirmButtonColor: '#ff9800'
+    });
     return;
   }
 
@@ -232,14 +237,31 @@ const createCategory = async () => {
     const data = await res.json();
 
     if (data.success) {
-      createResult.value = { success: true, message: 'Category created successfully' };
+      Swal.fire({
+        title: 'Category Created!',
+        text: 'New category has been created successfully.',
+        icon: 'success',
+        confirmButtonColor: '#4CAF50',
+        timer: 2000
+      });
       newCategory.value = { name: '', description: '', image: null };
+      showCreateForm.value = false;
       fetchCategories();
     } else {
-      createResult.value = { success: false, message: data.message || 'Failed to create category' };
+      Swal.fire({
+        title: 'Error',
+        text: data.message || 'Failed to create category',
+        icon: 'error',
+        confirmButtonColor: '#f44336'
+      });
     }
   } catch (e) {
-    createResult.value = { success: false, message: 'Failed to create category' };
+    Swal.fire({
+      title: 'Error',
+      text: 'Failed to create category',
+      icon: 'error',
+      confirmButtonColor: '#f44336'
+    });
   } finally {
     loading.value = false;
   }
@@ -444,6 +466,15 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 
+.current-image-preview {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+  border: 1px solid #e0e0e0;
+  object-fit: cover;
+}
+
 button {
   background-color: #2196F3;
   color: white;
@@ -541,18 +572,20 @@ button:disabled {
   width: 100%;
   height: 100%;
   background-color: rgba(0,0,0,0.5);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .modal-content {
   background-color: #fefefe;
-  margin: 10% auto;
+  margin: 5% auto;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   width: 80%;
   max-width: 600px;
+  max-height: 90vh;
   position: relative;
+  overflow-y: auto;
 }
 
 .close-button {
@@ -775,6 +808,8 @@ button:disabled {
   border-radius: 18px;
   border: 1.5px solid #e0e0e0;
   animation: modalPop 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 @keyframes modalPop {
   0% { transform: scale(0.92) translateY(40px); opacity: 0; }

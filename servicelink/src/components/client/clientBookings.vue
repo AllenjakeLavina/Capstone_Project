@@ -826,7 +826,8 @@ export default {
     const openEditModal = (booking) => {
       selectedBooking.value = booking;
       editForm.value = {
-        dateTime: formatDate(booking.startTime).replace(' ', 'T'),
+        // Ensure proper value for input[type="datetime-local"]
+        dateTime: formatForDateTimeLocal(booking.startTime),
         addressId: booking.address ? booking.address.id : '',
         notes: booking.notes || ''
       };
@@ -851,6 +852,19 @@ export default {
           text: 'Please select a date and address.',
           icon: 'warning',
           confirmButtonColor: '#ff9800'
+        });
+        return;
+      }
+
+      // Prevent selecting past date/time
+      const selected = new Date(editForm.value.dateTime);
+      const now = new Date();
+      if (isNaN(selected.getTime()) || selected.getTime() < now.getTime()) {
+        Swal.fire({
+          title: 'Invalid Date & Time',
+          text: 'Please choose a future date and time.',
+          icon: 'error',
+          confirmButtonColor: '#f44336'
         });
         return;
       }
@@ -968,9 +982,23 @@ export default {
       showAddAddressModal.value = false;
     };
 
-    // Get current date and time for date-time input min attribute
-    const currentDateTime = new Date();
-    const currentDateTimeString = currentDateTime.toISOString().slice(0, 16);
+    // Helper: format Date to yyyy-MM-ddTHH:mm in local time for <input type="datetime-local">
+    const formatForDateTimeLocal = (date) => {
+      const d = new Date(date);
+      const pad = (n) => String(n).padStart(2, '0');
+      const year = d.getFullYear();
+      const month = pad(d.getMonth() + 1);
+      const day = pad(d.getDate());
+      const hours = pad(d.getHours());
+      const minutes = pad(d.getMinutes());
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    // Keep min up-to-date so past times are blocked without reload
+    const currentDateTimeString = ref(formatForDateTimeLocal(new Date()));
+    setInterval(() => {
+      currentDateTimeString.value = formatForDateTimeLocal(new Date());
+    }, 60 * 1000);
 
     return {
       bookings,

@@ -457,6 +457,12 @@ export const bookService = async (
   }
 ) => {
   try {
+    // Validate startTime must be in the future
+    const now = new Date();
+    const requestedStart = new Date(bookingData.startTime);
+    if (isNaN(requestedStart.getTime()) || requestedStart.getTime() < now.getTime()) {
+      throw new Error('Invalid start time. Please choose a future date and time.');
+    }
     // Find client by userId
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -780,6 +786,15 @@ export const updateBooking = async (
     // Ensure booking can be updated (only PENDING bookings)
     if (booking.status !== 'PENDING') {
       throw new Error(`Cannot update a booking with status: ${booking.status}. Only pending bookings can be updated.`);
+    }
+
+    // Validate new start time if provided
+    if (updateData.startTime) {
+      const nowForUpdate = new Date();
+      const newStart = new Date(updateData.startTime);
+      if (isNaN(newStart.getTime()) || newStart.getTime() < nowForUpdate.getTime()) {
+        throw new Error('Invalid start time. Please choose a future date and time.');
+      }
     }
 
     // Validate address if provided
