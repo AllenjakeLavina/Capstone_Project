@@ -1,268 +1,248 @@
 <template>
   <div class="terms-container">
-    <div class="terms-content">
-      <div class="terms-header">
-        <h1>Terms and Conditions</h1>
-        <p class="last-updated">Last updated: {{ lastUpdated }}</p>
+    <!-- Header Section -->
+    <header class="terms-header">
+      <div class="header-content">
+        <div class="header-text">
+          <h1>Terms and Conditions</h1>
+          <p class="last-updated">Last updated: {{ lastUpdated }}</p>
+        </div>
       </div>
+    </header>
 
-      <div class="terms-body">
-        <section class="terms-section">
-          <h2>1. Acceptance of Terms</h2>
-          <p>By accessing and using ServiceLink ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.</p>
-        </section>
-
-        <section class="terms-section">
-          <h2>2. Description of Service</h2>
-          <p>ServiceLink is a platform that connects service providers with clients seeking various services. We facilitate the connection between users but do not provide the services directly.</p>
-        </section>
-
-        <section class="terms-section">
-          <h2>3. User Accounts</h2>
-          <h3>3.1 Account Creation</h3>
-          <p>To use our service, you must create an account. You are responsible for:</p>
-          <ul>
-            <li>Providing accurate and complete information</li>
-            <li>Maintaining the security of your account credentials</li>
-            <li>All activities that occur under your account</li>
-            <li>Notifying us immediately of any unauthorized use</li>
-          </ul>
-
-          <h3>3.2 Account Types</h3>
-          <p>We offer two types of accounts:</p>
-          <ul>
-            <li><strong>Client Accounts:</strong> For users seeking services</li>
-            <li><strong>Provider Accounts:</strong> For users offering services (requires verification)</li>
-          </ul>
-        </section>
-
-        <section class="terms-section">
-          <h2>4. Service Provider Verification</h2>
-          <p>Service providers must undergo verification before offering services. This includes:</p>
-          <ul>
-            <li>Identity verification through government-issued ID</li>
-            <li>Background checks where applicable</li>
-            <li>Skill and qualification verification</li>
-            <li>Portfolio and reference checks</li>
-          </ul>
-          <p>We reserve the right to reject or suspend provider accounts that do not meet our verification standards.</p>
-        </section>
-
-        <section class="terms-section">
-          <h2>5. User Conduct</h2>
-          <p>Users agree to:</p>
-          <ul>
-            <li>Use the service only for lawful purposes</li>
-            <li>Not engage in fraudulent, abusive, or illegal activities</li>
-            <li>Respect other users and maintain professional conduct</li>
-            <li>Not attempt to circumvent our verification processes</li>
-            <li>Provide honest and accurate information in profiles and communications</li>
-          </ul>
-        </section>
-
-        <section class="terms-section">
-          <h2>6. Booking and Payment</h2>
-          <h3>6.1 Booking Process</h3>
-          <p>Clients can book services through our platform. All bookings are subject to provider availability and approval.</p>
-
-          <h3>6.2 Payment Terms</h3>
-          <p>Payment terms will be agreed upon between clients and providers. ServiceLink may facilitate payment processing but is not responsible for payment disputes between users.</p>
-
-          <h3>6.3 Cancellation Policy</h3>
-          <p>Cancellation policies are set by individual service providers. Users should review these policies before booking.</p>
-        </section>
-
-        <section class="terms-section">
-          <h2>7. Privacy and Data Protection</h2>
-          <p>Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the service, to understand our practices.</p>
-        </section>
-
-        <section class="terms-section">
-          <h2>8. Intellectual Property</h2>
-          <p>The service and its original content, features, and functionality are and will remain the exclusive property of ServiceLink and its licensors. The service is protected by copyright, trademark, and other laws.</p>
-        </section>
-
-        <section class="terms-section">
-          <h2>9. Limitation of Liability</h2>
-          <p>ServiceLink acts as an intermediary platform. We are not responsible for:</p>
-          <ul>
-            <li>The quality of services provided by service providers</li>
-            <li>Disputes between clients and providers</li>
-            <li>Any damages resulting from the use of services booked through our platform</li>
-            <li>Technical issues or service interruptions</li>
-          </ul>
-        </section>
-
-        <section class="terms-section">
-          <h2>10. Account Termination</h2>
-          <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
-        </section>
-
-        <section class="terms-section">
-          <h2>11. Changes to Terms</h2>
-          <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days notice prior to any new terms taking effect.</p>
-        </section>
-
-        <section class="terms-section">
-          <h2>12. Contact Information</h2>
-          <p>If you have any questions about these Terms and Conditions, please contact us at:</p>
-          <ul>
-            <li>Email: support@servicetogo.online</li>
-            <li>Phone: 0915 066 4403</li>
-            <li>Address: De Aro Street, Mabayuan Olongapo City</li>
-          </ul>
-        </section>
+    <!-- Main Content -->
+    <main class="terms-main">
+      <TermsText />
+      <div class="auth-actions">
+        <router-link to="/login" class="action-btn ghost">Back to Login</router-link>
+        <router-link to="/register" class="action-btn solid">Go to Register</router-link>
       </div>
-
-      <div class="terms-footer">
-        <button @click="goBack" class="back-btn">
-          <i class="fa fa-arrow-left"></i> Back
-        </button>
-      </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
+import TermsText from './settings/TermsText.vue'
 const lastUpdated = 'January 2025';
-
-const goBack = () => {
-  router.go(-1);
-};
 </script>
 
 <style scoped>
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #00C853; /* Green background para walang white space sa taas */
+}
+
 .terms-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.terms-content {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
   width: 100%;
-  margin: 20px 0;
-  overflow: hidden;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-y: auto;
 }
 
+/* Header Section */
 .terms-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
   color: white;
-  padding: 40px;
-  text-align: center;
+  padding: 1.2rem 0; /* Manipis na header */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 0;
 }
 
-.terms-header h1 {
-  margin: 0 0 10px 0;
-  font-size: 2.5rem;
-  font-weight: 700;
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  justify-content: space-between;
+}
+
+.header-text h1 {
+  font-size: 2rem; /* Binawasan para mas manipis tingnan */
+  font-weight: 800;
+  margin-bottom: 0.3rem;
+  background: linear-gradient(45deg, #ffffff, #e6fff0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .last-updated {
-  margin: 0;
+  font-size: 0.9rem;
   opacity: 0.9;
-  font-size: 1rem;
+  font-weight: 400;
 }
 
-.terms-body {
-  padding: 40px;
-  line-height: 1.8;
-  color: #333;
+/* Main Content */
+.terms-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
 }
 
+.auth-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 2rem;
+}
+
+.action-btn {
+  text-decoration: none;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 999px;
+}
+
+.action-btn.ghost {
+  border: 2px solid #00C853;
+  color: #00A046;
+}
+
+.action-btn.solid {
+  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
+  color: #ffffff;
+}
+
+/* Sections */
 .terms-section {
-  margin-bottom: 30px;
+  margin-bottom: 3rem;
+  scroll-margin-top: 120px;
+}
+
+.terms-section:last-child {
+  margin-bottom: 0;
 }
 
 .terms-section h2 {
-  color: #667eea;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #f0f0f0;
-  padding-bottom: 10px;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.terms-section h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
+  border-radius: 2px;
 }
 
 .terms-section h3 {
-  color: #764ba2;
-  font-size: 1.2rem;
+  color: #475569;
+  font-size: 1.25rem;
   font-weight: 600;
-  margin: 20px 0 10px 0;
+  margin: 2rem 0 1rem 0;
 }
 
 .terms-section p {
-  margin-bottom: 15px;
+  color: #334155;
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
   text-align: justify;
 }
 
 .terms-section ul {
-  margin: 15px 0;
-  padding-left: 20px;
+  margin: 1.5rem 0;
+  padding-left: 0;
+  list-style: none;
 }
 
 .terms-section li {
-  margin-bottom: 8px;
-}
-
-.terms-footer {
-  background: #f8f9fa;
-  padding: 20px 40px;
-  text-align: center;
-  border-top: 1px solid #e9ecef;
-}
-
-.back-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 25px;
+  color: #334155;
   font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+  padding-left: 2rem;
+  position: relative;
 }
 
-.back-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+.terms-section li::before {
+  content: '•';
+  color: #009688;
+  font-size: 1.5rem;
+  position: absolute;
+  left: 0.5rem;
+  top: -0.1rem;
+}
+
+.terms-section strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .terms-main {
+    padding: 2rem 1.5rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .terms-container {
-    padding: 10px;
+  .header-content {
+    padding: 0 1.5rem;
+    gap: 1rem;
   }
-  
-  .terms-content {
-    margin: 10px 0;
+
+  .header-text h1 {
+    font-size: 1.8rem;
   }
-  
-  .terms-header {
-    padding: 30px 20px;
+
+  .terms-main {
+    padding: 2rem 1rem;
+    padding-bottom: 6rem;
+    overflow: visible;
   }
-  
-  .terms-header h1 {
-    font-size: 2rem;
+
+  .terms-section h2 {
+    font-size: 1.5rem;
   }
-  
-  .terms-body {
-    padding: 30px 20px;
+
+  .terms-section h3 {
+    font-size: 1.125rem;
   }
-  
-  .terms-footer {
-    padding: 20px;
+}
+
+@media (max-width: 480px) {
+  .header-text h1 {
+    font-size: 1.5rem;
   }
+
+  .terms-section {
+    margin-bottom: 2rem;
+  }
+
+  .terms-section h2 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection styles */
+::selection {
+  background: rgba(79, 70, 229, 0.2);
+  color: #1e293b;
 }
 </style>

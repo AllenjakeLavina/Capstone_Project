@@ -239,42 +239,42 @@ header, nav, .navbar, .nav-container, .navigation-container,
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 380px;
   background-color: white;
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-  padding: 40px;
+  padding: 32px 28px;
   position: relative;
   z-index: 1;
 }
 
 .logo {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .logo img {
-  max-width: 120px;
+  max-width: 100px;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.1));
 }
 
 h2 {
   text-align: center;
   color: #106e40;
-  font-size: 1.8rem;
-  margin-bottom: 8px;
+  font-size: 1.6rem;
+  margin-bottom: 6px;
   font-weight: 700;
 }
 
 .subtitle {
   text-align: center;
   color: #718096;
-  margin-bottom: 32px;
-  font-size: 0.95rem;
+  margin-bottom: 28px;
+  font-size: 0.9rem;
 }
 
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   position: relative;
 }
 
@@ -329,7 +329,7 @@ input:focus {
 }
 
 .form-actions {
-  margin-top: 32px;
+  margin-top: 28px;
 }
 
 .primary-btn {
@@ -357,9 +357,9 @@ input:focus {
 
 .auth-footer {
   text-align: center;
-  margin-top: 32px;
+  margin-top: 28px;
   color: #718096;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .auth-footer a {
@@ -372,5 +372,125 @@ input:focus {
 .auth-footer a:hover {
   color: #106e40;
   text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 16px;
+  }
+  
+  .auth-card {
+    max-width: 100%;
+    padding: 24px 20px;
+  }
+  
+  .logo img {
+    max-width: 80px;
+  }
+  
+  h2 {
+    font-size: 1.4rem;
+  }
+  
+  .subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+  }
+  
+  .form-group {
+    margin-bottom: 18px;
+  }
+  
+  .form-actions {
+    margin-top: 24px;
+  }
+  
+  .auth-footer {
+    margin-top: 24px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 12px;
+  }
+  
+  .auth-card {
+    padding: 20px 16px;
+  }
+  
+  .logo {
+    margin-bottom: 16px;
+  }
+  
+  .logo img {
+    max-width: 70px;
+  }
+  
+  h2 {
+    font-size: 1.3rem;
+  }
+  
+  .subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .form-actions {
+    margin-top: 20px;
+  }
+  
+  .auth-footer {
+    margin-top: 20px;
+    font-size: 0.8rem;
+  }
+}
+
+/* For very small screens */
+@media (max-height: 700px) {
+  .auth-container {
+    padding: 10px;
+  }
+  
+  .auth-card {
+    padding: 20px 16px;
+  }
+  
+  .logo {
+    margin-bottom: 12px;
+  }
+  
+  .logo img {
+    max-width: 60px;
+  }
+  
+  h2 {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+  
+  .subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+  }
+  
+  .form-group {
+    margin-bottom: 14px;
+  }
+  
+  .form-actions {
+    margin-top: 16px;
+  }
+  
+  .auth-footer {
+    margin-top: 16px;
+    font-size: 0.8rem;
+  }
 }
 </style> 

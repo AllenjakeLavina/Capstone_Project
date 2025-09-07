@@ -23,6 +23,10 @@ import AllProviders from '../components/admin/allProviders.vue';
 import AllClients from '../components/admin/allClients.vue';
 import CategoryManagement from '../components/admin/categoryManagement.vue';
 import TermsAndConditions from '../components/TermsAndConditions.vue';
+import SettingsLayout from '../components/settings/SettingsLayout.vue';
+import CustomerService from '../components/settings/CustomerService.vue';
+import AboutSettings from '../components/settings/About.vue';
+import TermsSettings from '../components/settings/TermsSettings.vue';
 
 const routes = [
   {
@@ -168,6 +172,33 @@ const routes = [
     path: '/terms-and-conditions',
     name: 'TermsAndConditions',
     component: TermsAndConditions
+  }
+  ,
+  {
+    path: '/settings',
+    component: SettingsLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        redirect: { name: 'SettingsCustomerService' }
+      },
+      {
+        path: 'customer-service',
+        name: 'SettingsCustomerService',
+        component: CustomerService
+      },
+      {
+        path: 'about',
+        name: 'SettingsAbout',
+        component: AboutSettings
+      },
+      {
+        path: 'terms',
+        name: 'SettingsTerms',
+        component: TermsSettings
+      }
+    ]
   }
 ];
 
