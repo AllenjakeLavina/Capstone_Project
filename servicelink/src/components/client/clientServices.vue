@@ -1084,10 +1084,10 @@ export default {
 
 .modal {
   background-color: white;
-  border-radius: 15px;
+  border-radius: 12px;
   width: 100%;
-  max-width: 550px;
-  max-height: 90vh;
+  max-width: 450px;
+  max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
   animation: slideIn 0.3s ease;
@@ -1099,19 +1099,19 @@ export default {
 }
 
 .modal-header {
-  padding: 20px 25px;
+  padding: 15px 20px;
   border-bottom: 1px solid #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(135deg, #f8f9fa, #f1f1f1);
-  border-top-left-radius: 15px;
-  border-top-right-radius: 15px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   color: #2c3e50;
   font-weight: 600;
 }
@@ -1142,35 +1142,35 @@ export default {
 }
 
 .modal-body {
-  padding: 25px;
+  padding: 20px;
 }
 
 .booking-service-details {
-  margin-bottom: 25px;
-  padding-bottom: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
   border-bottom: 1px solid #eee;
 }
 
 .booking-service-details h3 {
-  margin: 0 0 15px 0;
-  font-size: 1.4rem;
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
   color: #2c3e50;
   font-weight: 600;
 }
 
 .modal-price {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   color: #2ecc71;
   font-weight: 700;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   background-color: rgba(46, 204, 113, 0.1);
-  padding: 10px 15px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
   display: inline-block;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .form-group label {
@@ -1200,15 +1200,15 @@ export default {
 }
 
 .form-group textarea {
-  height: 120px;
+  height: 80px;
   resize: vertical;
 }
 
 .booking-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 15px;
-  margin-top: 25px;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .btn-cancel {
@@ -1241,7 +1241,7 @@ export default {
 }
 
 .success-modal {
-  max-width: 450px;
+  max-width: 400px;
 }
 
 .success-icon {

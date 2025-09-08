@@ -171,10 +171,10 @@ export default {
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
+  max-width: 420px;
+  max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
@@ -183,16 +183,16 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 15px 20px;
   border-bottom: 1px solid #e0e0e0;
   background: linear-gradient(135deg, #4CAF50, #45a049);
   color: white;
-  border-radius: 12px 12px 0 0;
+  border-radius: 10px 10px 0 0;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 600;
 }
 
@@ -217,13 +217,13 @@ export default {
 }
 
 .modal-body {
-  padding: 24px;
+  padding: 20px;
 }
 
 .address-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .form-group {
@@ -240,10 +240,10 @@ export default {
 
 .form-group input,
 .form-group select {
-  padding: 12px;
+  padding: 10px;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
   transition: border-color 0.3s ease;
 }
 
@@ -257,7 +257,7 @@ export default {
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 .checkbox {
@@ -279,17 +279,17 @@ export default {
 
 .form-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: flex-end;
-  margin-top: 20px;
-  padding-top: 20px;
+  margin-top: 15px;
+  padding-top: 15px;
   border-top: 1px solid #e0e0e0;
 }
 
 .btn {
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;

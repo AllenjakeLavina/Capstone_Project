@@ -939,13 +939,13 @@ h2 {
   background: #27ae60;
   color: white;
   border: none;
-  padding: 14px 28px;
-  border-radius: 12px;
+  padding: 12px 24px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .save-btn:hover {
@@ -958,12 +958,12 @@ h2 {
   background: white;
   color: #4a5568;
   border: 1px solid #e2e8f0;
-  padding: 14px 28px;
-  border-radius: 12px;
+  padding: 12px 24px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s ease;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .cancel-btn:hover {
@@ -978,7 +978,7 @@ h2 {
 }
 
 .form-group {
-  margin-bottom: 25px;
+  margin-bottom: 18px;
   position: relative;
 }
 
@@ -992,11 +992,11 @@ h2 {
 
 .form-group input, .form-group select {
   width: 100%;
-  padding: 14px 18px;
+  padding: 12px 15px;
   border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  border-radius: 10px;
   transition: all 0.3s ease;
-  font-size: 1rem;
+  font-size: 0.95rem;
   background-color: #f9f9f9;
   color: #333;
   box-shadow: 0 2px 10px rgba(0,0,0,0.02);
@@ -1011,7 +1011,7 @@ h2 {
 
 .form-row {
   display: flex;
-  gap: 15px;
+  gap: 12px;
 }
 
 .form-row .form-group {
@@ -1019,10 +1019,10 @@ h2 {
 }
 
 .form-actions {
-  margin-top: 20px;
+  margin-top: 15px;
   display: flex;
   justify-content: flex-end;
-  gap: 15px;
+  gap: 12px;
 }
 
 .checkbox {
@@ -1284,12 +1284,12 @@ h2 {
 }
 .modal-card {
   background: #fff;
-  border-radius: 18px;
+  border-radius: 15px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  padding: 40px 32px 32px 32px;
-  min-width: 350px;
+  padding: 30px 25px 25px 25px;
+  min-width: 320px;
   max-width: 95vw;
-  width: 480px;
+  width: 420px;
   position: relative;
   animation: modalPop 0.2s cubic-bezier(.4,2,.6,1) 1;
 }
