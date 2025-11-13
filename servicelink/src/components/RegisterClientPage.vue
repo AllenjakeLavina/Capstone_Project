@@ -7,7 +7,7 @@
       <h2>Register as Client</h2>
       <p class="subtitle">Create an account to find and book services</p>
       
-      <div v-if="showVerification" class="verification-section">
+      <div v-if="showVerification" class="verification-section" key="verification">
         <h3>Verify Your Email</h3>
         <p>Please verify your email address to complete registration</p>
         <EmailVerificationInput 
@@ -17,19 +17,10 @@
         />
       </div>
 
-      <form v-else @submit.prevent="handleRegister">
-        <div v-if="error" class="error-message">
-          <span class="error-icon">⚠️</span>
-          {{ error }}
-        </div>
-        <div v-if="success" class="success-message">
-          <span class="success-icon">✓</span>
-          {{ success }}
-        </div>
-        
+      <form v-else @submit.prevent="handleRegister" key="registration-form">
         <div class="form-row">
           <div class="form-group">
-            <label for="firstName">First Name</label>
+            <label for="firstName">First Name <span class="required">*</span></label>
             <div class="input-container">
               <span class="input-icon">👤</span>
               <input 
@@ -38,12 +29,13 @@
                 v-model="formData.firstName" 
                 required
                 placeholder="Enter your first name"
+                minlength="2"
               />
             </div>
           </div>
           
           <div class="form-group">
-            <label for="lastName">Last Name</label>
+            <label for="lastName">Last Name <span class="required">*</span></label>
             <div class="input-container">
               <span class="input-icon">👤</span>
               <input 
@@ -52,13 +44,14 @@
                 v-model="formData.lastName" 
                 required
                 placeholder="Enter your last name"
+                minlength="2"
               />
             </div>
           </div>
         </div>
         
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">Email <span class="required">*</span></label>
           <div class="input-container">
             <span class="input-icon">✉️</span>
             <input 
@@ -72,14 +65,44 @@
         </div>
         
         <div class="form-group">
-          <label for="phone">Phone Number</label>
+          <label for="phone">Contact Number <span class="required">*</span></label>
           <div class="input-container">
             <span class="input-icon">📱</span>
             <input 
               type="tel" 
               id="phone" 
               v-model="formData.phone" 
-              placeholder="Enter your phone number (optional)"
+              required
+              placeholder="e.g., 09123456789 or +639123456789"
+            />
+          </div>
+          <small class="input-hint">Enter a valid Philippine phone number</small>
+        </div>
+
+        <div class="form-group">
+          <label for="addressLine1">Address <span class="required">*</span></label>
+          <div class="input-container">
+            <span class="input-icon">📍</span>
+            <input 
+              type="text" 
+              id="addressLine1" 
+              v-model="formData.addressLine1" 
+              required
+              placeholder="Street address, building number, barangay"
+              minlength="5"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="addressLine2">Address Line 2 (Optional)</label>
+          <div class="input-container">
+            <span class="input-icon">📍</span>
+            <input 
+              type="text" 
+              id="addressLine2" 
+              v-model="formData.addressLine2" 
+              placeholder="Unit, floor, additional details (optional)"
             />
           </div>
         </div>
@@ -143,6 +166,7 @@
 <script>
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2';
 import { clientService, authService } from '../services/apiService';
 import EmailVerificationInput from './EmailVerificationInput.vue';
 
@@ -158,23 +182,134 @@ export default {
       lastName: '',
       email: '',
       phone: '',
-      password: ''
+      password: '',
+      addressLine1: '',
+      addressLine2: ''
     });
     const confirmPassword = ref('');
     const acceptTerms = ref(false);
-    const error = ref('');
-    const success = ref('');
     const loading = ref(false);
     const showVerification = ref(false);
 
+    // Validation functions
+    const validateFullName = () => {
+      const firstName = formData.firstName.trim();
+      const lastName = formData.lastName.trim();
+      
+      if (!firstName || !lastName) {
+        return 'First name and last name are required';
+      }
+      
+      if (firstName.length < 2) {
+        return 'First name must be at least 2 characters long';
+      }
+      
+      if (lastName.length < 2) {
+        return 'Last name must be at least 2 characters long';
+      }
+      
+      // Check for valid characters (letters, spaces, hyphens, apostrophes)
+      const nameRegex = /^[a-zA-Z\s'-]+$/;
+      if (!nameRegex.test(firstName)) {
+        return 'First name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed';
+      }
+      
+      if (!nameRegex.test(lastName)) {
+        return 'Last name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed';
+      }
+      
+      return null;
+    };
+
+    const validateContactNumber = () => {
+      const phone = formData.phone.trim();
+      
+      if (!phone) {
+        return 'Contact number is required';
+      }
+      
+      // Remove spaces, dashes, and parentheses for validation
+      const cleanPhone = phone.replace(/[\s\-()]/g, '');
+      
+      // Philippine phone number format: +63XXXXXXXXXX or 09XXXXXXXXX or 0XXXXXXXXX
+      // Also accept international formats
+      const phoneRegex = /^(\+63|63|0)?[9]\d{9}$|^(\+?\d{10,15})$/;
+      
+      if (!phoneRegex.test(cleanPhone)) {
+        return 'Please enter a valid contact number (e.g., 09123456789 or +639123456789)';
+      }
+      
+      return null;
+    };
+
+    const validateAddress = () => {
+      if (!formData.addressLine1.trim()) {
+        return 'Address is required';
+      }
+      
+      if (formData.addressLine1.trim().length < 5) {
+        return 'Address must be at least 5 characters long';
+      }
+      
+      return null;
+    };
+
     const handleRegister = async () => {
-      // Reset messages
-      error.value = '';
-      success.value = '';
+      // Validate full name
+      const nameError = validateFullName();
+      if (nameError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: nameError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate contact number
+      const phoneError = validateContactNumber();
+      if (phoneError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: phoneError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate address
+      const addressError = validateAddress();
+      if (addressError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: addressError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
       
       // Validate passwords match
       if (formData.password !== confirmPassword.value) {
-        error.value = 'Passwords do not match';
+        await Swal.fire({
+          icon: 'error',
+          title: 'Password Mismatch',
+          text: 'Passwords do not match',
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate password strength
+      if (formData.password.length < 8) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Weak Password',
+          text: 'Password must be at least 8 characters long',
+          confirmButtonColor: '#106e40'
+        });
         return;
       }
 
@@ -184,19 +319,36 @@ export default {
         const response = await clientService.registerClient({
           email: formData.email,
           password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          phone: formData.phone.trim()
         });
         
         if (response.success) {
-          success.value = 'Registration successful! Please verify your email.';
+          // Save address after successful registration (we'll need to add this to the API)
+          // For now, we'll show success and the user can add address later
+          await Swal.fire({
+            icon: 'success',
+            title: 'Registration Successful!',
+            text: 'Please verify your email to complete registration.',
+            confirmButtonColor: '#8cc63f'
+          });
           showVerification.value = true;
         } else {
-          error.value = response.message || 'Registration failed';
+          await Swal.fire({
+            icon: 'error',
+            title: 'Registration Failed',
+            text: response.message || 'Registration failed. Please try again.',
+            confirmButtonColor: '#106e40'
+          });
         }
       } catch (err) {
-        error.value = err.message || 'An error occurred during registration';
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message || 'An error occurred during registration',
+          confirmButtonColor: '#106e40'
+        });
       } finally {
         loading.value = false;
       }
@@ -220,16 +372,19 @@ export default {
       }
     };
 
-    const handleVerificationError = (errorMessage) => {
-      error.value = errorMessage;
+    const handleVerificationError = async (errorMessage) => {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Verification Error',
+        text: errorMessage,
+        confirmButtonColor: '#106e40'
+      });
     };
 
     return {
       formData,
       confirmPassword,
       acceptTerms,
-      error,
-      success,
       loading,
       showVerification,
       handleRegister,
@@ -396,12 +551,17 @@ input[type="checkbox"] {
   text-decoration: underline;
 }
 
-.password-hint {
+.password-hint, .input-hint {
   display: block;
   margin-top: 8px;
   color: #718096;
   font-size: 0.85rem;
   margin-left: 4px;
+}
+
+.required {
+  color: #e53e3e;
+  font-weight: bold;
 }
 
 .form-actions {
@@ -458,37 +618,6 @@ input[type="checkbox"] {
   text-decoration: underline;
 }
 
-.error-message {
-  background-color: #fff5f5;
-  color: #e53e3e;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-}
-
-.error-icon {
-  margin-right: 8px;
-  font-size: 1.1rem;
-}
-
-.success-message {
-  background-color: #f0fff4;
-  color: #2f855a;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-}
-
-.success-icon {
-  margin-right: 8px;
-  font-size: 1.1rem;
-}
 
 .verification-section {
   text-align: center;

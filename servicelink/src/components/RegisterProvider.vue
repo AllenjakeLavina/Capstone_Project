@@ -7,7 +7,7 @@
       <h2>Register as Service Provider</h2>
       <p class="subtitle">Create an account to offer your services</p>
       
-      <div v-if="showVerification" class="verification-section">
+      <div v-if="showVerification" class="verification-section" key="verification">
         <h3>Verify Your Email</h3>
         <p>Please verify your email address to complete registration. Your provider account will be reviewed by an admin for verification.</p>
         <EmailVerificationInput 
@@ -17,19 +17,10 @@
         />
       </div>
 
-      <form v-else @submit.prevent="handleRegister">
-        <div v-if="error" class="error-message">
-          <span class="error-icon">⚠️</span>
-          {{ error }}
-        </div>
-        <div v-if="success" class="success-message">
-          <span class="success-icon">✓</span>
-          {{ success }}
-        </div>
-        
+      <form v-else @submit.prevent="handleRegister" key="registration-form">
         <div class="form-row">
           <div class="form-group">
-            <label for="firstName">First Name</label>
+            <label for="firstName">First Name <span class="required">*</span></label>
             <div class="input-container">
               <span class="input-icon">👤</span>
               <input 
@@ -38,12 +29,13 @@
                 v-model="formData.firstName" 
                 required
                 placeholder="Enter your first name"
+                minlength="2"
               />
             </div>
           </div>
           
           <div class="form-group">
-            <label for="lastName">Last Name</label>
+            <label for="lastName">Last Name <span class="required">*</span></label>
             <div class="input-container">
               <span class="input-icon">👤</span>
               <input 
@@ -52,13 +44,14 @@
                 v-model="formData.lastName" 
                 required
                 placeholder="Enter your last name"
+                minlength="2"
               />
             </div>
           </div>
         </div>
         
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">Email <span class="required">*</span></label>
           <div class="input-container">
             <span class="input-icon">✉️</span>
             <input 
@@ -72,14 +65,44 @@
         </div>
         
         <div class="form-group">
-          <label for="phone">Phone Number</label>
+          <label for="phone">Contact Number <span class="required">*</span></label>
           <div class="input-container">
             <span class="input-icon">📱</span>
             <input 
               type="tel" 
               id="phone" 
               v-model="formData.phone" 
-              placeholder="Enter your phone number (optional)"
+              required
+              placeholder="e.g., 09123456789 or +639123456789"
+            />
+          </div>
+          <small class="input-hint">Enter a valid Philippine phone number</small>
+        </div>
+
+        <div class="form-group">
+          <label for="addressLine1">Address <span class="required">*</span></label>
+          <div class="input-container">
+            <span class="input-icon">📍</span>
+            <input 
+              type="text" 
+              id="addressLine1" 
+              v-model="formData.addressLine1" 
+              required
+              placeholder="Street address, building number, barangay"
+              minlength="5"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="addressLine2">Address Line 2 (Optional)</label>
+          <div class="input-container">
+            <span class="input-icon">📍</span>
+            <input 
+              type="text" 
+              id="addressLine2" 
+              v-model="formData.addressLine2" 
+              placeholder="Unit, floor, additional details (optional)"
             />
           </div>
         </div>
@@ -116,20 +139,22 @@
         </div>
         
         <div class="form-group">
-          <label for="idDocument">ID Document (Required for verification)</label>
-          <div class="file-upload">
+          <label for="idDocument">ID Document <span class="required">*</span></label>
+          <div class="file-upload" :class="{ 'file-uploaded': idDocument }">
             <input 
               type="file" 
               id="idDocument" 
               @change="handleFileChange"
               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+              required
             />
             <div class="file-upload-info">
-              <span class="file-icon">📄</span>
-              <span class="file-text">Upload ID document</span>
+              <span class="file-icon">{{ idDocument ? '✅' : '📄' }}</span>
+              <span class="file-text">{{ idDocument ? idDocument.name : 'Upload ID document' }}</span>
+              <span v-if="idDocument" class="file-size">({{ getFileSize(idDocument.size) }})</span>
             </div>
           </div>
-          <small class="file-hint">Accepted formats: JPG, PNG, PDF, DOC (Max size: 10MB)</small>
+          <small class="file-hint">Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max size: 10MB)</small>
         </div>
         
         <div class="form-group form-checkbox">
@@ -170,6 +195,7 @@
 <script>
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2';
 import { providerService, authService } from '../services/apiService';
 import EmailVerificationInput from './EmailVerificationInput.vue';
 
@@ -185,25 +211,123 @@ export default {
       lastName: '',
       email: '',
       phone: '',
-      password: ''
+      password: '',
+      addressLine1: '',
+      addressLine2: ''
     });
     const idDocument = ref(null);
     const confirmPassword = ref('');
     const acceptTerms = ref(false);
     const acceptVerification = ref(false);
-    const error = ref('');
-    const success = ref('');
     const loading = ref(false);
     const showVerification = ref(false);
 
-    const handleFileChange = (event) => {
+    // Validation functions
+    const validateFullName = () => {
+      const firstName = formData.firstName.trim();
+      const lastName = formData.lastName.trim();
+      
+      if (!firstName || !lastName) {
+        return 'First name and last name are required';
+      }
+      
+      if (firstName.length < 2) {
+        return 'First name must be at least 2 characters long';
+      }
+      
+      if (lastName.length < 2) {
+        return 'Last name must be at least 2 characters long';
+      }
+      
+      // Check for valid characters (letters, spaces, hyphens, apostrophes)
+      const nameRegex = /^[a-zA-Z\s'-]+$/;
+      if (!nameRegex.test(firstName)) {
+        return 'First name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed';
+      }
+      
+      if (!nameRegex.test(lastName)) {
+        return 'Last name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed';
+      }
+      
+      return null;
+    };
+
+    const validateContactNumber = () => {
+      const phone = formData.phone.trim();
+      
+      if (!phone) {
+        return 'Contact number is required';
+      }
+      
+      // Remove spaces, dashes, and parentheses for validation
+      const cleanPhone = phone.replace(/[\s\-()]/g, '');
+      
+      // Philippine phone number format: +63XXXXXXXXXX or 09XXXXXXXXX or 0XXXXXXXXX
+      // Also accept international formats
+      const phoneRegex = /^(\+63|63|0)?[9]\d{9}$|^(\+?\d{10,15})$/;
+      
+      if (!phoneRegex.test(cleanPhone)) {
+        return 'Please enter a valid contact number (e.g., 09123456789 or +639123456789)';
+      }
+      
+      return null;
+    };
+
+    const validateAddress = () => {
+      if (!formData.addressLine1.trim()) {
+        return 'Address is required';
+      }
+      
+      if (formData.addressLine1.trim().length < 5) {
+        return 'Address must be at least 5 characters long';
+      }
+      
+      return null;
+    };
+
+    const validateIdDocument = () => {
+      if (!idDocument.value) {
+        return 'ID document is required for verification';
+      }
+      
+      const fileSize = idDocument.value.size / 1024 / 1024; // size in MB
+      if (fileSize > 10) {
+        return 'File size exceeds 10MB limit. Please upload a smaller file.';
+      }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      const fileExtension = idDocument.value.name.split('.').pop().toLowerCase();
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
+      
+      if (!allowedTypes.includes(idDocument.value.type) && !allowedExtensions.includes(fileExtension)) {
+        return 'Invalid file type. Please upload JPG, PNG, PDF, DOC, or DOCX files only.';
+      }
+      
+      return null;
+    };
+
+    const getFileSize = (bytes) => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    };
+
+    const handleFileChange = async (event) => {
       idDocument.value = event.target.files[0];
       
-      // Simple file validation
+      // Validate file when selected
       if (idDocument.value) {
-        const fileSize = idDocument.value.size / 1024 / 1024; // size in MB
-        if (fileSize > 10) {
-          error.value = 'File size exceeds 10MB limit';
+        const fileError = validateIdDocument();
+        if (fileError) {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Invalid File',
+            text: fileError,
+            confirmButtonColor: '#106e40'
+          });
           idDocument.value = null;
           event.target.value = null;
         }
@@ -211,19 +335,73 @@ export default {
     };
 
     const handleRegister = async () => {
-      // Reset messages
-      error.value = '';
-      success.value = '';
-      
-      // Validate passwords match
-      if (formData.password !== confirmPassword.value) {
-        error.value = 'Passwords do not match';
+      // Validate full name
+      const nameError = validateFullName();
+      if (nameError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: nameError,
+          confirmButtonColor: '#106e40'
+        });
         return;
       }
 
-      // Check if ID document is provided
-      if (!idDocument.value) {
-        error.value = 'ID document is required for verification';
+      // Validate contact number
+      const phoneError = validateContactNumber();
+      if (phoneError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: phoneError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate address
+      const addressError = validateAddress();
+      if (addressError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: addressError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate ID document
+      const idError = validateIdDocument();
+      if (idError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: idError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+      
+      // Validate passwords match
+      if (formData.password !== confirmPassword.value) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Password Mismatch',
+          text: 'Passwords do not match',
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate password strength
+      if (formData.password.length < 8) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Weak Password',
+          text: 'Password must be at least 8 characters long',
+          confirmButtonColor: '#106e40'
+        });
         return;
       }
 
@@ -234,21 +412,36 @@ export default {
         const formDataToSend = new FormData();
         formDataToSend.append('email', formData.email);
         formDataToSend.append('password', formData.password);
-        formDataToSend.append('firstName', formData.firstName);
-        formDataToSend.append('lastName', formData.lastName);
-        if (formData.phone) formDataToSend.append('phone', formData.phone);
+        formDataToSend.append('firstName', formData.firstName.trim());
+        formDataToSend.append('lastName', formData.lastName.trim());
+        formDataToSend.append('phone', formData.phone.trim());
         formDataToSend.append('idDocument', idDocument.value);
         
         const response = await providerService.registerProvider(formDataToSend);
         
         if (response.success) {
-          success.value = 'Registration successful! Please verify your email.';
+          await Swal.fire({
+            icon: 'success',
+            title: 'Registration Successful!',
+            text: 'Please verify your email. Your provider account will be reviewed by an admin for verification.',
+            confirmButtonColor: '#38b676'
+          });
           showVerification.value = true;
         } else {
-          error.value = response.message || 'Registration failed';
+          await Swal.fire({
+            icon: 'error',
+            title: 'Registration Failed',
+            text: response.message || 'Registration failed. Please try again.',
+            confirmButtonColor: '#106e40'
+          });
         }
       } catch (err) {
-        error.value = err.message || 'An error occurred during registration';
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message || 'An error occurred during registration',
+          confirmButtonColor: '#106e40'
+        });
       } finally {
         loading.value = false;
       }
@@ -275,8 +468,13 @@ export default {
       }
     };
 
-    const handleVerificationError = (errorMessage) => {
-      error.value = errorMessage;
+    const handleVerificationError = async (errorMessage) => {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Verification Error',
+        text: errorMessage,
+        confirmButtonColor: '#106e40'
+      });
     };
 
     return {
@@ -284,10 +482,10 @@ export default {
       confirmPassword,
       acceptTerms,
       acceptVerification,
-      error,
-      success,
+      idDocument,
       loading,
       showVerification,
+      getFileSize,
       handleFileChange,
       handleRegister,
       handleVerificationSuccess,
@@ -439,7 +637,8 @@ input[type="file"] {
 
 .file-upload {
   position: relative;
-  height: 50px;
+  min-height: 50px;
+  padding: 12px;
   border: 2px dashed #e2e8f0;
   border-radius: 8px;
   display: flex;
@@ -447,6 +646,7 @@ input[type="file"] {
   justify-content: center;
   overflow: hidden;
   transition: all 0.3s ease;
+  background-color: #fafafa;
 }
 
 .file-upload:hover {
@@ -454,16 +654,39 @@ input[type="file"] {
   background-color: rgba(56, 182, 118, 0.05);
 }
 
+.file-upload.file-uploaded {
+  border-color: #38b676;
+  border-style: solid;
+  background-color: #f0fff4;
+}
+
 .file-upload-info {
   display: flex;
   align-items: center;
   justify-content: center;
   color: #718096;
+  pointer-events: none;
+  z-index: 1;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .file-icon {
   font-size: 1.2rem;
   margin-right: 10px;
+}
+
+.file-text {
+  font-weight: 500;
+  color: #4a5568;
+  word-break: break-word;
+  text-align: center;
+}
+
+.file-size {
+  font-size: 0.85rem;
+  color: #718096;
+  font-style: italic;
 }
 
 .form-checkbox {
@@ -493,12 +716,17 @@ input[type="file"] {
   text-decoration: underline;
 }
 
-.password-hint, .file-hint {
+.password-hint, .file-hint, .input-hint {
   display: block;
   margin-top: 8px;
   color: #718096;
   font-size: 0.85rem;
   margin-left: 4px;
+}
+
+.required {
+  color: #e53e3e;
+  font-weight: bold;
 }
 
 .form-actions {
@@ -555,37 +783,6 @@ input[type="file"] {
   text-decoration: underline;
 }
 
-.error-message {
-  background-color: #fff5f5;
-  color: #e53e3e;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-}
-
-.error-icon {
-  margin-right: 8px;
-  font-size: 1.1rem;
-}
-
-.success-message {
-  background-color: #f0fff4;
-  color: #2f855a;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-}
-
-.success-icon {
-  margin-right: 8px;
-  font-size: 1.1rem;
-}
 
 .verification-section {
   text-align: center;

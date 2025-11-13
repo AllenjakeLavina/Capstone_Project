@@ -156,7 +156,7 @@
               <i class="fa fa-spinner fa-spin"></i> Processing...
             </span>
             <span v-else>
-              ❌ Reject
+              ❌ Decline
             </span>
           </button>
         </div>
@@ -337,10 +337,10 @@ const verifyProvider = async (id) => {
 
 const rejectProvider = async (id) => {
   const { value: reason, isConfirmed } = await Swal.fire({
-    title: 'Reject Provider',
+    title: 'Decline Provider',
     text: 'Please provide a reason for rejection:',
     input: 'textarea',
-    inputPlaceholder: 'Enter rejection reason...',
+    inputPlaceholder: 'Enter a reason for declining...',
     inputValidator: (value) => {
       if (!value || value.trim().length < 10) {
         return 'Please provide a detailed reason (at least 10 characters)';
@@ -349,7 +349,7 @@ const rejectProvider = async (id) => {
     showCancelButton: true,
     confirmButtonColor: '#e74c3c',
     cancelButtonColor: '#95a5a6',
-    confirmButtonText: 'Reject',
+    confirmButtonText: 'Decline',
     cancelButtonText: 'Cancel'
   });
 
@@ -373,7 +373,7 @@ const rejectProvider = async (id) => {
       
       Swal.fire({
         title: 'Success!',
-        text: 'Provider rejection sent successfully',
+        text: 'Provider decline sent successfully',
         icon: 'success',
         confirmButtonColor: '#2ecc71',
         timer: 2000
@@ -381,7 +381,7 @@ const rejectProvider = async (id) => {
     } else {
       Swal.fire({
         title: 'Error',
-        text: data.message || 'Failed to reject provider',
+        text: data.message || 'Failed to Decline provider',
         icon: 'error',
         confirmButtonColor: '#e74c3c'
       });
@@ -389,7 +389,7 @@ const rejectProvider = async (id) => {
   } catch (e) {
     Swal.fire({
       title: 'Error',
-      text: 'Failed to reject provider. Please try again.',
+      text: 'Failed to Decline provider. Please try again.',
       icon: 'error',
       confirmButtonColor: '#e74c3c'
     });

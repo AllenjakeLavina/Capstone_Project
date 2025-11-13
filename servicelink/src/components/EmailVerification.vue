@@ -8,9 +8,6 @@
       <p class="subtitle">Please enter the verification code sent to your email</p>
       
       <form @submit.prevent="handleVerification" v-if="!isVerified">
-        <div v-if="error" class="error-message">{{ error }}</div>
-        <div v-if="success" class="success-message">{{ success }}</div>
-        
         <div class="form-group">
           <label for="code">Verification Code</label>
           <input 
@@ -67,6 +64,7 @@
 <script>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import Swal from 'sweetalert2';
 import { authService } from '../services/apiService';
 
 export default {
@@ -76,8 +74,6 @@ export default {
     const route = useRoute();
     const verificationCode = ref('');
     const email = ref(route.query.email || '');
-    const error = ref('');
-    const success = ref('');
     const loading = ref(false);
     const resendLoading = ref(false);
     const resendTimer = ref(0);
@@ -101,12 +97,15 @@ export default {
 
     const handleVerification = async () => {
       if (!email.value) {
-        error.value = 'Email address is missing. Please try registering again.';
+        await Swal.fire({
+          icon: 'error',
+          title: 'Email Missing',
+          text: 'Email address is missing. Please try registering again.',
+          confirmButtonColor: '#106e40'
+        });
         return;
       }
 
-      error.value = '';
-      success.value = '';
       loading.value = true;
 
       try {
@@ -114,9 +113,14 @@ export default {
         const verifyResponse = await authService.verifyEmail(email.value, verificationCode.value);
         
         if (verifyResponse.success) {
+          await Swal.fire({
+            icon: 'success',
+            title: 'Email Verified!',
+            text: 'Your email has been verified successfully.',
+            confirmButtonColor: '#8cc63f'
+          });
           // After successful verification, show success UI
           isVerified.value = true;
-          success.value = 'Email verified successfully!';
           
           // Try to login in the background (optional)
           try {
@@ -134,10 +138,20 @@ export default {
             console.log('Auto login failed, user will need to login manually');
           }
         } else {
-          error.value = verifyResponse.message || 'Verification failed';
+          await Swal.fire({
+            icon: 'error',
+            title: 'Verification Failed',
+            text: verifyResponse.message || 'Verification failed',
+            confirmButtonColor: '#106e40'
+          });
         }
       } catch (err) {
-        error.value = err.message || 'An error occurred during verification';
+        await Swal.fire({
+          icon: 'error',
+          title: 'Verification Error',
+          text: err.message || 'An error occurred during verification',
+          confirmButtonColor: '#106e40'
+        });
       } finally {
         loading.value = false;
       }
@@ -145,24 +159,43 @@ export default {
 
     const handleResendCode = async () => {
       if (!email.value) {
-        error.value = 'Email address is missing. Please try registering again.';
+        await Swal.fire({
+          icon: 'error',
+          title: 'Email Missing',
+          text: 'Email address is missing. Please try registering again.',
+          confirmButtonColor: '#106e40'
+        });
         return;
       }
 
-      error.value = '';
       resendLoading.value = true;
 
       try {
         const response = await authService.resendVerification(email.value);
         
         if (response.success) {
-          success.value = 'Verification code resent successfully!';
+          await Swal.fire({
+            icon: 'success',
+            title: 'Code Resent!',
+            text: 'A new verification code has been sent to your email.',
+            confirmButtonColor: '#8cc63f'
+          });
           startResendTimer();
         } else {
-          error.value = response.message || 'Failed to resend verification code';
+          await Swal.fire({
+            icon: 'error',
+            title: 'Resend Failed',
+            text: response.message || 'Failed to resend verification code',
+            confirmButtonColor: '#106e40'
+          });
         }
       } catch (err) {
-        error.value = err.message || 'An error occurred while resending the code';
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message || 'An error occurred while resending the code',
+          confirmButtonColor: '#106e40'
+        });
       } finally {
         resendLoading.value = false;
       }
@@ -170,7 +203,12 @@ export default {
 
     onMounted(() => {
       if (!email.value) {
-        error.value = 'Email address is missing. Please try registering again.';
+        Swal.fire({
+          icon: 'error',
+          title: 'Email Missing',
+          text: 'Email address is missing. Please try registering again.',
+          confirmButtonColor: '#106e40'
+        });
       }
       startResendTimer();
     });
@@ -183,8 +221,6 @@ export default {
 
     return {
       verificationCode,
-      error,
-      success,
       loading,
       resendLoading,
       resendTimer,
@@ -262,24 +298,6 @@ input:focus {
   outline: none;
   border-color: #4299e1;
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-}
-
-.error-message {
-  background-color: #fff5f5;
-  color: #c53030;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 0.875rem;
-}
-
-.success-message {
-  background-color: #f0fff4;
-  color: #2f855a;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 0.875rem;
 }
 
 .form-actions {

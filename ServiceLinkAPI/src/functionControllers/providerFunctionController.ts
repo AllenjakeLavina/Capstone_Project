@@ -18,13 +18,36 @@ export const registerProvider = async (
   }
 ) => {
   try {
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Check if user already exists with this email
+    const existingUserByEmail = await prisma.user.findUnique({
       where: { email }
     });
 
-    if (existingUser) {
+    if (existingUserByEmail) {
       throw new Error('User with this email already exists');
+    }
+
+    // Check if phone number already exists
+    if (phone) {
+      const existingUserByPhone = await prisma.user.findFirst({
+        where: { phone }
+      });
+
+      if (existingUserByPhone) {
+        throw new Error('User with this phone number already exists');
+      }
+    }
+
+    // Check if first name and last name combination already exists
+    const existingUserByName = await prisma.user.findFirst({
+      where: {
+        firstName: firstName.trim(),
+        lastName: lastName.trim()
+      }
+    });
+
+    if (existingUserByName) {
+      throw new Error('User with this name already exists');
     }
 
     // Hash password
