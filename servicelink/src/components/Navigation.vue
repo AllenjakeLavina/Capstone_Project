@@ -473,7 +473,7 @@ export default {
     
     // Check if navigation should be shown based on route
     const shouldShowNav = computed(() => {
-      const hiddenRoutes = ['/', '/login', '/register', '/register/client', '/register/provider', '/verify-email', '/forgot-password', '/reset-password', '/terms-and-conditions'];
+      const hiddenRoutes = ['/', '/login', '/register', '/register/client', '/register/provider', '/verify-email', '/forgot-password', '/reset-password', '/terms-and-conditions', '/privacy-policy'];
       return !hiddenRoutes.includes(route.path);
     });
     

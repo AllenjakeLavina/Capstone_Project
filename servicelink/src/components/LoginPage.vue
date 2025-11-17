@@ -50,7 +50,7 @@
         </form>
 
         <div class="footer-links">
-          <router-link to="/terms-and-conditions" class="footer-link">Privacy Policy</router-link>
+          <router-link to="/privacy-policy" class="footer-link">Privacy Policy</router-link>
           <span class="dot">•</span>
           <router-link to="/terms-and-conditions" class="footer-link">Terms & Conditions</router-link>
         </div>

@@ -266,6 +266,55 @@
         </div>
       </div>
 
+      <!-- Availability Tab -->
+      <div v-show="activeTab === 'availability'" class="tab-content section">
+        <div class="section-header">
+          <h2>Availability Schedule</h2>
+          <button @click="toggleAddAvailability" class="add-btn">
+            <i class="fas fa-plus"></i> Add Time Slot
+          </button>
+        </div>
+        
+        <p class="availability-description">
+          Set your weekly availability schedule. Clients will see when you're available to book services.
+        </p>
+
+        <!-- Availability Schedule by Day -->
+        <div class="availability-schedule">
+          <div v-for="(day, index) in weekDays" :key="index" class="day-schedule">
+            <div class="day-header">
+              <h3>{{ day.name }}</h3>
+              <span v-if="getDaySlots(index).length > 0" class="slot-count">
+                {{ getDaySlots(index).length }} {{ getDaySlots(index).length === 1 ? 'slot' : 'slots' }}
+              </span>
+              <span v-else class="no-slots">Not available</span>
+            </div>
+            
+            <div v-if="getDaySlots(index).length > 0" class="time-slots">
+              <div v-for="slot in getDaySlots(index)" :key="slot.id" class="time-slot-item">
+                <div class="slot-time">
+                  <i class="fas fa-clock"></i>
+                  <span>{{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}</span>
+                  <span v-if="!slot.isAvailable" class="unavailable-badge">Unavailable</span>
+                </div>
+                <div class="slot-actions">
+                  <button @click="editAvailabilitySlot(slot)" class="edit-slot-btn">
+                    <i class="fas fa-edit"></i> Edit
+                  </button>
+                  <button @click="deleteAvailabilitySlot(slot.id)" class="delete-slot-btn">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div v-else class="no-slots-message">
+              <i class="fas fa-calendar-times"></i>
+              <p>No time slots set for this day</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Reviews & Ratings Tab -->
       <div v-show="activeTab === 'reviews'" class="tab-content section">
         <div class="section-header">
@@ -568,6 +617,50 @@
         </div>
       </div>
 
+      <!-- Add/Edit Availability Modal -->
+      <div v-if="showAddAvailabilityModal || showEditAvailabilityModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>{{ showEditAvailabilityModal ? 'Edit Time Slot' : 'Add Time Slot' }}</h2>
+            <button class="close-btn" @click="closeAvailabilityModal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveAvailabilitySlot" class="add-form">
+              <div class="form-group">
+                <label>Day of Week*</label>
+                <select v-model="availabilityForm.dayOfWeek" required class="form-control">
+                  <option value="">Select a day</option>
+                  <option v-for="(day, index) in weekDays" :key="index" :value="index">
+                    {{ day.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Start Time*</label>
+                <input type="time" v-model="availabilityForm.startTime" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>End Time*</label>
+                <input type="time" v-model="availabilityForm.endTime" required class="form-control" />
+              </div>
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" v-model="availabilityForm.isAvailable" />
+                  Available
+                </label>
+                <small class="form-hint">Uncheck if this time slot is temporarily unavailable</small>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" @click="closeAvailabilityModal">Cancel</button>
+                <button type="submit" class="btn btn-primary" :disabled="isProcessing">
+                  {{ isProcessing ? 'Saving...' : (showEditAvailabilityModal ? 'Update Slot' : 'Add Slot') }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
       <!-- Add Portfolio Modal -->
       <div v-if="showAddPortfolioModal" class="modal-overlay">
         <div class="modal">
@@ -612,6 +705,7 @@
 import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { providerService } from '../../services/apiService';
 import apiService from '../../services/apiService';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'ProviderProfile',
@@ -630,6 +724,7 @@ export default {
       { id: 'experience', name: 'Work Experience', icon: 'fas fa-briefcase' },
       { id: 'education', name: 'Education', icon: 'fas fa-graduation-cap' },
       { id: 'skillsportfolio', name: 'Skills & Portfolio', icon: 'fas fa-tools' },
+      { id: 'availability', name: 'Availability', icon: 'fas fa-calendar-alt' },
       { id: 'reviews', name: 'Reviews & Ratings', icon: 'fas fa-star' },
     ];
 
@@ -648,6 +743,8 @@ export default {
     const showAddSkillModal = ref(false);
     const showAddDocumentModal = ref(false);
     const showAddPortfolioModal = ref(false);
+    const showAddAvailabilityModal = ref(false);
+    const showEditAvailabilityModal = ref(false);
     const isProcessing = ref(false);
 
     // Form data
@@ -692,6 +789,28 @@ export default {
       description: '',
       projectUrl: ''
     });
+
+    const availabilityForm = reactive({
+      dayOfWeek: '',
+      startTime: '',
+      endTime: '',
+      isAvailable: true
+    });
+
+    // Availability data
+    const availabilitySlots = ref([]);
+    const currentAvailabilitySlotId = ref(null);
+    
+    // Week days configuration
+    const weekDays = [
+      { name: 'Sunday', short: 'Sun' },
+      { name: 'Monday', short: 'Mon' },
+      { name: 'Tuesday', short: 'Tue' },
+      { name: 'Wednesday', short: 'Wed' },
+      { name: 'Thursday', short: 'Thu' },
+      { name: 'Friday', short: 'Fri' },
+      { name: 'Saturday', short: 'Sat' }
+    ];
 
     // Reviews data
     const reviews = ref([]);
@@ -1118,9 +1237,226 @@ export default {
       return ratingDistribution.value[rating] || 0;
     };
 
+    // Availability functions
+    const fetchAvailability = async () => {
+      try {
+        const response = await providerService.getAvailability();
+        if (response.success) {
+          // Flatten the availability data structure
+          availabilitySlots.value = [];
+          // Handle both possible response formats
+          let availabilityData = response.data;
+          
+          // If response has availabilityByDay property
+          if (availabilityData && availabilityData.availabilityByDay) {
+            availabilityData = availabilityData.availabilityByDay;
+          }
+          
+          // If it's an array of day objects
+          if (availabilityData && Array.isArray(availabilityData)) {
+            availabilityData.forEach(dayData => {
+              if (dayData.slots && Array.isArray(dayData.slots)) {
+                dayData.slots.forEach(slot => {
+                  availabilitySlots.value.push({
+                    ...slot,
+                    dayOfWeek: dayData.dayOfWeek
+                  });
+                });
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching availability:', err);
+      }
+    };
+
+    const getDaySlots = (dayIndex) => {
+      // Ensure proper comparison (handle both string and number types)
+      return availabilitySlots.value.filter(slot => 
+        slot.dayOfWeek === dayIndex || 
+        parseInt(slot.dayOfWeek) === dayIndex ||
+        slot.dayOfWeek === String(dayIndex)
+      );
+    };
+
+    const formatTime = (timeString) => {
+      if (!timeString) return '';
+      // Convert 24-hour format to 12-hour format
+      const [hours, minutes] = timeString.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour % 12 || 12;
+      return `${hour12}:${minutes} ${ampm}`;
+    };
+
+    const toggleAddAvailability = () => {
+      availabilityForm.dayOfWeek = '';
+      availabilityForm.startTime = '';
+      availabilityForm.endTime = '';
+      availabilityForm.isAvailable = true;
+      currentAvailabilitySlotId.value = null;
+      showAddAvailabilityModal.value = true;
+    };
+
+    const editAvailabilitySlot = (slot) => {
+      currentAvailabilitySlotId.value = slot.id;
+      // Ensure dayOfWeek is properly converted to string for the select input
+      availabilityForm.dayOfWeek = String(slot.dayOfWeek);
+      availabilityForm.startTime = slot.startTime;
+      availabilityForm.endTime = slot.endTime;
+      availabilityForm.isAvailable = slot.isAvailable !== false;
+      showAddAvailabilityModal.value = false; // Close add modal if open
+      showEditAvailabilityModal.value = true;
+    };
+
+    const closeAvailabilityModal = () => {
+      showAddAvailabilityModal.value = false;
+      showEditAvailabilityModal.value = false;
+      availabilityForm.dayOfWeek = '';
+      availabilityForm.startTime = '';
+      availabilityForm.endTime = '';
+      availabilityForm.isAvailable = true;
+      currentAvailabilitySlotId.value = null;
+    };
+
+    const saveAvailabilitySlot = async () => {
+      try {
+        isProcessing.value = true;
+        error.value = null;
+
+        // Validate time inputs
+        if (!availabilityForm.startTime || !availabilityForm.endTime) {
+          Swal.fire({
+            title: 'Validation Error',
+            text: 'Please select both start and end times',
+            icon: 'error',
+            confirmButtonColor: '#27ae60'
+          });
+          isProcessing.value = false;
+          return;
+        }
+
+        // Validate that end time is after start time
+        if (availabilityForm.startTime >= availabilityForm.endTime) {
+          Swal.fire({
+            title: 'Validation Error',
+            text: 'End time must be after start time',
+            icon: 'error',
+            confirmButtonColor: '#27ae60'
+          });
+          isProcessing.value = false;
+          return;
+        }
+
+        const slotData = {
+          dayOfWeek: parseInt(availabilityForm.dayOfWeek),
+          startTime: availabilityForm.startTime,
+          endTime: availabilityForm.endTime,
+          isAvailable: availabilityForm.isAvailable
+        };
+
+        let response;
+        const isEdit = showEditAvailabilityModal.value && currentAvailabilitySlotId.value;
+        
+        if (isEdit) {
+          response = await providerService.updateAvailabilitySlot(currentAvailabilitySlotId.value, slotData);
+        } else {
+          response = await providerService.addAvailabilitySlot(slotData);
+        }
+
+        if (response.success) {
+          await fetchAvailability();
+          closeAvailabilityModal();
+          
+          // Show success notification
+          const dayName = weekDays[slotData.dayOfWeek].name;
+          const timeRange = `${formatTime(slotData.startTime)} - ${formatTime(slotData.endTime)}`;
+          
+          Swal.fire({
+            title: isEdit ? 'Time Slot Updated!' : 'Time Slot Added!',
+            html: `<p>${dayName}: ${timeRange}</p>`,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
+        } else {
+          throw new Error(response.message || `Failed to ${isEdit ? 'update' : 'add'} availability slot`);
+        }
+      } catch (err) {
+        Swal.fire({
+          title: 'Error',
+          text: err.message || 'An error occurred while saving the time slot',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
+        error.value = err.message;
+      } finally {
+        isProcessing.value = false;
+      }
+    };
+
+    const deleteAvailabilitySlot = async (slotId) => {
+      // Find the slot to get its details for the confirmation message
+      const slot = availabilitySlots.value.find(s => s.id === slotId);
+      const dayName = slot ? weekDays[slot.dayOfWeek]?.name : 'this day';
+      const timeRange = slot ? `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}` : '';
+
+      const result = await Swal.fire({
+        title: 'Delete Time Slot?',
+        html: `<p>Are you sure you want to delete the time slot for <strong>${dayName}</strong>${timeRange ? ` (${timeRange})` : ''}?</p><p class="swal-warning">This action cannot be undone.</p>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      try {
+        isProcessing.value = true;
+        const response = await providerService.deleteAvailabilitySlot(slotId);
+        
+        if (response.success) {
+          await fetchAvailability();
+          
+          // Show success notification
+          Swal.fire({
+            title: 'Deleted!',
+            text: 'Time slot has been deleted successfully',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
+        } else {
+          throw new Error(response.message || 'Failed to delete availability slot');
+        }
+      } catch (err) {
+        Swal.fire({
+          title: 'Error',
+          text: err.message || 'An error occurred while deleting the time slot',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
+        error.value = err.message;
+      } finally {
+        isProcessing.value = false;
+      }
+    };
+
     onMounted(() => {
       fetchProfileData();
       fetchReviews();
+      fetchAvailability();
       // If navigated with ?tab=reviews, focus Reviews tab
       try {
         const url = new URL(window.location.href);
@@ -1193,7 +1529,19 @@ export default {
       showAddSkillModal,
       showAddDocumentModal,
       showAddPortfolioModal,
+      showAddAvailabilityModal,
+      showEditAvailabilityModal,
       isProcessing,
+      availabilitySlots,
+      weekDays,
+      availabilityForm,
+      getDaySlots,
+      formatTime,
+      toggleAddAvailability,
+      editAvailabilitySlot,
+      closeAvailabilityModal,
+      saveAvailabilitySlot,
+      deleteAvailabilitySlot,
       reviews,
       averageRating,
       totalReviews,
@@ -2615,5 +2963,200 @@ textarea.form-control {
   .review-rating {
     align-self: flex-end;
   }
+}
+
+/* Availability Schedule Styles */
+.availability-description {
+  color: #666;
+  margin-bottom: 2rem;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #27ae60;
+  line-height: 1.6;
+}
+
+.availability-schedule {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.day-schedule {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.day-schedule:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.day-header h3 {
+  margin: 0;
+  color: #27ae60;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.slot-count {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  color: #2e7d32;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.no-slots {
+  color: #999;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.time-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.time-slot-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.time-slot-item:hover {
+  background: #f0f0f0;
+  border-color: #27ae60;
+}
+
+.slot-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.slot-time i {
+  color: #27ae60;
+  font-size: 1rem;
+}
+
+.slot-time span:not(.unavailable-badge) {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.unavailable-badge {
+  background: #ffebee;
+  color: #c62828;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.slot-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-slot-btn, .delete-slot-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.edit-slot-btn {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.edit-slot-btn:hover {
+  background: #bbdefb;
+  transform: translateY(-1px);
+}
+
+.delete-slot-btn {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.delete-slot-btn:hover {
+  background: #ffcdd2;
+  transform: translateY(-1px);
+}
+
+.no-slots-message {
+  text-align: center;
+  padding: 30px 20px;
+  color: #999;
+}
+
+.no-slots-message i {
+  font-size: 2.5rem;
+  color: #ddd;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.no-slots-message p {
+  margin: 0;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .availability-schedule {
+    grid-template-columns: 1fr;
+  }
+  
+  .time-slot-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .slot-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* SweetAlert2 custom styles */
+:deep(.swal-warning) {
+  color: #d32f2f;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  font-weight: 500;
 }
 </style>

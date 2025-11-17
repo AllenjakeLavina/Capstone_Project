@@ -23,6 +23,7 @@ import AllProviders from '../components/admin/allProviders.vue';
 import AllClients from '../components/admin/allClients.vue';
 import CategoryManagement from '../components/admin/categoryManagement.vue';
 import TermsAndConditions from '../components/TermsAndConditions.vue';
+import PrivacyPolicy from '../components/PrivacyPolicy.vue';
 import SettingsLayout from '../components/settings/SettingsLayout.vue';
 import CustomerService from '../components/settings/CustomerService.vue';
 import AboutSettings from '../components/settings/About.vue';
@@ -172,8 +173,12 @@ const routes = [
     path: '/terms-and-conditions',
     name: 'TermsAndConditions',
     component: TermsAndConditions
-  }
-  ,
+  },
+  {
+    path: '/privacy-policy',
+    name: 'PrivacyPolicy',
+    component: PrivacyPolicy
+  },
   {
     path: '/settings',
     component: SettingsLayout,
