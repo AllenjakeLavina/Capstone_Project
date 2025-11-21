@@ -1353,7 +1353,11 @@ export const createReview = async (
     }
   });
 
-  const averageRating = allReviews.reduce((sum, review) => sum + review.rating, 0) / allReviews.length;
+  const averageRating =
+    allReviews.reduce(
+      (sum: number, review: { rating: number }) => sum + review.rating,
+      0
+    ) / allReviews.length;
 
   // Update provider's rating
   await prisma.serviceProvider.update({
@@ -1408,9 +1412,13 @@ export const getReviewsReceived = async (userId: string) => {
 
   // Calculate average rating and total reviews
   const totalReviews = reviews.length;
-  const averageRating = totalReviews > 0 
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
-    : 0;
+  const averageRating =
+    totalReviews > 0
+      ? reviews.reduce(
+          (sum: number, review: { rating: number }) => sum + review.rating,
+          0
+        ) / totalReviews
+      : 0;
 
   return {
     reviews,
@@ -1454,9 +1462,13 @@ export const getReviewsGiven = async (userId: string) => {
 
   // Calculate average rating and total reviews
   const totalReviews = reviews.length;
-  const averageRating = totalReviews > 0 
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
-    : 0;
+  const averageRating =
+    totalReviews > 0
+      ? reviews.reduce(
+          (sum: number, review: { rating: number }) => sum + review.rating,
+          0
+        ) / totalReviews
+      : 0;
 
   return {
     reviews,
