@@ -6,8 +6,12 @@ import {
   getAllProvidersWithStatus,
   changeUserPassword,
   getUnverifiedProviders,
+  getUnverifiedClients,
+  getUnverifiedUsers,
   verifyProviderAccount,
+  verifyClientAccount,
   rejectProviderVerification,
+  rejectClientVerification,
   createCategory,
   getAllCategories,
   editCategory,
@@ -17,6 +21,7 @@ import {
   getDashboardStats,
   getRecentBookings,
   getUnverifiedProviderDetails,
+  getUnverifiedClientDetails,
   getProviderDetailsForAdmin,
   getProviderRatings
 } from '../functionControllers/adminFunctionController';
@@ -208,6 +213,34 @@ export const handleGetUnverifiedProviders = async (req: Request, res: Response) 
   }
 };
 
+export const handleGetUnverifiedUsers = async (req: Request, res: Response) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Unauthorized: Only admins can perform this action'
+      });
+      return;
+    }
+
+    const users = await getUnverifiedUsers();
+
+    res.status(200).json({
+      success: true,
+      data: users
+    });
+    return;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.status(400).json({
+      success: false,
+      message: errorMessage
+    });
+    return;
+  }
+};
+
 export const handleVerifyProvider = async (req: Request, res: Response) => {
   try {
     const { providerId, documentId } = req.body;
@@ -251,6 +284,49 @@ export const handleVerifyProvider = async (req: Request, res: Response) => {
   }
 };
 
+export const handleVerifyClient = async (req: Request, res: Response) => {
+  try {
+    const { clientId } = req.body;
+
+    // Admin making the request
+    const adminId = req.user.id;
+
+    // Validate required fields
+    if (!clientId) {
+      res.status(400).json({
+        success: false,
+        message: 'Client ID is required'
+      });
+      return;
+    }
+
+    // Check if user has admin role
+    if (req.user.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Unauthorized: Only admins can perform this action'
+      });
+      return;
+    }
+
+    const result = await verifyClientAccount(clientId, adminId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Client account verified successfully',
+      data: result
+    });
+    return;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    res.status(400).json({
+      success: false,
+      message: errorMessage
+    });
+    return;
+  }
+};
+
 export const handleRejectProviderVerification = async (req: Request, res: Response) => {
   try {
     const { providerId, reason } = req.body;
@@ -280,6 +356,35 @@ export const handleRejectProviderVerification = async (req: Request, res: Respon
   }
 };
 
+export const handleRejectClientVerification = async (req: Request, res: Response) => {
+  try {
+    const { clientId, reason } = req.body;
+    const adminId = (req as any).user.id;
+
+    if (!clientId || !reason) {
+      res.status(400).json({
+        success: false,
+        message: 'Client ID and rejection reason are required'
+      });
+      return;
+    }
+
+    const result = await rejectClientVerification(clientId, adminId, reason);
+
+    res.status(200).json({
+      success: true,
+      message: 'Client verification rejected successfully',
+      data: result
+    });
+  } catch (error: any) {
+    console.error('Error rejecting client verification:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to reject client verification'
+    });
+  }
+};
+
 export const handleGetUnverifiedProviderDetails = async (req: Request, res: Response) => {
   try {
     const { providerId } = req.params;
@@ -304,6 +409,73 @@ export const handleGetUnverifiedProviderDetails = async (req: Request, res: Resp
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to get provider details'
+    });
+  }
+};
+
+export const handleGetUnverifiedClientDetails = async (req: Request, res: Response) => {
+  try {
+    const { clientId } = req.params;
+
+    if (!clientId) {
+      res.status(400).json({
+        success: false,
+        message: 'Client ID is required'
+      });
+      return;
+    }
+
+    const clientDetails = await getUnverifiedClientDetails(clientId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Client details retrieved successfully',
+      data: clientDetails
+    });
+  } catch (error: any) {
+    console.error('Error getting unverified client details:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get client details'
+    });
+  }
+};
+
+export const handleGetUnverifiedUserDetails = async (req: Request, res: Response) => {
+  try {
+    const { userId, userType } = req.params;
+
+    if (!userId || !userType) {
+      res.status(400).json({
+        success: false,
+        message: 'User ID and user type are required'
+      });
+      return;
+    }
+
+    let userDetails;
+    if (userType === 'PROVIDER') {
+      userDetails = await getUnverifiedProviderDetails(userId);
+    } else if (userType === 'CLIENT') {
+      userDetails = await getUnverifiedClientDetails(userId);
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid user type. Must be PROVIDER or CLIENT'
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User details retrieved successfully',
+      data: { ...userDetails, userType }
+    });
+  } catch (error: any) {
+    console.error('Error getting unverified user details:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get user details'
     });
   }
 };

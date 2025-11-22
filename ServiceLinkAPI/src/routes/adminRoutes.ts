@@ -2,10 +2,15 @@ import express from 'express';
 import { 
   handleCreateAdmin, 
   handleSetPassword, 
-  handleGetUnverifiedProviders, 
-  handleVerifyProvider, 
+  handleGetUnverifiedProviders,
+  handleGetUnverifiedUsers,
+  handleVerifyProvider,
+  handleVerifyClient,
   handleRejectProviderVerification,
+  handleRejectClientVerification,
   handleGetUnverifiedProviderDetails,
+  handleGetUnverifiedClientDetails,
+  handleGetUnverifiedUserDetails,
   handleGetProviderDetailsForAdmin,
   handleGetAllClients,
   handleGetAllProviders,
@@ -64,6 +69,15 @@ router.get('/providers/:providerId/details', authenticateToken, authorizeRoles('
 router.post('/providers/verify', authenticateToken, authorizeRoles('ADMIN'), handleVerifyProvider);
 router.post('/providers/reject', authenticateToken, authorizeRoles('ADMIN'), handleRejectProviderVerification);
 router.post('/providers/:providerId/toggle-status', authenticateToken, authorizeRoles('ADMIN'), handleToggleProviderStatus);
+
+// Client management - verification
+router.post('/clients/verify', authenticateToken, authorizeRoles('ADMIN'), handleVerifyClient);
+router.post('/clients/reject', authenticateToken, authorizeRoles('ADMIN'), handleRejectClientVerification);
+router.get('/clients/:clientId/details', authenticateToken, authorizeRoles('ADMIN'), handleGetUnverifiedClientDetails);
+
+// Combined unverified users (clients + providers)
+router.get('/users/unverified', authenticateToken, authorizeRoles('ADMIN'), handleGetUnverifiedUsers);
+router.get('/users/:userType/:userId/details', authenticateToken, authorizeRoles('ADMIN'), handleGetUnverifiedUserDetails);
 
 // User management
 router.post('/users/change-password', authenticateToken, authorizeRoles('ADMIN'), handleChangeUserPassword);

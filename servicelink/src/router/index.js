@@ -18,7 +18,7 @@ import ProviderBookings from '../components/provider/providerBookings.vue';
 import ProviderBookingDetails from '../components/provider/providerBookingDetails.vue';
 import message from '../components/shared/message.vue';
 import AdminDashboard from '../components/admin/adminDashboard.vue';
-import UnverifiedProviders from '../components/admin/unverifiedProviders.vue';
+import UnverifiedUsers from '../components/admin/unverifiedUsers.vue';
 import AllProviders from '../components/admin/allProviders.vue';
 import AllClients from '../components/admin/allClients.vue';
 import CategoryManagement from '../components/admin/categoryManagement.vue';
@@ -143,9 +143,9 @@ const routes = [
     meta: { requiresAuth: true, roles: ['ADMIN'] }
   },
   {
-    path: '/admin/unverified-providers',
-    name: 'UnverifiedProviders',
-    component: UnverifiedProviders,
+    path: '/admin/unverified-users',
+    name: 'UnverifiedUsers',
+    component: UnverifiedUsers,
     meta: { requiresAuth: true, roles: ['ADMIN'] }
   },
   {

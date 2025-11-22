@@ -321,12 +321,15 @@ export default {
           password: formData.password,
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
-          phone: formData.phone.trim()
+          phone: formData.phone.trim(),
+          address: {
+            addressLine1: formData.addressLine1.trim(),
+            addressLine2: formData.addressLine2?.trim() || ''
+            // No default values - only save what user entered
+          }
         });
         
         if (response.success) {
-          // Save address after successful registration (we'll need to add this to the API)
-          // For now, we'll show success and the user can add address later
           await Swal.fire({
             icon: 'success',
             title: 'Registration Successful!',

@@ -53,9 +53,9 @@
               <div class="icon"><i class="fas fa-chart-line"></i></div>
               <span>Dashboard</span>
             </router-link>
-            <router-link to="/admin/unverified-providers" class="nav-item">
+            <router-link to="/admin/unverified-users" class="nav-item">
               <div class="icon"><i class="fas fa-user-times"></i></div>
-              <span>Unverified Providers</span>
+              <span>Unverified Users</span>
             </router-link>
             <router-link to="/admin/providers" class="nav-item">
               <div class="icon"><i class="fas fa-briefcase"></i></div>
@@ -380,7 +380,7 @@
           <div class="icon"><i class="fas fa-chart-line"></i></div>
           <span>Dashboard</span>
         </router-link>
-        <router-link to="/admin/unverified-providers" class="mobile-nav-item" :class="{ 'active': isRouteActive('admin/unverified-providers') }">
+        <router-link to="/admin/unverified-users" class="mobile-nav-item" :class="{ 'active': isRouteActive('admin/unverified-users') }">
           <div class="icon"><i class="fas fa-user-times"></i></div>
           <span>Unverified</span>
         </router-link>

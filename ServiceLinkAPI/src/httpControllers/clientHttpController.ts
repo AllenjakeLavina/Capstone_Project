@@ -7,7 +7,7 @@ import { registerClient,  updateClientProfile,
 
 export const handleRegisterClient = async (req: Request, res: Response) => {
   try {
-    const { email, password, firstName, lastName, phone } = req.body;
+    const { email, password, firstName, lastName, phone, address } = req.body;
 
     // Validate input
     if (!email || !password || !firstName || !lastName) {
@@ -17,7 +17,7 @@ export const handleRegisterClient = async (req: Request, res: Response) => {
       }); return;
     }
 
-    const user = await registerClient(email, password, firstName, lastName, phone);
+    const user = await registerClient(email, password, firstName, lastName, phone, address);
 
     res.status(201).json({
       success: true,

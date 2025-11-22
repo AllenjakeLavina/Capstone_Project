@@ -68,7 +68,15 @@ export const registerClient = async (
   password: string,
   firstName: string,
   lastName: string,
-  phone?: string
+  phone?: string,
+  address?: {
+    addressLine1: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  }
 ) => {
   try {
     // Check if user already exists with this email
@@ -138,6 +146,31 @@ export const registerClient = async (
         verificationTokens: true
       }
     });
+
+    // If address is provided, save it
+    // Only save what the user entered, no default values
+    if (address && address.addressLine1 && newUser.client) {
+      try {
+        await prisma.address.create({
+          data: {
+            clientId: newUser.client.id,
+            type: 'HOME',
+            addressLine1: address.addressLine1.trim(),
+            addressLine2: address.addressLine2?.trim() || null,
+            // Only use provided values, no defaults
+            // If not provided, use empty strings (required fields in schema)
+            city: address.city?.trim() || '',
+            state: address.state?.trim() || '',
+            postalCode: address.postalCode?.trim() || '',
+            country: address.country?.trim() || '',
+            isDefault: true
+          }
+        });
+      } catch (addrError) {
+        // Log error but don't fail registration if address save fails
+        console.warn('Failed to save address during registration:', addrError);
+      }
+    }
 
     // Send verification email
     const emailSent = await sendVerificationEmail(

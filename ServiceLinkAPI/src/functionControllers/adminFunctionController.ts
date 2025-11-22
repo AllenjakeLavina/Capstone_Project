@@ -460,6 +460,241 @@ export const getUnverifiedProviders = async () => {
   }
 };
 
+// Get all unverified clients
+// Note: This includes clients who have verified their email but haven't been admin-approved yet
+// We check for clients where isVerified is false OR where they haven't been explicitly admin-approved
+// Since we don't have a separate isClientVerified field, we'll use a different approach:
+// Clients with isVerified: false are considered unverified (includes both email-unverified and admin-unverified)
+export const getUnverifiedClients = async () => {
+  try {
+    // For now, we'll show clients where isVerified is false
+    // After admin approval, isVerified will be set to true
+    // This means clients need to verify email first, then admin approves
+    // But if we want clients to appear even after email verification, we need a different approach
+    // For simplicity, we'll show clients where isVerified is false
+    // The admin will approve them, which sets isVerified to true
+    const clients = await prisma.client.findMany({
+      where: {
+        user: {
+          isVerified: false,
+          isActive: true // Only include active users
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            profilePicture: true,
+            createdAt: true,
+            isVerified: true // Include to check email verification status
+          }
+        },
+        addresses: true // Get all addresses
+      }
+    });
+
+    return clients;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get all unverified users (both clients and providers)
+export const getUnverifiedUsers = async () => {
+  try {
+    const [providers, clients] = await Promise.all([
+      getUnverifiedProviders(),
+      getUnverifiedClients()
+    ]);
+
+    // Format providers with type indicator
+    const formattedProviders = providers.map(provider => ({
+      ...provider,
+      userType: 'PROVIDER',
+      id: provider.id,
+      userId: provider.userId
+    }));
+
+    // Format clients with type indicator
+    const formattedClients = clients.map(client => ({
+      ...client,
+      userType: 'CLIENT',
+      id: client.id,
+      userId: client.userId
+    }));
+
+    // Combine and return
+    return [...formattedProviders, ...formattedClients];
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Verify a client's account
+export const verifyClientAccount = async (
+  clientId: string,
+  adminId: string
+) => {
+  try {
+    // Find the client by ID
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      include: {
+        user: true
+      }
+    });
+
+    if (!client) {
+      throw new Error('Client not found');
+    }
+
+    // Verify the client by updating user's isVerified status
+    await prisma.user.update({
+      where: { id: client.userId },
+      data: {
+        isVerified: true
+      }
+    });
+
+    // Create a notification for the client
+    await prisma.notification.create({
+      data: {
+        receiverId: client.userId,
+        type: 'GENERAL',
+        title: 'Account Verified',
+        message: 'Your client account has been verified by an admin. You can now use all features of the platform.',
+        isRead: false
+      }
+    });
+
+    // Get updated client data
+    const updatedClient = await prisma.client.findUnique({
+      where: { id: clientId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            profilePicture: true,
+            isActive: true,
+            isVerified: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    return updatedClient;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Reject a client's account verification
+export const rejectClientVerification = async (
+  clientId: string,
+  adminId: string,
+  reason: string
+) => {
+  try {
+    // Find the client by ID
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      include: {
+        user: true
+      }
+    });
+
+    if (!client) {
+      throw new Error('Client not found');
+    }
+
+    // Temporarily deactivate the user account to prevent them from appearing in unverified list
+    await prisma.user.update({
+      where: { id: client.userId },
+      data: { isActive: false }
+    });
+
+    // Create a notification for the client
+    await prisma.notification.create({
+      data: {
+        receiverId: client.userId,
+        type: 'GENERAL',
+        title: 'Verification Rejected',
+        message: `Your client verification was rejected. Reason: ${reason}. Your account has been temporarily deactivated. Please update your information and contact support to reactivate your account.`,
+        isRead: false
+      }
+    });
+
+    // Return the client (excluding sensitive information)
+    const { user, ...clientData } = client;
+    const { password, ...userData } = user;
+
+    return {
+      ...clientData,
+      user: userData
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get detailed profile of unverified client for admin review
+export const getUnverifiedClientDetails = async (clientId: string) => {
+  try {
+    const client = await prisma.client.findFirst({
+      where: {
+        id: clientId,
+        user: {
+          isVerified: false,
+          isActive: true
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            profilePicture: true,
+            createdAt: true
+          }
+        },
+        addresses: true
+      }
+    });
+
+    if (!client) {
+      throw new Error('Client not found or already verified');
+    }
+
+    // Transform the data to match the expected format
+    const transformedClient = {
+      id: client.id,
+      firstName: client.user.firstName,
+      lastName: client.user.lastName,
+      email: client.user.email,
+      phone: client.user.phone,
+      profilePicture: client.user.profilePicture,
+      addresses: client.addresses,
+      createdAt: client.user.createdAt
+    };
+
+    return transformedClient;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Get detailed profile of unverified provider for admin review
 export const getUnverifiedProviderDetails = async (providerId: string) => {
   try {
