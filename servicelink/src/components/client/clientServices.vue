@@ -10,12 +10,103 @@
     </div>
 
     <div v-else class="services-container">
-      <h1 class="page-title">Service Categories</h1>
+      <!-- Header with Title and Search/Filter -->
+      <div class="page-header-section">
+        <h1 class="page-title">Service Categories</h1>
+        
+        <!-- Search and Filter Section - Compact floating design -->
+        <div class="search-filter-section-fixed">
+          <div class="search-filter-row">
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <i class="fa fa-search search-icon"></i>
+                <input 
+                  type="text" 
+                  v-model="searchQuery" 
+                  :placeholder="selectedCategory ? 'Search services by title, description, or provider name...' : 'Search categories by name or description...'"
+                  class="search-input"
+                />
+                <button 
+                  v-if="searchQuery" 
+                  @click="clearSearch" 
+                  class="clear-search-btn"
+                  title="Clear search"
+                >
+                  <i class="fa fa-times"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Filter Button -->
+            <button 
+              @click="showFilters = !showFilters" 
+              class="filter-toggle-btn"
+              :class="{ active: showFilters || hasActiveFilters }"
+            >
+              <i class="fa fa-filter"></i>
+              <i class="fa" :class="showFilters ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </button>
+          </div>
+          
+          <!-- Collapsible Filter Panel -->
+          <div v-show="showFilters" class="filter-container">
+          <div class="filter-group">
+            <label for="sort-by">Sort by:</label>
+            <select id="sort-by" v-model="sortBy" class="filter-select">
+              <option value="default">Default</option>
+              <option v-if="selectedCategory" value="price-low">Price: Low to High</option>
+              <option v-if="selectedCategory" value="price-high">Price: High to Low</option>
+              <option v-if="selectedCategory" value="rating">Rating: High to Low</option>
+              <option value="name">Name: A to Z</option>
+            </select>
+          </div>
+          
+          <div class="filter-group" v-if="selectedCategory">
+            <label for="price-filter">Price Range:</label>
+            <select id="price-filter" v-model="priceFilter" class="filter-select">
+              <option value="all">All Prices</option>
+              <option value="0-500">₱0 - ₱500</option>
+              <option value="500-1000">₱500 - ₱1,000</option>
+              <option value="1000-2000">₱1,000 - ₱2,000</option>
+              <option value="2000+">₱2,000+</option>
+            </select>
+          </div>
+          
+          <div class="filter-group" v-if="selectedCategory">
+            <label for="rating-filter">Minimum Rating:</label>
+            <select id="rating-filter" v-model="ratingFilter" class="filter-select">
+              <option value="0">All Ratings</option>
+              <option value="4">4+ Stars</option>
+              <option value="3">3+ Stars</option>
+              <option value="2">2+ Stars</option>
+              <option value="1">1+ Star</option>
+            </select>
+          </div>
+          
+          <button 
+            v-if="hasActiveFilters" 
+            @click="clearFilters" 
+            class="clear-filters-btn"
+          >
+            <i class="fa fa-times"></i> Clear Filters
+          </button>
+        </div>
+        
+        </div>
+      </div>
+      
+      <!-- Results Info - Separate from filters -->
+      <div class="results-info-standalone" v-if="selectedCategory && filteredServices.length !== selectedCategory.services.length">
+        <i class="fa fa-info-circle"></i> Showing {{ filteredServices.length }} of {{ selectedCategory.services.length }} services
+      </div>
+      <div class="results-info-standalone" v-else-if="!selectedCategory && filteredCategories.length !== categories.length">
+        <i class="fa fa-info-circle"></i> Showing {{ filteredCategories.length }} of {{ categories.length }} categories
+      </div>
 
       <!-- Category Selection List -->
       <div class="categories-selection" v-if="!selectedCategory">
         <div class="category-grid">
-          <div v-for="category in categories" :key="category.id" 
+          <div v-for="category in filteredCategories" :key="category.id" 
                class="category-card-selection" 
                @click="selectCategory(category)">
             <div class="category-image">
@@ -34,83 +125,91 @@
         </div>
       </div>
 
-      <!-- Selected Category and Services -->
-      <div v-if="selectedCategory" class="selected-category">
-        <div class="back-button-container">
-          <button class="btn btn-back" @click="backToCategories">
-            <i class="fa fa-arrow-left"></i> Back to Categories
-          </button>
-        </div>
+        <!-- Selected Category and Services -->
+        <div v-if="selectedCategory" class="selected-category">
+          <div class="back-button-container">
+            <button class="btn btn-back" @click="backToCategories">
+              <i class="fa fa-arrow-left"></i> Back to Categories
+            </button>
+          </div>
 
-        <div class="category-header">
-          <div class="category-image">
-            <img v-if="selectedCategory.imageUrl" 
-                 :src="selectedCategory.imageUrl" 
-                 :alt="selectedCategory.name"
-                 @error="handleImageError" />
-            <i v-else class="fa fa-briefcase category-icon"></i>
+          <div class="category-header">
+            <div class="category-image">
+              <img v-if="selectedCategory.imageUrl" 
+                   :src="selectedCategory.imageUrl" 
+                   :alt="selectedCategory.name"
+                   @error="handleImageError" />
+              <i v-else class="fa fa-briefcase category-icon"></i>
+            </div>
+            <div class="category-info">
+              <h2 class="category-name">{{ selectedCategory.name }}</h2>
+              <p class="category-description">{{ selectedCategory.description }}</p>
+              <p class="service-count">{{ selectedCategory.serviceCount }} services available</p>
+            </div>
           </div>
-          <div class="category-info">
-            <h2 class="category-name">{{ selectedCategory.name }}</h2>
-            <p class="category-description">{{ selectedCategory.description }}</p>
-            <p class="service-count">{{ selectedCategory.serviceCount }} services available</p>
-          </div>
-        </div>
 
         <!-- Services for this category -->
         <div class="services-list" v-if="selectedCategory.services.length > 0">
-          <div v-for="service in displayedServices" :key="service.id" class="service-card">
-            <div class="service-image" v-if="service.imageUrls && service.imageUrls.length > 0">
-              <img :src="service.imageUrls[0]" :alt="service.title" />
-            </div>
-            <div class="service-content">
-              <h3 class="service-title">{{ service.title }}</h3>
-              <p class="service-description">
-                {{ truncateText(service.description, 150) }}
-              </p>
-              <div class="service-provider">
-                <div class="provider-image" v-if="service.provider.profilePicture">
-                  <img :src="service.provider.profilePicture" :alt="service.provider.name" />
+          <template v-if="filteredServices.length > 0">
+            <div v-for="service in displayedFilteredServices" :key="service.id" class="service-card">
+              <div class="service-image" v-if="service.imageUrls && service.imageUrls.length > 0">
+                <img :src="service.imageUrls[0]" :alt="service.title" />
+              </div>
+              <div class="service-content">
+                <h3 class="service-title">{{ service.title }}</h3>
+                <p class="service-description">
+                  {{ truncateText(service.description, 150) }}
+                </p>
+                <div class="service-provider">
+                  <div class="provider-image" v-if="service.provider.profilePicture">
+                    <img :src="service.provider.profilePicture" :alt="service.provider.name" />
+                  </div>
+                  <div class="provider-info">
+                    <p class="provider-name" 
+                       @click="viewProviderDetails(service.provider.id)"
+                       style="cursor: pointer; color: #3498db;">
+                      {{ service.provider.name }}
+                    </p>
+                    <div class="rating" v-if="service.provider.rating">
+                      <span class="stars">
+                        <i v-for="i in 5" :key="i" 
+                          :class="['fa', i <= Math.round(service.provider.rating) ? 'fa-star' : 'fa-star-o']"></i>
+                      </span>
+                      <span class="rating-value">{{ service.provider.rating.toFixed(1) }}</span>
+                      <span class="review-count">({{ service.provider.reviewCount }})</span>
+                    </div>
+                  </div>
                 </div>
-                <div class="provider-info">
-                  <p class="provider-name" 
-                     @click="viewProviderDetails(service.provider.id)"
-                     style="cursor: pointer; color: #3498db;">
-                    {{ service.provider.name }}
-                  </p>
-                  <div class="rating" v-if="service.provider.rating">
-                    <span class="stars">
-                      <i v-for="i in 5" :key="i" 
-                        :class="['fa', i <= Math.round(service.provider.rating) ? 'fa-star' : 'fa-star-o']"></i>
-                    </span>
-                    <span class="rating-value">{{ service.provider.rating.toFixed(1) }}</span>
-                    <span class="review-count">({{ service.provider.reviewCount }})</span>
+                <div class="service-footer">
+                  <div class="service-price">
+                    <span class="price">₱{{ Number(service.pricing).toFixed(2) }}</span>
+                    <span class="price-type">/ {{ formatPriceType(service.pricingType) }}</span>
+                  </div>
+                  <div class="service-actions">
+                    <button class="btn btn-book" @click="bookService(service)">
+                      Book Now
+                    </button>
                   </div>
                 </div>
               </div>
-              <div class="service-footer">
-                <div class="service-price">
-                  <span class="price">₱{{ Number(service.pricing).toFixed(2) }}</span>
-                  <span class="price-type">/ {{ formatPriceType(service.pricingType) }}</span>
-                </div>
-                <div class="service-actions">
-                
-                  <button class="btn btn-book" @click="bookService(service)">
-                    Book Now
-                  </button>
-                </div>
-              </div>
             </div>
-          </div>
+            
+            <!-- Show More/Less button -->
+            <div class="show-more-container" v-if="filteredServices.length > initialServiceCount">
+              <button 
+                class="btn btn-show-more" 
+                @click="toggleShowMore"
+              >
+                {{ showAllServices ? 'Show Less' : `Show More (${filteredServices.length - displayedFilteredServices.length} more)` }}
+              </button>
+            </div>
+          </template>
           
-          <!-- Show More/Less button -->
-          <div class="show-more-container" v-if="selectedCategory.services.length > initialServiceCount">
-            <button 
-              class="btn btn-show-more" 
-              @click="toggleShowMore"
-            >
-              {{ showAllServices ? 'Show Less' : `Show More (${selectedCategory.services.length - displayedServices.length} more)` }}
-            </button>
+          <!-- No results message -->
+          <div v-else class="no-results">
+            <i class="fa fa-search"></i>
+            <p>No services found matching your search criteria.</p>
+            <button @click="clearFilters" class="btn btn-secondary">Clear Filters</button>
           </div>
         </div>
         <div v-else class="no-services">
@@ -223,7 +322,7 @@
 <script>
 import { FILE_SERVER_URL, serviceService, clientService, providerService } from '@/services/apiService';
 import { useRouter } from 'vue-router';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import Swal from 'sweetalert2';
 import ProviderDetailsModal from '@/components/modals/ProviderDetailsModal.vue';
 import AddAddressModal from '@/components/modals/AddAddressModal.vue';
@@ -503,16 +602,134 @@ export default {
       fetchAddresses();
     });
     
-    // Add these new refs
+    // Search and filter refs
+    const searchQuery = ref('');
+    const sortBy = ref('default');
+    const priceFilter = ref('all');
+    const ratingFilter = ref('0');
     const initialServiceCount = 6; // Number of services to show initially
     const showAllServices = ref(false);
+    const showFilters = ref(false);
     
-    // Computed property for displayed services
-    const displayedServices = computed(() => {
+    // Computed property for filtered categories (when no category selected)
+    const filteredCategories = computed(() => {
+      if (!categories.value.length) return [];
+      
+      let filtered = [...categories.value];
+      
+      // Apply search filter
+      if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase().trim();
+        filtered = filtered.filter(category => {
+          const nameMatch = category.name?.toLowerCase().includes(query);
+          const descMatch = category.description?.toLowerCase().includes(query);
+          return nameMatch || descMatch;
+        });
+      }
+      
+      // Apply sorting
+      if (sortBy.value === 'name') {
+        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      }
+      
+      return filtered;
+    });
+    
+    // Computed property for filtered services
+    const filteredServices = computed(() => {
       if (!selectedCategory.value) return [];
+      
+      let services = [...selectedCategory.value.services];
+      
+      // Apply search filter
+      if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase().trim();
+        services = services.filter(service => {
+          const titleMatch = service.title?.toLowerCase().includes(query);
+          const descMatch = service.description?.toLowerCase().includes(query);
+          const providerMatch = service.provider?.name?.toLowerCase().includes(query);
+          return titleMatch || descMatch || providerMatch;
+        });
+      }
+      
+      // Apply price filter
+      if (priceFilter.value !== 'all') {
+        services = services.filter(service => {
+          const price = Number(service.pricing) || 0;
+          switch (priceFilter.value) {
+            case '0-500': return price >= 0 && price <= 500;
+            case '500-1000': return price > 500 && price <= 1000;
+            case '1000-2000': return price > 1000 && price <= 2000;
+            case '2000+': return price > 2000;
+            default: return true;
+          }
+        });
+      }
+      
+      // Apply rating filter
+      if (ratingFilter.value !== '0') {
+        const minRating = Number(ratingFilter.value);
+        services = services.filter(service => {
+          const rating = service.provider?.rating || 0;
+          return rating >= minRating;
+        });
+      }
+      
+      // Apply sorting
+      if (sortBy.value !== 'default') {
+        services.sort((a, b) => {
+          switch (sortBy.value) {
+            case 'price-low':
+              return (Number(a.pricing) || 0) - (Number(b.pricing) || 0);
+            case 'price-high':
+              return (Number(b.pricing) || 0) - (Number(a.pricing) || 0);
+            case 'rating':
+              return (b.provider?.rating || 0) - (a.provider?.rating || 0);
+            case 'name':
+              return (a.title || '').localeCompare(b.title || '');
+            default:
+              return 0;
+          }
+        });
+      }
+      
+      return services;
+    });
+    
+    // Computed property for displayed services (with show more/less)
+    const displayedFilteredServices = computed(() => {
+      if (!filteredServices.value.length) return [];
       return showAllServices.value 
-        ? selectedCategory.value.services 
-        : selectedCategory.value.services.slice(0, initialServiceCount);
+        ? filteredServices.value 
+        : filteredServices.value.slice(0, initialServiceCount);
+    });
+    
+    // Check if any filters are active
+    const hasActiveFilters = computed(() => {
+      const hasSearch = searchQuery.value.trim() !== '';
+      const hasSort = sortBy.value !== 'default';
+      const hasPriceFilter = selectedCategory.value && priceFilter.value !== 'all';
+      const hasRatingFilter = selectedCategory.value && ratingFilter.value !== '0';
+      return hasSearch || hasSort || hasPriceFilter || hasRatingFilter;
+    });
+    
+    // Clear search
+    const clearSearch = () => {
+      searchQuery.value = '';
+    };
+    
+    // Clear all filters
+    const clearFilters = () => {
+      searchQuery.value = '';
+      sortBy.value = 'default';
+      priceFilter.value = 'all';
+      ratingFilter.value = '0';
+      showAllServices.value = false;
+    };
+    
+    // Reset show all when filters change
+    watch([searchQuery, sortBy, priceFilter, ratingFilter], () => {
+      showAllServices.value = false;
     });
 
     // Toggle show more/less
@@ -562,7 +779,17 @@ export default {
       submitBooking,
       viewProviderDetails,
       closeProviderModal,
-      displayedServices,
+      displayedFilteredServices,
+      filteredServices,
+      filteredCategories,
+      searchQuery,
+      sortBy,
+      priceFilter,
+      ratingFilter,
+      showFilters,
+      hasActiveFilters,
+      clearSearch,
+      clearFilters,
       toggleShowMore,
       showAllServices,
       initialServiceCount,
@@ -1357,8 +1584,294 @@ export default {
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
 }
 
-.add-address-btn i {
+  .add-address-btn i {
+    font-size: 1rem;
+  }
+
+/* Page Header Section */
+.page-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+  gap: 20px;
+  position: relative;
+}
+
+/* Search and Filter Styles - Clean, no box design */
+.search-filter-section-fixed {
+  position: relative;
+  width: 280px;
+  flex-shrink: 0;
+  background: transparent;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  align-self: flex-start;
+}
+
+.search-filter-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-container {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.filter-toggle-btn {
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2c3e50;
+  background: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.filter-toggle-btn:hover {
+  border-color: #27ae60;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+  transform: translateY(-1px);
+}
+
+.filter-toggle-btn.active {
+  border-color: #27ae60;
+  background: linear-gradient(135deg, rgba(39, 174, 96, 0.05), rgba(52, 152, 219, 0.05));
+  color: #27ae60;
+}
+
+.filter-toggle-btn i {
+  font-size: 0.9rem;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: #27ae60;
   font-size: 1rem;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  height: 50px;
+  padding: 11px 40px 11px 40px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  border-color: #27ae60;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+  outline: none;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 12px;
+  background: rgba(231, 76, 60, 0.1);
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+}
+
+.clear-search-btn:hover {
+  background: rgba(231, 76, 60, 0.2);
+  color: #c0392b;
+  transform: scale(1.1);
+}
+
+.filter-container {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 280px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: #ffffff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #34495e;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.filter-select {
+  padding: 9px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #2c3e50;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.filter-select:hover {
+  border-color: #27ae60;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.1);
+}
+
+.filter-select:focus {
+  border-color: #27ae60;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+  outline: none;
+}
+
+.clear-filters-btn {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  border: none;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  width: 100%;
+  margin-top: 8px;
+  box-shadow: 0 3px 10px rgba(231, 76, 60, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.clear-filters-btn:hover {
+  background: linear-gradient(135deg, #c0392b, #a93226);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.35);
+}
+
+.results-info-standalone {
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, rgba(39, 174, 96, 0.08), rgba(52, 152, 219, 0.08));
+  border-radius: 10px;
+  color: #27ae60;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(39, 174, 96, 0.15);
+}
+
+.results-info-standalone i {
+  font-size: 0.9rem;
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px 30px;
+  color: #777;
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  margin: 20px 0;
+}
+
+.no-results i {
+  font-size: 3rem;
+  color: #ddd;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.no-results p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: #555;
+}
+
+@media screen and (max-width: 768px) {
+  .search-filter-section-fixed {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    max-height: none;
+    margin-bottom: 20px;
+  }
+  
+  .filter-container {
+    flex-direction: column;
+  }
+  
+  .filter-group {
+    width: 100%;
+  }
+  
+  .clear-filters-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media screen and (max-width: 1600px) {
@@ -1386,8 +1899,19 @@ export default {
     padding: 15px;
   }
   
+  .page-header-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
   .page-title {
     font-size: 1.8rem;
+    margin-bottom: 15px;
+  }
+  
+  .search-filter-section-fixed {
+    width: 100%;
+    margin-bottom: 15px;
   }
   
   .category-header {
