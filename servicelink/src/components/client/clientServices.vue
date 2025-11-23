@@ -233,14 +233,39 @@
             
             <form @submit.prevent="submitBooking">
               <div class="form-group">
-                <label for="booking-date">Date & Time</label>
-                <input 
-                  type="datetime-local" 
-                  id="booking-date" 
-                  v-model="bookingForm.dateTime" 
-                  required
-                  :min="currentDateTimeString"
-                />
+                <label>Select Available Time Slot</label>
+                
+                <div v-if="loadingAvailability" class="loading-availability">
+                  <i class="fa fa-spinner fa-spin"></i> Loading availability...
+                </div>
+                
+                <div v-else-if="availabilityByDay.length === 0" class="no-availability">
+                  <i class="fa fa-calendar-times"></i>
+                  <p>No available time slots set by this provider.</p>
+                  <p>Please contact the provider for booking options.</p>
+                </div>
+                
+                <div v-else class="availability-slots">
+                  <div 
+                    v-for="day in availabilityByDay" 
+                    :key="day.dayOfWeek" 
+                    class="day-slot-group"
+                  >
+                    <h4 class="day-name">{{ day.dayName }}</h4>
+                    <div class="time-slots-grid">
+                      <button
+                        v-for="slot in day.slots.filter(s => s.isAvailable !== false)"
+                        :key="slot.id"
+                        type="button"
+                        class="time-slot-btn"
+                        :class="{ active: bookingForm.selectedSlot?.id === slot.id }"
+                        @click="bookingForm.selectedSlot = { ...slot, dayOfWeek: day.dayOfWeek, dayName: day.dayName }"
+                      >
+                        {{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div class="form-group">
@@ -360,10 +385,15 @@ export default {
     const selectedService = ref({});
     const isBookingSubmitting = ref(false);
     const bookingForm = ref({
-      dateTime: '',
+      selectedSlot: null, // { dayOfWeek, startTime, endTime, dayName }
       addressId: '',
       notes: ''
     });
+    
+    // Provider availability state
+    const providerAvailability = ref(null);
+    const loadingAvailability = ref(false);
+    const availabilityByDay = ref([]);
 
     // Provider details modal state
     const showProviderModal = ref(false);
@@ -442,8 +472,64 @@ export default {
       return text.length > length ? text.substring(0, length) + '...' : text;
     };
     
+    // Fetch provider availability
+    const fetchProviderAvailability = async (providerId) => {
+      if (!providerId) return;
+      
+      loadingAvailability.value = true;
+      try {
+        const response = await providerService.getProviderAvailability(providerId);
+        if (response.success && response.data) {
+          providerAvailability.value = response.data;
+          // Process availability by day - only show days with available slots
+          availabilityByDay.value = (response.data.availabilityByDay || []).filter(day => {
+            return day.slots && day.slots.length > 0 && 
+                   day.slots.some(slot => slot.isAvailable !== false);
+          });
+        } else {
+          console.error('Failed to fetch availability:', response.message);
+          providerAvailability.value = null;
+          availabilityByDay.value = [];
+        }
+      } catch (err) {
+        console.error('Error fetching provider availability:', err);
+        providerAvailability.value = null;
+        availabilityByDay.value = [];
+      } finally {
+        loadingAvailability.value = false;
+      }
+    };
+    
+    // Format time helper
+    const formatTime = (timeString) => {
+      if (!timeString) return '';
+      const [hours, minutes] = timeString.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour % 12 || 12;
+      return `${hour12}:${minutes} ${ampm}`;
+    };
+    
+    // Get next occurrence of a day of week
+    const getNextDateForDay = (dayOfWeek) => {
+      const today = new Date();
+      const currentDay = today.getDay();
+      let daysUntil = dayOfWeek - currentDay;
+      
+      // If the day has passed this week or is today, get next week's occurrence
+      if (daysUntil < 0 || (daysUntil === 0 && today.getHours() >= 23)) {
+        daysUntil += 7;
+      }
+      
+      const nextDate = new Date(today);
+      nextDate.setDate(today.getDate() + daysUntil);
+      nextDate.setHours(0, 0, 0, 0);
+      
+      return nextDate;
+    };
+    
     // Open booking modal
-    const bookService = (service) => {
+    const bookService = async (service) => {
       // Create a deep copy of the service and process its image URLs
       const processedService = JSON.parse(JSON.stringify(service));
       
@@ -458,6 +544,12 @@ export default {
       }
       
       selectedService.value = processedService;
+      
+      // Fetch provider availability
+      if (processedService.provider && processedService.provider.id) {
+        await fetchProviderAvailability(processedService.provider.id);
+      }
+      
       showBookingModal.value = true;
     };
     
@@ -466,10 +558,12 @@ export default {
       showBookingModal.value = false;
       // Reset form
       bookingForm.value = {
-        dateTime: '',
+        selectedSlot: null,
         addressId: '',
         notes: ''
       };
+      providerAvailability.value = null;
+      availabilityByDay.value = [];
     };
     
     // Close success modal
@@ -485,23 +579,28 @@ export default {
     
     // Submit booking
     const submitBooking = async () => {
-      if (!bookingForm.value.dateTime || !bookingForm.value.addressId) {
+      if (!bookingForm.value.selectedSlot || !bookingForm.value.addressId) {
         Swal.fire({
           title: 'Incomplete Form',
-          text: 'Please select a date/time and an address.',
+          text: 'Please select an available time slot and an address.',
           icon: 'warning',
           confirmButtonColor: '#ff9800'
         });
         return;
       }
 
-      // Guard: prevent past date/time
-      const selected = new Date(bookingForm.value.dateTime);
+      // Calculate the actual date for the selected day and time
+      const nextDate = getNextDateForDay(bookingForm.value.selectedSlot.dayOfWeek);
+      const [hours, minutes] = bookingForm.value.selectedSlot.startTime.split(':');
+      nextDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
       const now = new Date();
-      if (isNaN(selected.getTime()) || selected.getTime() < now.getTime()) {
+      
+      // Guard: prevent past date/time
+      if (nextDate.getTime() < now.getTime()) {
         Swal.fire({
           title: 'Invalid Start Time',
-          text: 'Please choose a future date and time.',
+          text: 'Please choose a future time slot.',
           icon: 'error',
           confirmButtonColor: '#f44336'
         });
@@ -519,7 +618,7 @@ export default {
         
         const bookingData = {
           serviceId: selectedService.value.id,
-          startTime: new Date(bookingForm.value.dateTime).toISOString(),
+          startTime: nextDate.toISOString(),
           addressId: bookingForm.value.addressId,
           notes: bookingForm.value.notes || null
         };
@@ -763,6 +862,11 @@ export default {
       bookingForm,
       isBookingSubmitting,
       currentDateTimeString,
+      providerAvailability,
+      loadingAvailability,
+      availabilityByDay,
+      formatTime,
+      getNextDateForDay,
       showProviderModal,
       selectedProvider,
       showAddAddressModal,
@@ -1429,6 +1533,139 @@ export default {
 .form-group textarea {
   height: 80px;
   resize: vertical;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 5px;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.time-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.time-select:focus {
+  border-color: #27ae60;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.15);
+  outline: none;
+}
+
+.loading-availability {
+  text-align: center;
+  padding: 15px;
+  color: #27ae60;
+  font-size: 0.9rem;
+}
+
+.loading-availability i {
+  margin-right: 8px;
+}
+
+.availability-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 4px 10px;
+  background: rgba(39, 174, 96, 0.1);
+  color: #27ae60;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.availability-badge i {
+  font-size: 0.75rem;
+}
+
+.availability-slots {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #f9f9f9;
+}
+
+.day-slot-group {
+  margin-bottom: 20px;
+}
+
+.day-slot-group:last-child {
+  margin-bottom: 0;
+}
+
+.day-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #27ae60;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.time-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.time-slot-btn {
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.time-slot-btn:hover {
+  border-color: #27ae60;
+  background: rgba(39, 174, 96, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(39, 174, 96, 0.2);
+}
+
+.time-slot-btn.active {
+  border-color: #27ae60;
+  background: #27ae60;
+  color: white;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.no-availability {
+  text-align: center;
+  padding: 30px 20px;
+  color: #777;
+  background: #f9f9f9;
+  border-radius: 10px;
+  border: 2px dashed #e0e0e0;
+}
+
+.no-availability i {
+  font-size: 3rem;
+  color: #ccc;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.no-availability p {
+  margin: 8px 0;
+  font-size: 0.95rem;
 }
 
 .booking-actions {

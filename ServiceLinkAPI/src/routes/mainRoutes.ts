@@ -11,6 +11,7 @@ import {
   handleGetServiceDetails,
   handleSearchProviders,
   handleGetProviderDetails,
+  handleGetProviderAvailability,
   handleGetConversations,
   handleGetConversationMessages,
   handleSendMessage,
@@ -39,6 +40,7 @@ router.get('/services', handleGetAllServices);
 router.get('/services/:serviceId', handleGetServiceDetails);
 router.get('/providers/search', handleSearchProviders);
 router.get('/providers/:providerId', handleGetProviderDetails);
+router.get('/providers/:providerId/availability', handleGetProviderAvailability);
 router.get('/categories-with-services', handleGetCategoriesWithServices);
 
 // Protected routes

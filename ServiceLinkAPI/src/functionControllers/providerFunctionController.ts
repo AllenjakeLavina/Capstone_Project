@@ -1907,6 +1907,56 @@ export const getAvailability = async (userId: string) => {
   };
 };
 
+export const getProviderAvailabilityByProviderId = async (providerId: string) => {
+  // Find the service provider
+  const serviceProvider = await prisma.serviceProvider.findUnique({
+    where: { id: providerId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true
+        }
+      }
+    }
+  });
+
+  if (!serviceProvider) {
+    throw new Error('Service provider not found');
+  }
+
+  // Get all availability slots
+  const availabilitySlots = await prisma.availability.findMany({
+    where: {
+      serviceProviderId: providerId
+    },
+    orderBy: [
+      { dayOfWeek: 'asc' },
+      { startTime: 'asc' }
+    ]
+  });
+
+  // Group by day of week for easier client-side consumption
+  const availabilityByDay = [0, 1, 2, 3, 4, 5, 6].map(day => {
+    const daySlots = availabilitySlots.filter(slot => slot.dayOfWeek === day);
+    return {
+      dayOfWeek: day,
+      dayName: getDayName(day),
+      slots: daySlots
+    };
+  });
+
+  return {
+    providerInfo: {
+      id: serviceProvider.id,
+      userId: serviceProvider.userId,
+      name: `${serviceProvider.user.firstName} ${serviceProvider.user.lastName}`
+    },
+    availabilityByDay
+  };
+};
+
 export const updateAvailabilitySlot = async (
   userId: string,
   slotId: string,
