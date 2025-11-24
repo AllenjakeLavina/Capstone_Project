@@ -1262,6 +1262,45 @@ export const adminService = {
     } catch (error) {
       return handleApiError(error);
     }
+  },
+
+  // Service approval functions
+  getPendingServices: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/services/pending`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  approveService: async (serviceId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/services/approve`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ serviceId })
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  rejectService: async (serviceId, reason) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/services/reject`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ serviceId, reason })
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
   }
 };
 

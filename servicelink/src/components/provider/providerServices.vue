@@ -41,7 +41,7 @@
             
             <div class="service-details">
               <p class="category"><i class="fa fa-folder"></i> <strong>Category:</strong> {{ service.category.name }}</p>
-              <p class="pricing"><i class="fa fa-tag"></i> <strong>Pricing:</strong> ₱{{ service.pricing }} / {{ formatPricingType(service.pricingType) }}</p>
+              <p class="pricing"><i class="fa fa-tag"></i> <strong>Rate:</strong> ₱{{ service.pricing }} / {{ formatPricingType(service.pricingType) }}</p>
               <p class="description">{{ truncateText(service.description, 150) }}</p>
               
               <div class="service-skills" v-if="service.skills && service.skills.length > 0">
@@ -97,12 +97,12 @@
                 
                 <div class="form-group pricing-group">
                   <div class="price-input">
-                    <label for="pricing">Price*</label>
+                    <label for="pricing">Rate*</label>
                     <input id="pricing" type="number" v-model="serviceForm.pricing" min="0" step="0.01" required class="form-control" />
                   </div>
                   
                   <div class="price-type">
-                    <label for="pricingType">Price Type*</label>
+                    <label for="pricingType">Rate Type*</label>
                     <select id="pricingType" v-model="serviceForm.pricingType" required class="form-control">
                       <option value="FIXED">Fixed Price</option>
                       <option value="DAILY">Per Day</option>
@@ -175,12 +175,12 @@
                 
                 <div class="form-group pricing-group">
                   <div class="price-input">
-                    <label for="edit-pricing">Price*</label>
+                    <label for="edit-pricing">Rate*</label>
                     <input id="edit-pricing" type="number" v-model="editServiceForm.pricing" min="0" step="0.01" required class="form-control" />
                   </div>
                   
                   <div class="price-type">
-                    <label for="edit-pricingType">Price Type*</label>
+                    <label for="edit-pricingType">Rate Type*</label>
                     <select id="edit-pricingType" v-model="editServiceForm.pricingType" required class="form-control">
                       <option value="FIXED">Fixed Price</option>
                       <option value="DAILY">Per Day</option>

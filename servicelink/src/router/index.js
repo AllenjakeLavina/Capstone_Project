@@ -22,6 +22,7 @@ import UnverifiedUsers from '../components/admin/unverifiedUsers.vue';
 import AllProviders from '../components/admin/allProviders.vue';
 import AllClients from '../components/admin/allClients.vue';
 import CategoryManagement from '../components/admin/categoryManagement.vue';
+import PendingServices from '../components/admin/pendingServices.vue';
 import TermsAndConditions from '../components/TermsAndConditions.vue';
 import PrivacyPolicy from '../components/PrivacyPolicy.vue';
 import SettingsLayout from '../components/settings/SettingsLayout.vue';
@@ -167,6 +168,12 @@ const routes = [
     path: '/admin/category-management',
     name: 'CategoryManagement',
     component: CategoryManagement,
+    meta: { requiresAuth: true, roles: ['ADMIN'] }
+  },
+  {
+    path: '/admin/pending-services',
+    name: 'PendingServices',
+    component: PendingServices,
     meta: { requiresAuth: true, roles: ['ADMIN'] }
   },
   {

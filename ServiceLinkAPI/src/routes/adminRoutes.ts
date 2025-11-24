@@ -23,7 +23,10 @@ import {
   handleToggleProviderStatus,
   handleGetDashboardStats,
   handleGetRecentBookings,
-  handleGetProviderRatings
+  handleGetProviderRatings,
+  handleGetPendingServices,
+  handleApproveService,
+  handleRejectService
 } from '../httpControllers/adminHttpController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 import { uploadFile } from '../middlewares/fileHandler';
@@ -105,6 +108,11 @@ router.delete(
   authorizeRoles('ADMIN'),
   handleDeleteCategory
 );
+
+// Service approval management
+router.get('/services/pending', authenticateToken, authorizeRoles('ADMIN'), handleGetPendingServices);
+router.post('/services/approve', authenticateToken, authorizeRoles('ADMIN'), handleApproveService);
+router.post('/services/reject', authenticateToken, authorizeRoles('ADMIN'), handleRejectService);
 
 // Add this comment to remind yourself to secure or remove these routes
 /*

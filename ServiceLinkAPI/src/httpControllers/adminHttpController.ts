@@ -23,7 +23,10 @@ import {
   getUnverifiedProviderDetails,
   getUnverifiedClientDetails,
   getProviderDetailsForAdmin,
-  getProviderRatings
+  getProviderRatings,
+  getPendingServices,
+  approveService,
+  rejectService
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -740,6 +743,114 @@ export const handleGetProviderRatings = async (req: Request, res: Response) => {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     console.error('Error in handleGetProviderRatings:', error);
     res.status(500).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+// Service approval HTTP controllers
+export const handleGetPendingServices = async (req: Request, res: Response) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Unauthorized: Only admins can perform this action'
+      });
+      return;
+    }
+
+    const services = await getPendingServices();
+
+    res.status(200).json({
+      success: true,
+      data: services
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in handleGetPendingServices:', error);
+    res.status(500).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+export const handleApproveService = async (req: Request, res: Response) => {
+  try {
+    const { serviceId } = req.body;
+    const adminId = req.user.id;
+
+    // Check if user has admin role
+    if (req.user.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Unauthorized: Only admins can perform this action'
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!serviceId) {
+      res.status(400).json({
+        success: false,
+        message: 'Service ID is required'
+      });
+      return;
+    }
+
+    const service = await approveService(serviceId, adminId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Service approved successfully',
+      data: service
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in handleApproveService:', error);
+    res.status(400).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+export const handleRejectService = async (req: Request, res: Response) => {
+  try {
+    const { serviceId, reason } = req.body;
+    const adminId = req.user.id;
+
+    // Check if user has admin role
+    if (req.user.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Unauthorized: Only admins can perform this action'
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!serviceId || !reason) {
+      res.status(400).json({
+        success: false,
+        message: 'Service ID and rejection reason are required'
+      });
+      return;
+    }
+
+    const service = await rejectService(serviceId, adminId, reason);
+
+    res.status(200).json({
+      success: true,
+      message: 'Service rejected successfully',
+      data: service
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in handleRejectService:', error);
+    res.status(400).json({
       success: false,
       message: errorMessage
     });

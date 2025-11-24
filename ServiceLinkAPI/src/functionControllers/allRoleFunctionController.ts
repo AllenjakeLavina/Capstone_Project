@@ -406,7 +406,8 @@ export const getAllServices = async (
 
     // Build where conditions based on filters
     const where: any = {
-      isActive: true
+      isActive: true,
+      isApproved: true // Only show approved services to clients
     };
 
     // Filter by category if provided
@@ -427,10 +428,12 @@ export const getAllServices = async (
 
     // Search in title or description
     if (filters?.searchTerm) {
-      where.OR = [
-        { title: { contains: filters.searchTerm } },
-        { description: { contains: filters.searchTerm } }
-      ];
+      where.AND.push({
+        OR: [
+          { title: { contains: filters.searchTerm } },
+          { description: { contains: filters.searchTerm } }
+        ]
+      });
     }
 
     // Only include services where provider is verified
@@ -550,10 +553,12 @@ export const getAllServices = async (
 
 export const getServiceDetails = async (serviceId: string) => {
   try {
-    const service = await prisma.service.findUnique({
+    // Fetch service - only approved services are visible to clients
+    const service = await prisma.service.findFirst({
       where: {
         id: serviceId,
-        isActive: true
+        isActive: true,
+        isApproved: true
       },
       include: {
         category: true,
@@ -604,6 +609,11 @@ export const getServiceDetails = async (serviceId: string) => {
       throw new Error('Service not found');
     }
 
+    // Check if service is approved (allow null for legacy services or true)
+    if (service.isApproved === false) {
+      throw new Error('This service is pending approval and is not yet available');
+    }
+
     // Check if provider is verified
     if (!service.serviceProvider.isProviderVerified) {
       throw new Error('This service is not available because the provider is not verified');
@@ -611,7 +621,7 @@ export const getServiceDetails = async (serviceId: string) => {
 
     // Calculate average rating from reviews
     const reviews = service.serviceProvider.user.receivedReviews;
-    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const totalRating = reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0);
     const averageRating = reviews.length > 0 ? totalRating / reviews.length : null;
     const reviewCount = reviews.length;
 
@@ -626,14 +636,14 @@ export const getServiceDetails = async (serviceId: string) => {
     }
 
     // Process portfolio with files
-    const portfolio = service.serviceProvider.portfolio.map(item => {
+    const portfolio = service.serviceProvider.portfolio.map((item: any) => {
       return {
         id: item.id,
         title: item.title,
         description: item.description,
         projectUrl: item.projectUrl,
         createdAt: item.createdAt,
-        files: item.files?.map(file => ({
+        files: item.files?.map((file: any) => ({
           id: file.id,
           fileUrl: file.fileUrl,
           fileName: file.fileName,

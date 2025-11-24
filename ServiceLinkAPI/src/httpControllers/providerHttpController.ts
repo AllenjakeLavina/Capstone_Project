@@ -564,7 +564,7 @@ export const handleCreateService = async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      message: 'Service created successfully',
+      message: 'Service created successfully and submitted for admin approval. You will be notified once it\'s reviewed.',
       data: newService
     });
     return;

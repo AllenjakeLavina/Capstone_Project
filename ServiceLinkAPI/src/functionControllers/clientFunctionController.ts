@@ -530,7 +530,8 @@ export const bookService = async (
     }
 
     // Find the service with provider details
-    const service = await prisma.service.findUnique({
+    // Note: We check isApproved separately to handle existing services that might have null
+    const service = await prisma.service.findFirst({
       where: { 
         id: bookingData.serviceId,
         isActive: true
@@ -551,6 +552,21 @@ export const bookService = async (
     // Check if provider is verified
     if (!service.serviceProvider.isProviderVerified) {
       throw new Error('This service provider is not verified');
+    }
+
+    // Check if service is approved
+    // For existing services created before migration, isApproved might be null/false
+    // We'll allow booking if isApproved is null (legacy services) or true
+    if (service.isApproved === false) {
+      throw new Error('This service is pending approval and cannot be booked yet');
+    }
+    
+    // Auto-approve legacy services (created before migration) on first booking attempt
+    if (service.isApproved === null || service.isApproved === undefined) {
+      await prisma.service.update({
+        where: { id: service.id },
+        data: { isApproved: true }
+      });
     }
 
     // Create a new booking

@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, NotificationType } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '../services/emailService';
@@ -505,7 +505,7 @@ export const createService = async (
       throw new Error('Category not found');
     }
 
-    // Create new service
+    // Create new service (pending admin approval)
     const newService = await prisma.service.create({
       data: {
         serviceProviderId: user.serviceProvider.id,
@@ -516,6 +516,7 @@ export const createService = async (
         pricingType: service.pricingType,
         imageUrls: service.imageUrls ? JSON.stringify(service.imageUrls) : null,
         isActive: true,
+        isApproved: false, // Must be approved by admin before visible to clients
         skills: service.skillIds ? {
           connect: service.skillIds.map(id => ({ id }))
         } : undefined
@@ -525,6 +526,40 @@ export const createService = async (
         category: true
       }
     });
+
+    // Notify provider that service is pending approval
+    await prisma.notification.create({
+      data: {
+        receiverId: userId,
+        type: 'GENERAL',
+        title: 'Service Submitted for Review',
+        message: `Your service "${service.title}" has been submitted and is pending admin approval. You will be notified once it's reviewed.`,
+        isRead: false
+      }
+    });
+
+    // Notify all admins about new service pending approval
+    const admins = await prisma.user.findMany({
+      where: {
+        role: 'ADMIN',
+        isActive: true
+      }
+    });
+
+    // Create notifications for all admins
+    const adminNotifications = admins.map(admin => ({
+      receiverId: admin.id,
+      type: NotificationType.GENERAL,
+      title: 'New Service Pending Approval',
+      message: `A new service "${service.title}" by ${user.firstName} ${user.lastName} is pending approval.`,
+      isRead: false
+    }));
+
+    if (adminNotifications.length > 0) {
+      await prisma.notification.createMany({
+        data: adminNotifications
+      });
+    }
 
     return newService;
   } catch (error) {

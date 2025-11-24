@@ -1273,3 +1273,253 @@ export const getProviderDetailsForAdmin = async (providerId: string) => {
     throw error;
   }
 };
+
+// Get all services for admin monitoring (pending and approved)
+export const getPendingServices = async () => {
+  try {
+    const services = await prisma.service.findMany({
+      where: {
+        isActive: true // Get all active services (both approved and pending)
+      },
+      include: {
+        category: true,
+        skills: true,
+        serviceProvider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePicture: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Process image URLs
+    const processedServices = services.map(service => {
+      let imageUrls: string[] = [];
+      if (service.imageUrls) {
+        try {
+          imageUrls = JSON.parse(service.imageUrls);
+        } catch (error) {
+          console.warn(`Error parsing image URLs for service ${service.id}:`, error);
+        }
+      }
+
+      return {
+        id: service.id,
+        title: service.title,
+        description: service.description,
+        pricing: service.pricing,
+        pricingType: service.pricingType,
+        imageUrls,
+        category: service.category,
+        skills: service.skills,
+        isApproved: service.isApproved, // Include approval status
+        provider: {
+          id: service.serviceProvider.id,
+          userId: service.serviceProvider.userId,
+          name: `${service.serviceProvider.user.firstName} ${service.serviceProvider.user.lastName}`,
+          email: service.serviceProvider.user.email,
+          profilePicture: service.serviceProvider.user.profilePicture
+        },
+        createdAt: service.createdAt,
+        updatedAt: service.updatedAt
+      };
+    });
+
+    return processedServices;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Approve a service
+export const approveService = async (serviceId: string, adminId: string) => {
+  try {
+    // Find the service
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        serviceProvider: {
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+
+    if (!service) {
+      throw new Error('Service not found');
+    }
+
+    // Update service to approved
+    const updatedService = await prisma.service.update({
+      where: { id: serviceId },
+      data: {
+        isApproved: true
+      },
+      include: {
+        category: true,
+        skills: true,
+        serviceProvider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePicture: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Create notification for the provider
+    await prisma.notification.create({
+      data: {
+        receiverId: service.serviceProvider.userId,
+        type: 'GENERAL',
+        title: 'Service Approved',
+        message: `Your service "${service.title}" has been approved by an admin and is now visible to clients.`,
+        isRead: false
+      }
+    });
+
+    // Process image URLs
+    let imageUrls: string[] = [];
+    if (updatedService.imageUrls) {
+      try {
+        imageUrls = JSON.parse(updatedService.imageUrls);
+      } catch (error) {
+        console.warn(`Error parsing image URLs for service ${updatedService.id}:`, error);
+      }
+    }
+
+    return {
+      id: updatedService.id,
+      title: updatedService.title,
+      description: updatedService.description,
+      pricing: updatedService.pricing,
+      pricingType: updatedService.pricingType,
+      imageUrls,
+      category: updatedService.category,
+      skills: updatedService.skills,
+      provider: {
+        id: updatedService.serviceProvider.id,
+        userId: updatedService.serviceProvider.userId,
+        name: `${updatedService.serviceProvider.user.firstName} ${updatedService.serviceProvider.user.lastName}`,
+        email: updatedService.serviceProvider.user.email,
+        profilePicture: updatedService.serviceProvider.user.profilePicture
+      },
+      isApproved: updatedService.isApproved,
+      createdAt: updatedService.createdAt,
+      updatedAt: updatedService.updatedAt
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Reject a service
+export const rejectService = async (serviceId: string, adminId: string, reason: string) => {
+  try {
+    // Find the service
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        serviceProvider: {
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+
+    if (!service) {
+      throw new Error('Service not found');
+    }
+
+    // Deactivate the service instead of deleting it (to maintain data integrity)
+    const updatedService = await prisma.service.update({
+      where: { id: serviceId },
+      data: {
+        isActive: false,
+        isApproved: false
+      },
+      include: {
+        category: true,
+        skills: true,
+        serviceProvider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePicture: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Create notification for the provider
+    await prisma.notification.create({
+      data: {
+        receiverId: service.serviceProvider.userId,
+        type: 'GENERAL',
+        title: 'Service Rejected',
+        message: `Your service "${service.title}" has been rejected by an admin. Reason: ${reason}. You can update the service and resubmit it for review.`,
+        isRead: false
+      }
+    });
+
+    // Process image URLs
+    let imageUrls: string[] = [];
+    if (updatedService.imageUrls) {
+      try {
+        imageUrls = JSON.parse(updatedService.imageUrls);
+      } catch (error) {
+        console.warn(`Error parsing image URLs for service ${updatedService.id}:`, error);
+      }
+    }
+
+    return {
+      id: updatedService.id,
+      title: updatedService.title,
+      description: updatedService.description,
+      pricing: updatedService.pricing,
+      pricingType: updatedService.pricingType,
+      imageUrls,
+      category: updatedService.category,
+      skills: updatedService.skills,
+      provider: {
+        id: updatedService.serviceProvider.id,
+        userId: updatedService.serviceProvider.userId,
+        name: `${updatedService.serviceProvider.user.firstName} ${updatedService.serviceProvider.user.lastName}`,
+        email: updatedService.serviceProvider.user.email,
+        profilePicture: updatedService.serviceProvider.user.profilePicture
+      },
+      isApproved: updatedService.isApproved,
+      isActive: updatedService.isActive,
+      createdAt: updatedService.createdAt,
+      updatedAt: updatedService.updatedAt
+    };
+  } catch (error) {
+    throw error;
+  }
+};

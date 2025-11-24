@@ -70,6 +70,10 @@
               <div class="icon"><i class="fas fa-th-list"></i></div>
               <span>Category Management</span>
             </router-link>
+            <router-link to="/admin/pending-services" class="nav-item">
+              <div class="icon"><i class="fas fa-clock"></i></div>
+              <span>Pending Services</span>
+            </router-link>
           </template>
         </div>
 
@@ -396,6 +400,10 @@
         <router-link to="/admin/category-management" class="mobile-nav-item" :class="{ 'active': isRouteActive('admin/category-management') }">
           <div class="icon"><i class="fas fa-th-list"></i></div>
           <span>Categories</span>
+        </router-link>
+        <router-link to="/admin/pending-services" class="mobile-nav-item" :class="{ 'active': isRouteActive('admin/pending-services') }">
+          <div class="icon"><i class="fas fa-clock"></i></div>
+          <span>Pending</span>
         </router-link>
       </template>
     </div>

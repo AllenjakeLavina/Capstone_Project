@@ -199,6 +199,7 @@ model Service {
   pricingType       PricingType    @default(HOURLY)
   imageUrls         String?        @db.Text // Store as JSON string of URLs
   isActive          Boolean        @default(true)
+  isApproved        Boolean        @default(false)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   
