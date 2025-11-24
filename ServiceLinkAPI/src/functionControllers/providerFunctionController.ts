@@ -961,11 +961,14 @@ export const acceptBooking = async (userId: string, bookingId: string) => {
       throw new Error('Provider not found');
     }
 
+    // Store serviceProviderId to avoid TypeScript null check issues
+    const serviceProviderId = user.serviceProvider.id;
+
     // Find the booking and ensure it belongs to this provider
     const booking = await prisma.serviceBooking.findFirst({
       where: {
         id: bookingId,
-        serviceProviderId: user.serviceProvider.id
+        serviceProviderId: serviceProviderId
       },
       include: {
         client: {
@@ -986,10 +989,40 @@ export const acceptBooking = async (userId: string, bookingId: string) => {
       throw new Error(`Cannot accept a booking with status: ${booking.status}`);
     }
 
-    // Update booking status
-    const updatedBooking = await prisma.serviceBooking.update({
-      where: { id: bookingId },
-      data: { status: 'CONFIRMED' }
+    // Calculate expected end time (default 1 hour duration)
+    const bookingStart = new Date(booking.startTime);
+    const expectedEndTime = new Date(bookingStart);
+    expectedEndTime.setHours(expectedEndTime.getHours() + 1); // Default 1 hour duration
+    
+    // Format date and times
+    const bookingDate = new Date(bookingStart);
+    bookingDate.setHours(0, 0, 0, 0); // Set to start of day for date comparison
+    
+    const startTimeStr = bookingStart.getHours().toString().padStart(2, '0') + ':' + 
+                         bookingStart.getMinutes().toString().padStart(2, '0');
+    const endTimeStr = expectedEndTime.getHours().toString().padStart(2, '0') + ':' + 
+                       expectedEndTime.getMinutes().toString().padStart(2, '0');
+
+    // Update booking status and create unavailable slot in a transaction
+    const updatedBooking = await prisma.$transaction(async (tx) => {
+      // Update booking status
+      const updated = await tx.serviceBooking.update({
+        where: { id: bookingId },
+        data: { status: 'CONFIRMED' }
+      });
+
+      // Create unavailable slot for this date + time range
+      await tx.providerUnavailable.create({
+        data: {
+          serviceProviderId: serviceProviderId,
+          date: bookingDate,
+          startTime: startTimeStr,
+          endTime: endTimeStr,
+          bookingId: bookingId
+        }
+      });
+
+      return updated;
     });
 
     // Create a chat conversation between provider and client

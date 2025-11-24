@@ -164,7 +164,7 @@
             v-model="acceptTerms" 
             required
           />
-          <label for="terms">I agree to the <router-link to="/terms-and-conditions" target="_blank">Terms and Conditions</router-link></label>
+          <label for="terms">I agree to the <a href="#" @click.prevent="showTermsModal = true" class="terms-link">Terms and Conditions</a></label>
         </div>
         
         <div class="form-group form-checkbox">
@@ -189,6 +189,20 @@
         <p>Want to register as a client? <router-link to="/register/client">Client Registration</router-link></p>
       </div>
     </div>
+
+    <!-- Terms & Conditions Modal -->
+    <div v-if="showTermsModal" class="modal-overlay" @click.self="showTermsModal = false">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Terms and Conditions</h2>
+          <button class="modal-close" @click="showTermsModal = false">&times;</button>
+        </div>
+        <div class="modal-content">
+          <p class="last-updated">Last updated: January 2025</p>
+          <TermsText />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -198,11 +212,13 @@ import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 import { providerService, authService } from '../services/apiService';
 import EmailVerificationInput from './EmailVerificationInput.vue';
+import TermsText from './settings/TermsText.vue';
 
 export default {
   name: 'RegisterProvider',
   components: {
-    EmailVerificationInput
+    EmailVerificationInput,
+    TermsText
   },
   setup() {
     const router = useRouter();
@@ -221,6 +237,7 @@ export default {
     const acceptVerification = ref(false);
     const loading = ref(false);
     const showVerification = ref(false);
+    const showTermsModal = ref(false);
 
     // Validation functions
     const validateFullName = () => {
@@ -485,6 +502,7 @@ export default {
       idDocument,
       loading,
       showVerification,
+      showTermsModal,
       getFileSize,
       handleFileChange,
       handleRegister,
@@ -705,13 +723,16 @@ input[type="file"] {
   margin-bottom: 0;
 }
 
-.form-checkbox a {
+.form-checkbox a,
+.terms-link {
   color: #38b676;
   text-decoration: none;
   font-weight: 500;
+  cursor: pointer;
 }
 
-.form-checkbox a:hover {
+.form-checkbox a:hover,
+.terms-link:hover {
   color: #106e40;
   text-decoration: underline;
 }
@@ -809,6 +830,127 @@ input[type="file"] {
   
   .auth-card {
     padding: 30px 20px;
+  }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-card {
+  background: white;
+  border-radius: 20px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #106e40 0%, #38b676 100%);
+  color: white;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 28px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.modal-content {
+  padding: 30px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-content .last-updated {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .modal-card {
+    max-height: 95vh;
+    border-radius: 15px;
+  }
+
+  .modal-header {
+    padding: 15px 20px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .modal-content {
+    padding: 20px;
   }
 }
 </style>

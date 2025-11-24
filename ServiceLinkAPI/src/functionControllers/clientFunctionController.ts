@@ -6,6 +6,42 @@ import nodemailer from 'nodemailer';
 
 const prisma = new PrismaClient();
 
+// Helper function to check if two time ranges overlap
+// Returns true if the time ranges overlap
+const doTimeRangesOverlap = (
+  start1: string, // "HH:MM"
+  end1: string,   // "HH:MM"
+  start2: string, // "HH:MM"
+  end2: string    // "HH:MM"
+): boolean => {
+  const [hour1, minute1] = start1.split(':').map(Number);
+  const [hour2, minute2] = end1.split(':').map(Number);
+  const [hour3, minute3] = start2.split(':').map(Number);
+  const [hour4, minute4] = end2.split(':').map(Number);
+  
+  const start1Minutes = hour1 * 60 + minute1;
+  const end1Minutes = hour2 * 60 + minute2;
+  const start2Minutes = hour3 * 60 + minute3;
+  const end2Minutes = hour4 * 60 + minute4;
+  
+  // Check for overlap: ranges overlap if start1 < end2 AND start2 < end1
+  return start1Minutes < end2Minutes && start2Minutes < end1Minutes;
+};
+
+// Helper function to format time from Date to "HH:MM" string
+const formatTime = (date: Date): string => {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+// Helper function to calculate end time (default 1 hour duration)
+const calculateEndTime = (startTime: Date, durationHours: number = 1): Date => {
+  const endTime = new Date(startTime);
+  endTime.setHours(endTime.getHours() + durationHours);
+  return endTime;
+};
+
 // Create email transporter
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -567,6 +603,73 @@ export const bookService = async (
         where: { id: service.id },
         data: { isApproved: true }
       });
+    }
+
+    // Calculate expected end time (default 1 hour duration)
+    // For hourly services, use 1 hour. For fixed/session services, also use 1 hour as default.
+    const expectedEndTime = calculateEndTime(requestedStart, 1);
+    const requestedDate = new Date(requestedStart);
+    requestedDate.setHours(0, 0, 0, 0); // Set to start of day for date comparison
+    
+    const requestedStartTimeStr = formatTime(requestedStart);
+    const requestedEndTimeStr = formatTime(expectedEndTime);
+
+    // Check for conflicts with unavailable slots
+    const conflictingSlots = await prisma.providerUnavailable.findMany({
+      where: {
+        serviceProviderId: service.serviceProvider.id,
+        date: requestedDate
+      }
+    });
+
+    // Check if requested time overlaps with any unavailable slot
+    for (const slot of conflictingSlots) {
+      if (doTimeRangesOverlap(
+        requestedStartTimeStr,
+        requestedEndTimeStr,
+        slot.startTime,
+        slot.endTime
+      )) {
+        throw new Error('Selected date and time is no longer available.');
+      }
+    }
+
+    // Also check for conflicts with CONFIRMED bookings on the same date
+    const confirmedBookings = await prisma.serviceBooking.findMany({
+      where: {
+        serviceProviderId: service.serviceProvider.id,
+        status: 'CONFIRMED',
+        startTime: {
+          gte: requestedDate,
+          lt: new Date(requestedDate.getTime() + 24 * 60 * 60 * 1000) // Next day
+        }
+      }
+    });
+
+    // Check if requested time overlaps with any confirmed booking
+    for (const booking of confirmedBookings) {
+      const bookingStart = new Date(booking.startTime);
+      const bookingEnd = booking.endTime 
+        ? new Date(booking.endTime)
+        : calculateEndTime(bookingStart, 1); // Default 1 hour if no end time
+      
+      // Check if same date
+      const bookingDate = new Date(bookingStart);
+      bookingDate.setHours(0, 0, 0, 0);
+      
+      if (bookingDate.getTime() === requestedDate.getTime()) {
+        const bookingStartTimeStr = formatTime(bookingStart);
+        const bookingEndTimeStr = formatTime(bookingEnd);
+        
+        if (doTimeRangesOverlap(
+          requestedStartTimeStr,
+          requestedEndTimeStr,
+          bookingStartTimeStr,
+          bookingEndTimeStr
+        )) {
+          throw new Error('Selected date and time is no longer available.');
+        }
+      }
     }
 
     // Create a new booking
