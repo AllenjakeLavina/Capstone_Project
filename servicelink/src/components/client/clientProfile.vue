@@ -2,14 +2,12 @@
   <div class="client-profile">
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
-      <!-- Profile Header Card -->
-      <div class="profile-header-card">
-        <div class="profile-banner">
-          <img src="@/assets/Header.png" alt="Banner" />
-        </div>
-        <div class="profile-header-content-row">
-          <div class="profile-picture-outer">
+    <div v-else class="profile-layout">
+      <!-- Left Sidebar -->
+      <div class="profile-sidebar">
+        <!-- Profile Info Card -->
+        <div class="sidebar-card profile-info-card">
+          <div class="profile-picture-wrapper">
             <div class="profile-picture-container large">
               <div v-if="user.profilePicture" class="profile-picture">
                 <img :src="getFullFileUrl(user.profilePicture)" alt="Profile Picture" />
@@ -33,25 +31,62 @@
               </div>
             </div>
           </div>
-          <div class="profile-header-info">
-            <div class="profile-header-name">{{ user.firstName }} {{ user.lastName }}</div>
-            <div class="profile-header-role">Client</div>
-            <div class="profile-header-meta">
-              <div class="meta-item">
-                <i class="fas fa-envelope"></i>
-                <span class="meta-text">{{ user.email }}</span>
-              </div>
-              <div v-if="user.phone" class="meta-item">
-                <i class="fas fa-phone"></i>
-                <span class="meta-text">{{ user.phone }}</span>
+          <div class="profile-info-content">
+            <div class="profile-name-row">
+              <h3>{{ user.firstName }} {{ user.lastName }}</h3>
+              <div v-if="user.isVerified" class="verification-badge">
+                <i class="fas fa-check-circle"></i>
+                <span>Verified</span>
               </div>
             </div>
-            <button class="edit-profile-btn profile-btn-card" @click="startEditProfile"><i class="fas fa-edit"></i> Edit Profile</button>
+            <div class="profile-role">Client Account</div>
+            <div class="profile-stats-mini">
+              <div class="stat-mini">
+                <i class="fas fa-calendar-check"></i>
+                <span>{{ activityStats.totalBookings }}</span>
+                <small>Bookings</small>
+              </div>
+              <div class="stat-mini">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ activityStats.completedBookings }}</span>
+                <small>Completed</small>
+              </div>
+            </div>
+            <div class="profile-contact-info">
+              <div class="contact-item">
+                <i class="fas fa-envelope"></i>
+                <span>{{ user.email }}</span>
+              </div>
+              <div v-if="user.phone" class="contact-item">
+                <i class="fas fa-phone"></i>
+                <span>{{ user.phone }}</span>
+              </div>
+              <div class="contact-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Joined {{ formatDate(user.createdAt) }}</span>
+              </div>
+            </div>
+            <button class="edit-profile-btn-sidebar" @click="startEditProfile">
+              <i class="fas fa-edit"></i> Edit Profile
+            </button>
           </div>
         </div>
       </div>
-      <!-- Addresses Section -->
-      <div class="section">
+
+      <!-- Main Content -->
+      <div class="profile-main-content">
+        <!-- Enhanced Banner Header -->
+        <div class="profile-banner-wrapper">
+          <div class="profile-banner-enhanced">
+            <div class="banner-content">
+              <h1>Welcome back, {{ user.firstName }}!</h1>
+              <p>Manage your profile, addresses, and bookings</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Addresses Section -->
+        <div class="section">
         <div class="addresses-section">
           <div class="section-header">
             <h2>My Addresses</h2>
@@ -61,25 +96,80 @@
             <p>You haven't added any addresses yet.</p>
           </div>
           <div v-else class="address-list">
-            <div v-for="address in addresses" :key="address.id" class="address-card" :class="{ 'default-address': address.isDefault }">
-              <div v-if="address.isDefault" class="default-badge">Default</div>
-              <div class="address-type">{{ formatAddressType(address.type) }}</div>
-              <div class="address-content">
-                <p>{{ address.addressLine1 }}</p>
-                <p v-if="address.addressLine2">{{ address.addressLine2 }}</p>
-                <p>{{ address.city }}, {{ address.state }} {{ address.postalCode }}</p>
-                <p>{{ address.country }}</p>
+            <div v-for="address in addresses" :key="address.id" class="address-card-modern" :class="{ 'default-address': address.isDefault }">
+              <div class="address-card-header">
+                <div class="address-type-icon">
+                  <i :class="getAddressIcon(address.type)"></i>
+                </div>
+                <div class="address-header-info">
+                  <div class="address-type-modern">{{ formatAddressType(address.type) }}</div>
+                  <div v-if="address.isDefault" class="default-badge-modern">
+                    <i class="fas fa-star"></i> Default
+                  </div>
+                </div>
               </div>
-              <div class="address-actions">
-                <button class="edit-address-btn" @click="editAddress(address)">Edit</button>
-                <button class="delete-btn" @click="deleteAddress(address.id)">Delete</button>
+              <div class="address-content-modern">
+                <div class="address-line">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <span>{{ address.addressLine1 }}</span>
+                </div>
+                <div v-if="address.addressLine2" class="address-line">
+                  <i class="fas fa-building"></i>
+                  <span>{{ address.addressLine2 }}</span>
+                </div>
+              </div>
+              <div class="address-actions-modern">
+                <button class="action-btn edit-btn-modern" @click="editAddress(address)" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </button>
                 <button 
                   v-if="!address.isDefault" 
-                  class="default-btn" 
+                  class="action-btn default-btn-modern" 
                   @click="setDefaultAddress(address.id)"
+                  title="Set as Default"
                 >
-                  Set as Default
+                  <i class="fas fa-star"></i>
                 </button>
+                <button class="action-btn delete-btn-modern" @click="deleteAddress(address.id)" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar - Activity Summary -->
+      <div class="profile-right-sidebar">
+        <div class="activity-summary">
+          <h4>Activity Summary</h4>
+          <div class="activity-cards">
+            <div class="activity-card">
+              <div class="activity-icon pending">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.pendingBookings }}</div>
+                <div class="activity-label">Pending</div>
+              </div>
+            </div>
+            <div class="activity-card">
+              <div class="activity-icon confirmed">
+                <i class="fas fa-check"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.confirmedBookings }}</div>
+                <div class="activity-label">Confirmed</div>
+              </div>
+            </div>
+            <div class="activity-card">
+              <div class="activity-icon completed">
+                <i class="fas fa-check-double"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.completedBookings }}</div>
+                <div class="activity-label">Completed</div>
               </div>
             </div>
           </div>
@@ -100,32 +190,12 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="addressLine1">Address Line 1*</label>
+              <label for="addressLine1">Street Address</label>
               <input id="addressLine1" v-model="addressForm.addressLine1" required />
             </div>
             <div class="form-group">
-              <label for="addressLine2">Address Line 2</label>
+              <label for="addressLine2">Barangay</label>
               <input id="addressLine2" v-model="addressForm.addressLine2" />
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="city">City*</label>
-                <input id="city" v-model="addressForm.city" required />
-              </div>
-              <div class="form-group">
-                <label for="state">State/Province*</label>
-                <input id="state" v-model="addressForm.state" required />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="postalCode">Postal Code*</label>
-                <input id="postalCode" v-model="addressForm.postalCode" required />
-              </div>
-              <div class="form-group">
-                <label for="country">Country*</label>
-                <input id="country" v-model="addressForm.country" required />
-              </div>
             </div>
             <div class="form-group checkbox">
               <input id="isDefault" type="checkbox" v-model="addressForm.isDefault" />
@@ -161,26 +231,6 @@
             <div class="form-group">
               <label for="editAddressLine2">Address Line 2</label>
               <input id="editAddressLine2" v-model="editAddressForm.addressLine2" />
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="editCity">City*</label>
-                <input id="editCity" v-model="editAddressForm.city" required />
-              </div>
-              <div class="form-group">
-                <label for="editState">State/Province*</label>
-                <input id="editState" v-model="editAddressForm.state" required />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="editPostalCode">Postal Code*</label>
-                <input id="editPostalCode" v-model="editAddressForm.postalCode" required />
-              </div>
-              <div class="form-group">
-                <label for="editCountry">Country*</label>
-                <input id="editCountry" v-model="editAddressForm.country" required />
-              </div>
             </div>
             <div class="form-group checkbox">
               <input id="editIsDefault" type="checkbox" v-model="editAddressForm.isDefault" />
@@ -236,17 +286,6 @@
           </form>
         </div>
       </div>
-      <!-- Confirmation Dialog -->
-      <div v-if="showConfirmDialog" class="modal-overlay">
-        <div class="modal-card confirm-dialog">
-          <h3>Confirm Delete</h3>
-          <p>Are you sure you want to delete this address?</p>
-          <div class="form-actions">
-            <button type="button" class="cancel-btn" @click="showConfirmDialog = false">Cancel</button>
-            <button type="button" class="delete-confirm-btn" @click="confirmDeleteAddress">Delete</button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -255,6 +294,7 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { clientService } from '../../services/apiService';
 import apiService from '../../services/apiService';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'ClientProfile',
@@ -274,9 +314,15 @@ export default {
     // Address state
     const showAddAddressForm = ref(false);
     const showEditAddressForm = ref(false);
-    const showConfirmDialog = ref(false);
-    const addressToDelete = ref(null);
     const editingAddressId = ref(null);
+    
+    // Activity stats
+    const activityStats = ref({
+      totalBookings: 0,
+      pendingBookings: 0,
+      confirmedBookings: 0,
+      completedBookings: 0
+    });
     
     // Form data
     const profileForm = reactive({
@@ -289,10 +335,6 @@ export default {
       type: 'HOME',
       addressLine1: '',
       addressLine2: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: '',
       isDefault: false
     });
     
@@ -300,10 +342,6 @@ export default {
       type: 'HOME',
       addressLine1: '',
       addressLine2: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: '',
       isDefault: false
     });
     
@@ -338,6 +376,38 @@ export default {
         console.error('Error fetching client profile:', err);
       } finally {
         loading.value = false;
+      }
+    };
+
+    const fetchActivityStats = async () => {
+      try {
+        const response = await clientService.getBookings();
+        if (response.success && response.data) {
+          const bookings = response.data;
+          activityStats.value = {
+            totalBookings: bookings.length,
+            pendingBookings: bookings.filter(b => b.status === 'PENDING').length,
+            confirmedBookings: bookings.filter(b => b.status === 'CONFIRMED').length,
+            completedBookings: bookings.filter(b => b.status === 'COMPLETED').length
+          };
+        }
+      } catch (err) {
+        console.error('Error fetching activity stats:', err);
+      }
+    };
+
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    };
+
+    const getAddressIcon = (type) => {
+      switch (type) {
+        case 'HOME': return 'fas fa-home';
+        case 'WORK': return 'fas fa-briefcase';
+        case 'OTHER': return 'fas fa-map-marker-alt';
+        default: return 'fas fa-map-marker-alt';
       }
     };
     
@@ -380,12 +450,40 @@ export default {
           // Update local user data with the response
           user.value = response.data;
           console.log('Profile picture updated successfully');
+          
+          // Emit event to notify Navigation component
+          window.dispatchEvent(new CustomEvent('profile-updated', {
+            detail: {
+              firstName: user.value.firstName,
+              lastName: user.value.lastName,
+              profilePicture: user.value.profilePicture
+            }
+          }));
+          
+          // Show success notification
+          await Swal.fire({
+            title: 'Profile Picture Updated!',
+            text: 'Your profile picture has been updated successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
           throw new Error(response.message || 'Failed to update profile picture');
         }
       } catch (err) {
         console.error('Error in profile image upload:', err);
         error.value = err.message || 'Failed to upload profile picture';
+        
+        // Show error notification
+        await Swal.fire({
+          title: 'Upload Failed',
+          text: err.message || 'Failed to upload profile picture. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         uploadingProfileImage.value = false;
         event.target.value = '';
@@ -421,12 +519,39 @@ export default {
             ...profileForm
           };
           isEditingProfile.value = false;
+          
+          // Emit event to notify Navigation component
+          window.dispatchEvent(new CustomEvent('profile-updated', {
+            detail: {
+              firstName: profileForm.firstName,
+              lastName: profileForm.lastName
+            }
+          }));
+          
+          // Show success notification
+          await Swal.fire({
+            title: 'Profile Updated!',
+            text: 'Your profile has been updated successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
           throw new Error(response.message || 'Failed to update profile');
         }
       } catch (err) {
         error.value = err.message || 'An error occurred while updating your profile';
         console.error('Error updating profile:', err);
+        
+        // Show error notification
+        await Swal.fire({
+          title: 'Update Failed',
+          text: err.message || 'Failed to update profile. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         isSubmitting.value = false;
       }
@@ -453,12 +578,31 @@ export default {
           // Reset form and close modal
           resetAddressForm();
           showAddAddressForm.value = false;
+          
+          // Show success notification
+          await Swal.fire({
+            title: 'Address Added!',
+            text: 'Your address has been added successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
           throw new Error(response.message || 'Failed to add address');
         }
       } catch (err) {
         error.value = err.message || 'An error occurred while adding the address';
         console.error('Error adding address:', err);
+        
+        // Show error notification
+        await Swal.fire({
+          title: 'Add Failed',
+          text: err.message || 'Failed to add address. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         isSubmitting.value = false;
       }
@@ -468,10 +612,6 @@ export default {
       addressForm.type = 'HOME';
       addressForm.addressLine1 = '';
       addressForm.addressLine2 = '';
-      addressForm.city = '';
-      addressForm.state = '';
-      addressForm.postalCode = '';
-      addressForm.country = '';
       addressForm.isDefault = false;
     };
     
@@ -480,10 +620,6 @@ export default {
       editAddressForm.type = address.type;
       editAddressForm.addressLine1 = address.addressLine1;
       editAddressForm.addressLine2 = address.addressLine2 || '';
-      editAddressForm.city = address.city;
-      editAddressForm.state = address.state;
-      editAddressForm.postalCode = address.postalCode;
-      editAddressForm.country = address.country;
       editAddressForm.isDefault = address.isDefault;
       
       showEditAddressForm.value = true;
@@ -513,46 +649,92 @@ export default {
           
           // Close modal
           showEditAddressForm.value = false;
+          
+          // Show success notification
+          await Swal.fire({
+            title: 'Address Updated!',
+            text: 'Your address has been updated successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
           throw new Error(response.message || 'Failed to update address');
         }
       } catch (err) {
         error.value = err.message || 'An error occurred while updating the address';
         console.error('Error updating address:', err);
+        
+        // Show error notification
+        await Swal.fire({
+          title: 'Update Failed',
+          text: err.message || 'Failed to update address. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         isSubmitting.value = false;
       }
     };
     
-    const deleteAddress = (addressId) => {
-      addressToDelete.value = addressId;
-      showConfirmDialog.value = true;
-    };
-    
-    const confirmDeleteAddress = async () => {
+    const deleteAddress = async (addressId) => {
+      // Show confirmation dialog with SweetAlert
+      const result = await Swal.fire({
+        title: 'Delete Address?',
+        text: 'Are you sure you want to delete this address? This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#27ae60',
+        confirmButtonText: 'Yes, Delete',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
       try {
         isSubmitting.value = true;
         error.value = null;
         
-        const response = await clientService.deleteAddress(addressToDelete.value);
+        const response = await clientService.deleteAddress(addressId);
         
         if (response.success) {
           // Remove the address from the list
-          addresses.value = addresses.value.filter(addr => addr.id !== addressToDelete.value);
+          addresses.value = addresses.value.filter(addr => addr.id !== addressId);
           
-          // Close dialog
-          showConfirmDialog.value = false;
-          addressToDelete.value = null;
+          // Show success notification
+          await Swal.fire({
+            title: 'Address Deleted!',
+            text: 'Your address has been deleted successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
           throw new Error(response.message || 'Failed to delete address');
         }
       } catch (err) {
         error.value = err.message || 'An error occurred while deleting the address';
         console.error('Error deleting address:', err);
+        
+        // Show error notification
+        await Swal.fire({
+          title: 'Delete Failed',
+          text: err.message || 'Failed to delete address. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         isSubmitting.value = false;
       }
     };
+    
     
     const setDefaultAddress = async (addressId) => {
       try {
@@ -566,12 +748,31 @@ export default {
           addresses.value.forEach(addr => {
             addr.isDefault = (addr.id === addressId);
           });
+          
+          // Show success notification
+          await Swal.fire({
+            title: 'Default Address Set!',
+            text: 'This address has been set as your default address.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
           throw new Error(response.message || 'Failed to set default address');
         }
       } catch (err) {
         error.value = err.message || 'An error occurred while setting default address';
         console.error('Error setting default address:', err);
+        
+        // Show error notification
+        await Swal.fire({
+          title: 'Update Failed',
+          text: err.message || 'Failed to set default address. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         isSubmitting.value = false;
       }
@@ -589,6 +790,7 @@ export default {
     // Initialize
     onMounted(() => {
       fetchClientProfile();
+      fetchActivityStats();
     });
     
     const activeTab = ref('profile');
@@ -605,7 +807,6 @@ export default {
       editAddressForm,
       showAddAddressForm,
       showEditAddressForm,
-      showConfirmDialog,
       getUserInitials,
       startEditProfile,
       cancelEditProfile,
@@ -614,7 +815,6 @@ export default {
       editAddress,
       updateAddress,
       deleteAddress,
-      confirmDeleteAddress,
       setDefaultAddress,
       formatAddressType,
       // Profile image upload
@@ -623,7 +823,10 @@ export default {
       triggerFileUpload,
       handleProfileImageChange,
       getFullFileUrl,
-      activeTab
+      activeTab,
+      activityStats,
+      formatDate,
+      getAddressIcon
     };
   }
 };
@@ -632,16 +835,565 @@ export default {
 <style scoped>
 /* Base Styles */
 .client-profile {
-  max-width: 100vw;
   width: 100%;
   margin: 0;
-  padding: 30px;
+  padding: 0;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #f7f9fc;
-  min-height: 100vh;
+  min-height: 93vh;
   color: #2d3748;
   box-sizing: border-box;
   overflow-x: hidden;
+}
+
+/* Layout */
+.profile-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr 250px;
+  gap: 20px;
+  width: 100%;
+  max-width: 2000px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.profile-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.profile-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.profile-right-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* Sidebar Cards */
+.sidebar-card {
+  margin-top: 10px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  padding: 35px;
+  border: 1px solid #e2e8f0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-info-card {
+  text-align: center;
+}
+
+.profile-picture-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.profile-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-name-row h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2d3748;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+}
+
+.verification-badge i {
+  font-size: 0.9rem;
+}
+
+.profile-role {
+  color: #718096;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.profile-stats-mini {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.stat-mini {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-mini i {
+  color: #27ae60;
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.stat-mini span {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 5px 0;
+}
+
+.stat-mini small {
+  display: block;
+  color: #718096;
+  font-size: 0.75rem;
+}
+
+.profile-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #4a5568;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.contact-item i {
+  color: #27ae60;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.contact-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-profile-btn-sidebar {
+  width: 100%;
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+}
+
+.edit-profile-btn-sidebar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(39, 174, 96, 0.3);
+}
+
+/* Activity Summary */
+.profile-right-sidebar .activity-summary {
+  margin-top: 10px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  padding: 25px;
+  border: 1px solid #e2e8f0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.activity-summary h4 {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.activity-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activity-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.activity-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+}
+
+.activity-icon.pending {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.activity-icon.confirmed {
+  background: linear-gradient(135deg, #2196F3, #1976d2);
+}
+
+.activity-icon.completed {
+  background: linear-gradient(135deg, #27ae60, #219d55);
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.activity-label {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+/* Enhanced Banner */
+.profile-banner-wrapper {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.profile-banner-enhanced {
+  margin-top: 10px;
+  position: relative;
+  width: 100%;
+  min-height: 20px;
+  background: linear-gradient(135deg, #27ae60 0%, #219d55 50%, #00C853 100%);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 30px;
+  box-sizing: border-box;
+}
+
+.profile-banner-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 1;
+  pointer-events: none;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  width: 100%;
+  max-width: 800px;
+}
+
+.banner-content h1 {
+  margin: 0 0 12px 0;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  line-height: 1.2;
+}
+
+.banner-content p {
+  margin: 0;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  opacity: 0.95;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Modernized Address Cards */
+.address-card-modern {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.address-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.address-card-modern:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  border-color: #27ae60;
+}
+
+.address-card-modern:hover::before {
+  background: linear-gradient(135deg, #27ae60, #219d55);
+}
+
+.address-card-modern.default-address {
+  border-color: #27ae60;
+  background: linear-gradient(to bottom right, #ffffff, #f0fff4);
+}
+
+.address-card-modern.default-address::before {
+  background: linear-gradient(135deg, #27ae60, #219d55);
+}
+
+.address-card-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.address-type-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.address-header-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.address-type-modern {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.default-badge-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+}
+
+.address-content-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.address-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #4a5568;
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.address-line i {
+  color: #27ae60;
+  margin-top: 3px;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.address-line span {
+  min-width: 0;
+  flex: 1;
+}
+
+.address-actions-modern {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 15px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.edit-btn-modern {
+  background: #e3f2fd;
+  color: #2196F3;
+}
+
+.edit-btn-modern:hover {
+  background: #2196F3;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.default-btn-modern {
+  background: #fff3e0;
+  color: #ff9800;
+}
+
+.default-btn-modern:hover {
+  background: #ff9800;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.delete-btn-modern {
+  background: #ffebee;
+  color: #f44336;
+}
+
+.delete-btn-modern:hover {
+  background: #f44336;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .profile-layout {
+    grid-template-columns: 220px 1fr 220px;
+    gap: 15px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .profile-layout {
+    grid-template-columns: 200px 1fr 200px;
+    gap: 15px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .profile-sidebar {
+    order: 2;
+  }
+  
+  .profile-main-content {
+    order: 1;
+  }
+  
+  .profile-right-sidebar {
+    order: 3;
+  }
+  
+  .profile-stats-mini {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .activity-cards {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .activity-card {
+    flex: 1;
+    min-width: 150px;
+  }
 }
 
 h1 {
@@ -731,11 +1483,13 @@ h2 {
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.04);
   padding: 35px;
-  margin-bottom: 40px;
   position: relative;
   overflow: hidden;
   border: 1px solid #e2e8f0;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 655px;
 }
 
 .section:hover {
@@ -1042,8 +1796,8 @@ h2 {
 
 .address-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
   margin-top: 20px;
   width: 100%;
   box-sizing: border-box;
@@ -1390,18 +2144,45 @@ h2 {
   }
 }
 @media (max-width: 700px) {
+  .profile-layout {
+    padding: 15px;
+    gap: 15px;
+  }
+  
   .address-list {
     grid-template-columns: 1fr;
     gap: 16px;
-    padding: 0 4px;
   }
-  .address-card {
+  
+  .address-card-modern {
     padding: 16px;
     min-width: 0;
   }
+  
   .profile-header-content-row {
     padding-left: 8px;
     padding-right: 8px;
+  }
+  
+  .profile-banner-enhanced {
+    min-height: 140px;
+    padding: 30px 20px;
+  }
+  
+  .sidebar-card {
+    padding: 20px;
+  }
+  
+  .profile-stats-mini {
+    grid-template-columns: 1fr;
+  }
+  
+  .activity-cards {
+    flex-direction: column;
+  }
+  
+  .section {
+    padding: 20px;
   }
 }
 </style>

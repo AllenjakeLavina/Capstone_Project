@@ -878,7 +878,7 @@ export const clientService = {
   updateAddress: async (addressId, addressData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/client/address/${addressId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(addressData)
       });

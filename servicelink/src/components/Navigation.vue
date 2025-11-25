@@ -810,12 +810,34 @@ export default {
       loadUserData();
     });
     
+    // Listen for profile update events
+    const handleProfileUpdate = (event) => {
+      if (event.detail) {
+        // Update name if provided
+        if (event.detail.firstName && event.detail.lastName) {
+          userName.value = `${event.detail.firstName} ${event.detail.lastName}`;
+        }
+        
+        // Update avatar if provided
+        if (event.detail.profilePicture) {
+          userAvatar.value = getFileUrl(event.detail.profilePicture);
+        } else if (event.detail.profilePicture === null) {
+          // If profile picture was removed, use default
+          userAvatar.value = DEFAULT_AVATAR;
+        }
+      } else {
+        // If no details provided, reload user data
+        loadUserData();
+      }
+    };
+    
     // Setup on component mount
     onMounted(() => {
       loadUserData();
       checkIfMobile();
       window.addEventListener('resize', checkIfMobile);
       document.addEventListener('click', handleClickOutside);
+      window.addEventListener('profile-updated', handleProfileUpdate);
       startNotificationPolling();
     });
     
@@ -823,6 +845,7 @@ export default {
     onUnmounted(() => {
       window.removeEventListener('resize', checkIfMobile);
       document.removeEventListener('click', handleClickOutside);
+      window.removeEventListener('profile-updated', handleProfileUpdate);
       if (notificationInterval) {
         clearInterval(notificationInterval);
       }
