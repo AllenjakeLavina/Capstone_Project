@@ -738,7 +738,11 @@ export default {
     const filteredServices = computed(() => {
       if (!selectedCategory.value) return [];
       
-      let services = [...selectedCategory.value.services];
+      // Filter out unapproved services (extra safety check)
+      let services = [...selectedCategory.value.services].filter(service => {
+        // Only show approved services (isApproved should be true or undefined for legacy services)
+        return service.isApproved !== false;
+      });
       
       // Apply search filter
       if (searchQuery.value.trim()) {

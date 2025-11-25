@@ -2,11 +2,91 @@
   <div class="provider-profile">
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
-      <h1>Provider Profile</h1>
-      
-      <!-- Profile Tabs Navigation -->
-      <div class="profile-tabs">
+    <div v-else class="profile-layout">
+      <!-- Left Sidebar -->
+      <div class="profile-sidebar">
+        <!-- Profile Info Card -->
+        <div class="sidebar-card profile-info-card">
+          <div class="profile-picture-wrapper">
+            <div class="profile-picture-container large">
+              <div v-if="profile.profilePicture" class="profile-picture">
+                <img :src="getFullFileUrl(profile.profilePicture)" alt="Profile Picture" />
+              </div>
+              <div v-else class="profile-picture placeholder-img">
+                <div class="profile-initials">{{ getUserInitials }}</div>
+              </div>
+              <div class="profile-picture-overlay" @click="triggerFileUpload">
+                <i class="fas fa-camera"></i>
+                <span>Change Photo</span>
+              </div>
+              <input 
+                type="file" 
+                ref="profileImageInput" 
+                @change="handleProfileImageChange" 
+                accept="image/*" 
+                class="hidden-input" 
+              />
+              <div v-if="uploadingProfileImage" class="upload-progress">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+          <div class="profile-info-content">
+            <div class="profile-name-row">
+              <h3>{{ profile.firstName }} {{ profile.lastName }}</h3>
+              <div v-if="verificationStatus.isVerified" class="verification-badge">
+                <i class="fas fa-check-circle"></i>
+                <span>Verified</span>
+              </div>
+            </div>
+            <div class="profile-role">Provider Account</div>
+            <div class="profile-stats-mini">
+              <div class="stat-mini">
+                <i class="fas fa-calendar-check"></i>
+                <span>{{ activityStats.totalBookings }}</span>
+                <small>Bookings</small>
+              </div>
+              <div class="stat-mini">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ activityStats.completedBookings }}</span>
+                <small>Completed</small>
+              </div>
+            </div>
+            <div class="profile-contact-info">
+              <div class="contact-item">
+                <i class="fas fa-envelope"></i>
+                <span>{{ profile.email }}</span>
+              </div>
+              <div v-if="profile.phone" class="contact-item">
+                <i class="fas fa-phone"></i>
+                <span>{{ profile.phone }}</span>
+              </div>
+              <div class="contact-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Joined {{ formatDate(profile.createdAt) }}</span>
+              </div>
+            </div>
+            <button class="edit-profile-btn-sidebar" @click="toggleEditPersonal">
+              <i class="fas fa-edit"></i> Edit Profile
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="profile-main-content">
+        <!-- Enhanced Banner Header -->
+        <div class="profile-banner-wrapper">
+          <div class="profile-banner-enhanced">
+            <div class="banner-content">
+              <h1>Welcome back, {{ profile.firstName }}!</h1>
+              <p>Manage your profile, services, and bookings</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Tabs Navigation -->
+        <div class="profile-tabs">
         <div 
           v-for="tab in tabs" 
           :key="tab.id" 
@@ -21,44 +101,6 @@
       <div v-show="activeTab === 'personal'" class="tab-content section">
         <h2>Personal Information</h2>
         <div v-if="!editingPersonal" class="profile-info">
-          <div class="profile-header">
-            <div class="profile-picture-container">
-              <div v-if="profile.profilePicture" class="profile-picture">
-                <img :src="getFullFileUrl(profile.profilePicture)" alt="Profile Picture" />
-              </div>
-              <div v-else class="profile-picture placeholder-img">
-                <i class="fas fa-user"></i>
-              </div>
-              
-              <!-- Overlay clickable area -->
-              <div class="profile-picture-overlay" @click="triggerFileUpload">
-                <i class="fas fa-camera"></i>
-                <span>Change Photo</span>
-              </div>
-              
-              <!-- Hidden file input -->
-              <input 
-                type="file" 
-                ref="profileImageInput" 
-                @change="handleProfileImageChange" 
-                accept="image/*" 
-                class="hidden-input" 
-                style="display:none" 
-              />
-              
-              <!-- Upload progress indicator -->
-              <div v-if="uploadingProfileImage" class="upload-progress">
-                <div class="spinner"></div>
-              </div>
-            </div>
-            
-            <div class="profile-actions">
-              <button class="edit-btn" @click="toggleEditPersonal">
-                <i class="fas fa-edit"></i> Edit Profile
-              </button>
-            </div>
-          </div>
-          
           <div class="profile-details">
             <div class="detail-item">
               <h3>Basic Info</h3>
@@ -69,13 +111,13 @@
             
             <div class="detail-item">
               <h3>Professional Info</h3>
-              <p><strong>Headline:</strong> {{ profile.serviceProvider?.headline || '' }}</p>
+              <p><strong>Headline:</strong> {{ profile.serviceProvider?.headline || 'Not set' }}</p>
               <!-- Removed hourly rate display per new pricing policy -->
             </div>
             
             <div class="detail-item">
               <h3>Bio</h3>
-              <p class="bio-text">{{ profile.serviceProvider?.bio || '' }}</p>
+              <p class="bio-text">{{ profile.serviceProvider?.bio || 'No bio added yet.' }}</p>
             </div>
           </div>
         </div>
@@ -697,6 +739,43 @@
           </div>
         </div>
       </div>
+      </div>
+
+      <!-- Right Sidebar - Activity Summary -->
+      <div class="profile-right-sidebar">
+        <div class="activity-summary">
+          <h4>Activity Summary</h4>
+          <div class="activity-cards">
+            <div class="activity-card">
+              <div class="activity-icon pending">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.pendingBookings }}</div>
+                <div class="activity-label">Pending</div>
+              </div>
+            </div>
+            <div class="activity-card">
+              <div class="activity-icon confirmed">
+                <i class="fas fa-check"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.confirmedBookings }}</div>
+                <div class="activity-label">Confirmed</div>
+              </div>
+            </div>
+            <div class="activity-card">
+              <div class="activity-icon completed">
+                <i class="fas fa-check-double"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.completedBookings }}</div>
+                <div class="activity-label">Completed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -818,6 +897,14 @@ export default {
     const totalReviews = ref(0);
     const ratingDistribution = ref({});
 
+    // Activity stats
+    const activityStats = ref({
+      totalBookings: 0,
+      pendingBookings: 0,
+      confirmedBookings: 0,
+      completedBookings: 0
+    });
+
     // Computed properties
     const verificationStatusText = computed(() => {
       if (!verificationStatus.value) return 'Unknown';
@@ -831,6 +918,13 @@ export default {
       if (verificationStatus.value.isVerified) return 'verified';
       if (verificationStatus.value.pendingVerification) return 'pending';
       return 'not-verified';
+    });
+
+    const getUserInitials = computed(() => {
+      if (profile.value.firstName && profile.value.lastName) {
+        return `${profile.value.firstName[0]}${profile.value.lastName[0]}`;
+      }
+      return '';
     });
 
     // Modal state
@@ -917,12 +1011,37 @@ export default {
           // Update local data
           profile.value = response.data;
           showEditProfileModal.value = false;
+          
+          // Emit event to notify Navigation component
+          window.dispatchEvent(new CustomEvent('profile-updated', {
+            detail: {
+              firstName: personalForm.firstName,
+              lastName: personalForm.lastName
+            }
+          }));
+          
+          await Swal.fire({
+            title: 'Profile Updated!',
+            text: 'Your profile has been updated successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
           throw new Error(response.message || 'Failed to update profile');
         }
       } catch (err) {
         console.error('Component: Error updating profile:', err);
         error.value = err.message;
+        
+        await Swal.fire({
+          title: 'Update Failed',
+          text: err.message || 'Failed to update profile. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         isProcessing.value = false;
       }
@@ -1114,14 +1233,31 @@ export default {
       }
     };
 
+    // Fetch activity stats
+    const fetchActivityStats = async () => {
+      try {
+        const response = await providerService.getProviderBookings();
+        if (response.success && response.data) {
+          const bookings = response.data;
+          activityStats.value = {
+            totalBookings: bookings.length,
+            pendingBookings: bookings.filter(b => b.status === 'PENDING').length,
+            confirmedBookings: bookings.filter(b => b.status === 'CONFIRMED').length,
+            completedBookings: bookings.filter(b => b.status === 'COMPLETED').length
+          };
+        }
+      } catch (err) {
+        console.error('Error fetching activity stats:', err);
+      }
+    };
+
     // Helper functions
     const formatDate = (dateString) => {
       if (!dateString) return 'N/A';
       const date = new Date(dateString);
       return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        month: 'long'
       }).format(date);
     };
 
@@ -1181,12 +1317,22 @@ export default {
       if (!file) return;
       // Validate file type
       if (!file.type.match('image.*')) {
-        error.value = 'Please select an image file';
+        await Swal.fire({
+          title: 'Invalid File',
+          text: 'Please select an image file',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
         return;
       }
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        error.value = 'Image must be less than 5MB';
+        await Swal.fire({
+          title: 'File Too Large',
+          text: 'Image must be less than 5MB',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
         return;
       }
       try {
@@ -1195,11 +1341,36 @@ export default {
         const response = await apiService.uploadProfilePicture(file);
         if (response.success) {
           profile.value = response.data;
+          
+          // Emit event to notify Navigation component
+          window.dispatchEvent(new CustomEvent('profile-updated', {
+            detail: {
+              firstName: profile.value.firstName,
+              lastName: profile.value.lastName,
+              profilePicture: profile.value.profilePicture
+            }
+          }));
+          
+          await Swal.fire({
+            title: 'Profile Picture Updated!',
+            text: 'Your profile picture has been updated successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
           throw new Error(response.message || 'Failed to update profile picture');
         }
       } catch (err) {
         error.value = err.message || 'Failed to upload profile picture';
+        await Swal.fire({
+          title: 'Upload Failed',
+          text: err.message || 'Failed to upload profile picture. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         uploadingProfileImage.value = false;
         event.target.value = '';
@@ -1457,6 +1628,7 @@ export default {
       fetchProfileData();
       fetchReviews();
       fetchAvailability();
+      fetchActivityStats();
       // If navigated with ?tab=reviews, focus Reviews tab
       try {
         const url = new URL(window.location.href);
@@ -1548,7 +1720,9 @@ export default {
       ratingDistribution,
       fetchReviews,
       getRatingPercentage,
-      getRatingCount
+      getRatingCount,
+      activityStats,
+      getUserInitials
     };
   }
 };
@@ -1557,17 +1731,373 @@ export default {
 <style scoped>
 /* Base Styles */
 .provider-profile {
-  max-width: 100%;
   width: 100%;
   margin: 0;
-  padding: 30px;
+  padding: 0;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #f7f9fc;
-  min-height: 100vh;
+  min-height: 93vh;
   color: #2d3748;
   box-sizing: border-box;
   overflow-x: hidden;
-  overflow-y: auto; /* Ensure vertical scrolling works */
+}
+
+/* Layout */
+.profile-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr 250px;
+  gap: 20px;
+  width: 100%;
+  max-width: 2000px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.profile-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.profile-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.profile-right-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* Sidebar Cards */
+.sidebar-card {
+  margin-top: 10px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  padding: 35px;
+  border: 1px solid #e2e8f0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-info-card {
+  text-align: center;
+}
+
+.profile-picture-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.profile-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-name-row h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2d3748;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+}
+
+.verification-badge i {
+  font-size: 0.9rem;
+}
+
+.profile-role {
+  color: #718096;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.profile-stats-mini {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.stat-mini {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-mini i {
+  color: #27ae60;
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.stat-mini span {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 5px 0;
+}
+
+.stat-mini small {
+  display: block;
+  color: #718096;
+  font-size: 0.75rem;
+}
+
+.profile-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #4a5568;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.contact-item i {
+  color: #27ae60;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.contact-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-profile-btn-sidebar {
+  width: 100%;
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+}
+
+.edit-profile-btn-sidebar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(39, 174, 96, 0.3);
+}
+
+/* Activity Summary */
+.profile-right-sidebar .activity-summary {
+  margin-top: 10px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  padding: 25px;
+  border: 1px solid #e2e8f0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.activity-summary h4 {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.activity-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activity-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.activity-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+}
+
+.activity-icon.pending {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.activity-icon.confirmed {
+  background: linear-gradient(135deg, #2196F3, #1976d2);
+}
+
+.activity-icon.completed {
+  background: linear-gradient(135deg, #27ae60, #219d55);
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.activity-label {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+/* Enhanced Banner */
+.profile-banner-wrapper {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.profile-banner-enhanced {
+  margin-top: 10px;
+  position: relative;
+  width: 100%;
+  min-height: 20px;
+  background: linear-gradient(135deg, #27ae60 0%, #219d55 50%, #00C853 100%);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 30px;
+  box-sizing: border-box;
+}
+
+.profile-banner-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 1;
+  pointer-events: none;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  width: 100%;
+  max-width: 800px;
+}
+
+.banner-content h1 {
+  margin: 0 0 12px 0;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  line-height: 1.2;
+}
+
+.banner-content p {
+  margin: 0;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  opacity: 0.95;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.profile-picture-container.large {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin: 0;
+  position: relative;
+}
+
+.profile-picture-container.large .profile-picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-picture-container.large .profile-initials {
+  font-size: 48px;
+}
+
+.profile-initials {
+  font-size: 32px;
+  font-weight: bold;
+  color: #555;
 }
 
 h1 {
@@ -1582,6 +2112,11 @@ h1 {
 }
 
 h1::after {
+  display: none;
+}
+
+/* Hide h1 in banner since it's now in banner-content */
+.profile-main-content > h1 {
   display: none;
 }
 
@@ -1727,6 +2262,11 @@ h3 {
   background-color: #e0e0e0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   margin: 0 auto;
+}
+
+.profile-picture-container.large {
+  width: 180px;
+  height: 180px;
 }
 
 .profile-picture {
@@ -2911,6 +3451,57 @@ textarea.form-control {
   object-fit: cover;
 }
 
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .profile-layout {
+    grid-template-columns: 220px 1fr 220px;
+    gap: 15px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .profile-layout {
+    grid-template-columns: 200px 1fr 200px;
+    gap: 15px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .profile-sidebar {
+    order: 2;
+  }
+  
+  .profile-main-content {
+    order: 1;
+  }
+  
+  .profile-right-sidebar {
+    order: 3;
+  }
+  
+  .profile-stats-mini {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .activity-cards {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .activity-card {
+    flex: 1;
+    min-width: 150px;
+  }
+}
+
 @media (max-width: 600px) {
   .experience-list,
   .education-list,
@@ -2962,6 +3553,28 @@ textarea.form-control {
   
   .review-rating {
     align-self: flex-end;
+  }
+  
+  .profile-layout {
+    padding: 15px;
+    gap: 15px;
+  }
+  
+  .sidebar-card {
+    padding: 20px;
+  }
+  
+  .profile-stats-mini {
+    grid-template-columns: 1fr;
+  }
+  
+  .activity-cards {
+    flex-direction: column;
+  }
+  
+  .profile-banner-enhanced {
+    min-height: 140px;
+    padding: 30px 20px;
   }
 }
 

@@ -1384,6 +1384,7 @@ export const getCategoriesWithServices = async () => {
         services: {
           where: {
             isActive: true,
+            isApproved: true, // Only show approved services to clients
             serviceProvider: {
               isProviderVerified: true
             }
@@ -1455,18 +1456,25 @@ export const getCategoriesWithServices = async () => {
         };
       });
 
+      // Filter out categories with no approved services
+      // Only return categories that have at least one approved service
+      if (processedServices.length === 0) {
+        return null;
+      }
+
       // Ensure the imageUrl is included in the returned category
       return {
         id: category.id,
         name: category.name,
         description: category.description,
         imageUrl: category.imageUrl || null, // Ensure even null is returned explicitly
-        serviceCount: category.services.length,
+        serviceCount: processedServices.length, // Use processed services count (only approved)
         services: processedServices
       };
     });
 
-    return processedCategories;
+    // Filter out null categories (those with no approved services)
+    return processedCategories.filter(category => category !== null);
   } catch (error) {
     throw error;
   }
