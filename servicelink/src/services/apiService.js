@@ -1301,6 +1301,32 @@ export const adminService = {
     } catch (error) {
       return handleApiError(error);
     }
+  },
+
+  getAllTransactions: async (queryParams = '') => {
+    try {
+      const url = `${API_BASE_URL}/admin/transactions${queryParams ? `?${queryParams}` : ''}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  getActivityLogs: async (queryParams = '') => {
+    try {
+      const url = `${API_BASE_URL}/admin/activity-logs${queryParams ? `?${queryParams}` : ''}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
   }
 };
 

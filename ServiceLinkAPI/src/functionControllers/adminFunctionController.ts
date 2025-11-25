@@ -1156,6 +1156,146 @@ export const getRecentBookings = async (limit = 10) => {
   }
 };
 
+export const getAllTransactions = async (filters?: {
+  paymentStatus?: 'PENDING' | 'COMPLETED';
+  providerId?: string;
+  clientId?: string;
+  sortBy?: 'date' | 'amount';
+  sortOrder?: 'asc' | 'desc';
+}) => {
+  try {
+    const where: any = {};
+
+    // Apply filters
+    if (filters?.paymentStatus) {
+      // When filtering by payment status, payment must exist and have that status
+      where.payment = {
+        status: filters.paymentStatus
+      };
+    } else {
+      // If no payment status filter, just ensure payment exists
+      where.payment = {
+        isNot: null
+      };
+    }
+
+    if (filters?.providerId) {
+      where.serviceProviderId = filters.providerId;
+    }
+
+    if (filters?.clientId) {
+      where.clientId = filters.clientId;
+    }
+
+    // Determine sort order
+    const orderBy: any = {};
+    if (filters?.sortBy === 'date') {
+      orderBy.createdAt = filters.sortOrder || 'desc';
+    } else if (filters?.sortBy === 'amount') {
+      orderBy.totalAmount = filters.sortOrder || 'desc';
+    } else {
+      orderBy.createdAt = 'desc'; // Default sort by date
+    }
+
+    const transactions = await prisma.serviceBooking.findMany({
+      where,
+      orderBy,
+      include: {
+        client: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
+        serviceProvider: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            }
+          }
+        },
+        service: {
+          select: {
+            title: true,
+            pricing: true
+          }
+        },
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            status: true,
+            paymentMethod: true,
+            paymentDate: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        }
+      }
+    });
+
+    return transactions;
+  } catch (error) {
+    console.error('Error getting all transactions:', error);
+    throw error;
+  }
+};
+
+export const getActivityLogs = async (filters?: {
+  bookingId?: string;
+  userId?: string;
+  action?: string;
+  limit?: number;
+}) => {
+  try {
+    const where: any = {};
+
+    if (filters?.bookingId) {
+      where.bookingId = filters.bookingId;
+    }
+
+    if (filters?.userId) {
+      where.userId = filters.userId;
+    }
+
+    if (filters?.action) {
+      where.action = filters.action;
+    }
+
+    const logs = await prisma.activityLog.findMany({
+      where,
+      take: filters?.limit || 100,
+      orderBy: {
+        createdAt: 'desc'
+      },
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    return logs;
+  } catch (error) {
+    console.error('Error getting activity logs:', error);
+    throw error;
+  }
+};
+
 export const getProviderRatings = async () => {
   try {
     // Get all providers with their user data and received reviews

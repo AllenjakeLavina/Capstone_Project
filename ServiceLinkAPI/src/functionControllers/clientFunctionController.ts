@@ -672,7 +672,7 @@ export const bookService = async (
       }
     }
 
-    // Create a new booking
+    // Create a new booking with payment
     const booking = await prisma.serviceBooking.create({
       data: {
         clientId: user.client.id,
@@ -684,7 +684,14 @@ export const bookService = async (
         notes: bookingData.notes,
         title: bookingData.title || service.title,
         description: bookingData.description,
-        totalAmount: service.pricing // Initial amount based on service price
+        totalAmount: service.pricing, // Initial amount based on service price
+        payment: {
+          create: {
+            amount: service.pricing,
+            status: 'PENDING',
+            paymentMethod: 'CASH'
+          }
+        }
       },
       include: {
         service: true,
@@ -697,9 +704,19 @@ export const bookService = async (
           include: {
             user: true
           }
-        }
+        },
+        payment: true
       }
     });
+
+    // Log activity
+    const { logActivity } = await import('../utils/activityLogger');
+    await logActivity(
+      'BOOKING_CREATED',
+      `Client ${user.firstName} ${user.lastName} created a booking for "${service.title}"`,
+      userId,
+      booking.id
+    );
 
     // Create a notification for the provider
     await prisma.notification.create({
@@ -1028,8 +1045,7 @@ export const updateBooking = async (
 
 export const processPayment = async (
   userId: string,
-  bookingId: string,
-  paymentProofUrl?: string
+  bookingId: string
 ) => {
   try {
     // Find client by userId
@@ -1063,19 +1079,17 @@ export const processPayment = async (
       throw new Error('Booking not found or not authorized');
     }
 
-    // Check if payment already exists
+    // Check if payment already exists and is completed
     if (booking.payment && booking.payment.status === 'COMPLETED') {
       throw new Error('Payment has already been processed for this booking');
     }
 
-    // For cash payment, we'll create or update the payment record
-    // and mark it as pending since it will be collected in person
+    // For cash payment, create or update the payment record
+    // Mark it as pending since it will be collected in person
     const paymentData = {
       amount: booking.totalAmount || booking.service.pricing,
       status: 'PENDING' as const,
-      paymentMethod: 'CASH',
-      paymentDate: new Date(),
-      paymentProofUrl // Store the payment proof file path
+      paymentMethod: 'CASH'
     };
 
     let payment;
@@ -1123,14 +1137,13 @@ export const processPayment = async (
         receiverId: booking.serviceProvider.user.id,
         type: 'BOOKING_CONFIRMED',
         title: 'Booking Confirmed',
-        message: `The booking for "${booking.service.title}" has been confirmed. Payment will be collected in cash.`,
+        message: `The booking for "${booking.service.title}" has been confirmed. Payment will be collected in cash on service.`,
         isRead: false,
         data: JSON.stringify({
           bookingId: booking.id,
           serviceId: booking.service.id,
           paymentMethod: 'CASH',
-          amount: paymentData.amount.toString(),
-          paymentProofUrl // Include payment proof path in notification
+          amount: paymentData.amount.toString()
         })
       }
     });
@@ -1168,6 +1181,11 @@ export const markPaymentCompleted = async (
       where: { id: bookingId },
       include: {
         payment: true,
+        service: {
+          select: {
+            title: true
+          }
+        },
         client: {
           include: {
             user: true
@@ -1195,14 +1213,24 @@ export const markPaymentCompleted = async (
       throw new Error('No payment record found for this booking');
     }
 
-    // Update payment status to COMPLETED
+    // Update payment status to COMPLETED and set payment date
+    const paymentDate = new Date();
     const updatedPayment = await prisma.payment.update({
       where: { id: booking.payment.id },
       data: {
         status: 'COMPLETED' as const,
-        paymentDate: new Date()
+        paymentDate: paymentDate
       }
     });
+
+    // Log activity
+    const { logActivity } = await import('../utils/activityLogger');
+    await logActivity(
+      'PAYMENT_MARKED_PAID',
+      `Provider ${user.firstName} ${user.lastName} marked payment as paid for booking "${booking.title || booking.service?.title || 'N/A'}"`,
+      userId,
+      bookingId
+    );
 
     // Update booking status to IN_PROGRESS only if it's CONFIRMED
     // Don't change status if it's already COMPLETED
@@ -1213,13 +1241,13 @@ export const markPaymentCompleted = async (
       });
     }
 
-    // Create notification for client
-    await prisma.notification.create({
+    // Create notification for client - Payment was marked as paid by provider
+    const notification = await prisma.notification.create({
       data: {
         receiverId: booking.client.user.id,
         type: 'PAYMENT_RECEIVED',
-        title: 'Payment Received',
-        message: `Your cash payment for "${booking.title || 'service booking'}" has been received and marked as completed.`,
+        title: 'Payment Confirmed',
+        message: `Your payment of ₱${updatedPayment.amount} for "${booking.title || booking.service?.title || 'service booking'}" has been confirmed by the provider.`,
         isRead: false,
         data: JSON.stringify({
           bookingId: booking.id,
@@ -1228,6 +1256,35 @@ export const markPaymentCompleted = async (
         })
       }
     });
+
+    // Emit real-time updates
+    try {
+      const { io } = await import('../index');
+      if (io) {
+        // Emit booking update to client
+        io.to(`user:${booking.client.user.id}`).emit('booking-updated', {
+          bookingId: booking.id,
+          booking: {
+            ...booking,
+            payment: updatedPayment
+          }
+        });
+
+        // Emit notification to client
+        io.to(`user:${booking.client.user.id}`).emit('notification', {
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: JSON.parse(notification.data || '{}'),
+          createdAt: notification.createdAt,
+          isRead: false
+        });
+      }
+    } catch (socketError) {
+      console.error('Error emitting socket update:', socketError);
+      // Don't fail if socket fails
+    }
 
     return updatedPayment;
   } catch (error) {

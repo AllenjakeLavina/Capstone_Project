@@ -45,6 +45,9 @@ model User {
   // Verification and reset tokens
   verificationTokens  VerificationToken[]
   resetPasswordTokens ResetPasswordToken[]
+  
+  // Activity logs
+  activityLogs ActivityLog[] @relation("ActivityLogs")
 }
 
 enum Role {
@@ -389,12 +392,11 @@ model Payment {
   serviceBooking   ServiceBooking @relation(fields: [serviceBookingId], references: [id], onDelete: Cascade)
   amount           Decimal        @db.Decimal(10, 2)
   status           PaymentStatus  @default(PENDING)
-  paymentMethod    String?
+  paymentMethod    String?        @default("CASH")
   transactionId    String?
-  paymentDate      DateTime?
+  paymentDate      DateTime?      // Date when payment was marked as paid
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
-  paymentProofUrl  String? // Store the payment proof file path
 }
 
 enum PaymentStatus {
@@ -554,3 +556,20 @@ model ResetPasswordToken {
   createdAt DateTime @default(now())
   isUsed    Boolean  @default(false)
 }
+
+// Activity Log for tracking important actions
+model ActivityLog {
+  id          String   @id @default(uuid())
+  action      String   // e.g., "BOOKING_CREATED", "PAYMENT_MARKED_PAID"
+  description String   @db.Text
+  userId      String?  // Who performed the action
+  user        User?    @relation("ActivityLogs", fields: [userId], references: [id], onDelete: SetNull)
+  bookingId   String?  // Related booking if applicable
+  createdAt   DateTime @default(now())
+  
+  @@index([bookingId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Add relation to User model

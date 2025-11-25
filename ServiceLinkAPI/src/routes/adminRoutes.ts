@@ -26,7 +26,9 @@ import {
   handleGetProviderRatings,
   handleGetPendingServices,
   handleApproveService,
-  handleRejectService
+  handleRejectService,
+  handleGetAllTransactions,
+  handleGetActivityLogs
 } from '../httpControllers/adminHttpController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 import { uploadFile } from '../middlewares/fileHandler';
@@ -44,6 +46,10 @@ router.post('/create-admin', handleCreateAdmin);
 router.get('/dashboard/stats', authenticateToken, authorizeRoles('ADMIN'), handleGetDashboardStats);
 router.get('/dashboard/recent-bookings', authenticateToken, authorizeRoles('ADMIN'), handleGetRecentBookings);
 router.get('/dashboard/provider-ratings', authenticateToken, authorizeRoles('ADMIN'), handleGetProviderRatings);
+
+// Transactions and Activity Logs
+router.get('/transactions', authenticateToken, authorizeRoles('ADMIN'), handleGetAllTransactions);
+router.get('/activity-logs', authenticateToken, authorizeRoles('ADMIN'), handleGetActivityLogs);
 
 // Protected admin routes (example)
 router.get('/dashboard', authenticateToken, authorizeRoles('ADMIN'), (req, res) => {

@@ -284,3 +284,18 @@ export const setupSocketServer = (httpServer: HttpServer) => {
 
   return io;
 };
+
+// Export function to emit booking updates
+export const emitBookingUpdate = (io: SocketIOServer, bookingId: string, bookingData: any, userIds: string[]) => {
+  userIds.forEach(userId => {
+    io.to(`user:${userId}`).emit('booking-updated', {
+      bookingId,
+      booking: bookingData
+    });
+  });
+};
+
+// Export function to emit notification
+export const emitNotification = (io: SocketIOServer, userId: string, notification: any) => {
+  io.to(`user:${userId}`).emit('notification', notification);
+};

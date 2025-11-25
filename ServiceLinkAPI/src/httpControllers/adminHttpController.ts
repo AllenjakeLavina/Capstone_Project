@@ -26,7 +26,9 @@ import {
   getProviderRatings,
   getPendingServices,
   approveService,
-  rejectService
+  rejectService,
+  getAllTransactions,
+  getActivityLogs
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -724,6 +726,82 @@ export const handleGetRecentBookings = async (req: Request, res: Response) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     console.error('Error in handleGetRecentBookings:', error);
+    res.status(500).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+export const handleGetAllTransactions = async (req: Request, res: Response) => {
+  try {
+    const filters: any = {};
+    
+    if (req.query.paymentStatus) {
+      filters.paymentStatus = req.query.paymentStatus as 'PENDING' | 'COMPLETED';
+    }
+    
+    if (req.query.providerId) {
+      filters.providerId = req.query.providerId as string;
+    }
+    
+    if (req.query.clientId) {
+      filters.clientId = req.query.clientId as string;
+    }
+    
+    if (req.query.sortBy) {
+      filters.sortBy = req.query.sortBy as 'date' | 'amount';
+    }
+    
+    if (req.query.sortOrder) {
+      filters.sortOrder = req.query.sortOrder as 'asc' | 'desc';
+    }
+
+    const transactions = await getAllTransactions(filters);
+
+    res.status(200).json({
+      success: true,
+      data: transactions
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in handleGetAllTransactions:', error);
+    res.status(500).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+export const handleGetActivityLogs = async (req: Request, res: Response) => {
+  try {
+    const filters: any = {};
+    
+    if (req.query.bookingId) {
+      filters.bookingId = req.query.bookingId as string;
+    }
+    
+    if (req.query.userId) {
+      filters.userId = req.query.userId as string;
+    }
+    
+    if (req.query.action) {
+      filters.action = req.query.action as string;
+    }
+    
+    if (req.query.limit) {
+      filters.limit = parseInt(req.query.limit as string);
+    }
+
+    const logs = await getActivityLogs(filters);
+
+    res.status(200).json({
+      success: true,
+      data: logs
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in handleGetActivityLogs:', error);
     res.status(500).json({
       success: false,
       message: errorMessage

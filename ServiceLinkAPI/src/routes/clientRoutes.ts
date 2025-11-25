@@ -36,7 +36,7 @@ router.put('/booking/:bookingId', authenticateToken, handleUpdateBooking);
 router.post('/booking/:bookingId/cancel', authenticateToken, handleCancelBooking);
 
 // Payment management
-router.post('/booking/:bookingId/payment', authenticateToken, uploadFile.single('paymentProof'), handleProcessPayment);
+router.post('/booking/:bookingId/payment', authenticateToken, handleProcessPayment);
 router.post('/booking/:bookingId/payment/complete', authenticateToken, authorizeRoles('PROVIDER'), handleMarkPaymentCompleted);
 
 // Contract Routes

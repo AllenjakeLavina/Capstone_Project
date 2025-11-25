@@ -69,14 +69,16 @@
             </div>
           </div>
 
-          <div v-if="booking.payment && booking.payment.paymentProofUrl" class="card-section">
-            <h3>Payment Proof</h3>
-            <div class="payment-proof">
-              <img 
-                :src="getPaymentProofUrl(booking)" 
-                alt="Payment Proof"
-                @click="openImageInNewTab(getPaymentProofUrl(booking))"
-              />
+          <div v-if="booking.payment" class="card-section">
+            <h3>Payment Information</h3>
+            <div class="payment-info">
+              <p><strong>Payment Method:</strong> Cash On-Service</p>
+              <p><strong>Payment Status:</strong> 
+                <span :class="['status-badge', booking.payment.status === 'COMPLETED' ? 'paid' : 'unpaid']">
+                  {{ booking.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+                </span>
+              </p>
+              <p v-if="booking.payment.paymentDate"><strong>Date Paid:</strong> {{ formatDate(booking.payment.paymentDate) }}</p>
             </div>
           </div>
 
@@ -243,12 +245,6 @@ export default {
       return '';
     };
 
-    const getPaymentProofUrl = (booking) => {
-      if (booking?.payment?.paymentProofUrl) {
-        return getFileUrl(booking.payment.paymentProofUrl);
-      }
-      return '';
-    };
 
     const openImageInNewTab = (imageUrl) => {
       if (imageUrl) {
@@ -548,7 +544,6 @@ export default {
       formatAddress,
       getClientName,
       getServiceImage,
-      getPaymentProofUrl,
       openImageInNewTab,
       goBack,
       confirmAcceptBooking,

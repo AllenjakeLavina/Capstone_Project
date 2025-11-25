@@ -95,15 +95,18 @@
               v-if="booking.status === 'COMPLETED' && booking.payment && booking.payment.status === 'PENDING'"
               class="btn btn-payment" 
               @click="confirmMarkPaymentCompleted(booking)">
-              Mark Payment Received
+              Mark as Paid
             </button>
-            
-            <button
-              v-if="booking.status === 'COMPLETED' && booking.payment && booking.payment.paymentProofUrl"
-              class="btn btn-view-proof"
-              @click="viewPaymentProof(booking)">
-              View Payment Proof
-            </button>
+
+            <div v-if="booking.payment" class="payment-status-display">
+              <span :class="['payment-status-badge', booking.payment.status === 'COMPLETED' ? 'paid' : 'unpaid']">
+                <i :class="booking.payment.status === 'COMPLETED' ? 'fa fa-check-circle' : 'fa fa-clock'"></i>
+                Payment: {{ booking.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+                <span v-if="booking.payment.status === 'COMPLETED' && booking.payment.paymentDate" class="payment-date">
+                  ({{ formatDate(booking.payment.paymentDate) }})
+                </span>
+              </span>
+            </div>
             
             <button 
               v-if="booking.status === 'COMPLETED' && !isBookingRated(booking)"
@@ -270,19 +273,11 @@
               <h4>{{ selectedBooking?.title || selectedBooking?.service.title }}</h4>
               <p class="payment-amount">₱{{ Number(selectedBooking?.totalAmount || selectedBooking?.service.pricing).toFixed(2) }}</p>
               <p>Client: {{ getClientName(selectedBooking) }}</p>
-              <p>Payment Method: {{ selectedBooking?.payment?.paymentMethod || 'Cash' }}</p>
-              
-              <!-- Payment proof section -->
-              <div v-if="hasPaymentProof" class="payment-proof">
-                <h5>Payment Proof</h5>
-                <div class="payment-proof-image">
-                  <img :src="getPaymentProofUrl(selectedBooking)" alt="Payment Proof" @click="openImageInNewTab(getPaymentProofUrl(selectedBooking))" />
-                </div>
-                <p class="proof-help-text">Click on image to view in full size</p>
-              </div>
-              <div v-else class="no-payment-proof">
-                <p>No payment proof image was provided by the client.</p>
-              </div>
+              <p><strong>Payment Method: Cash On-Service</strong></p>
+              <p class="payment-note">
+                <i class="fa fa-info-circle"></i>
+                Mark this payment as paid after you have received the cash payment from the client.
+              </p>
             </div>
             
             <div class="modal-actions">
@@ -359,10 +354,12 @@
 <script>
 import { providerService } from '@/services/apiService';
 import { useRouter } from 'vue-router';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import Swal from 'sweetalert2';
+import { io } from 'socket.io-client';
 
 const API_BASE_URL = process.env.VUE_APP_FILE_URL || (process.env.VUE_APP_API_URL ? process.env.VUE_APP_API_URL.replace(/\/?api\/?$/, '') : 'http://localhost:5500');
+const SOCKET_URL = API_BASE_URL;
 
 // Helper function to get file URL
 const getFileUrl = (relativePath) => {
@@ -403,6 +400,48 @@ export default {
     const rating = ref(0);
     const ratingComment = ref('');
     const bookingRatings = ref({});
+    const socket = ref(null);
+
+    // Initialize socket connection for real-time updates
+    const initializeSocket = () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      socket.value = io(SOCKET_URL, {
+        path: '/socket',
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
+
+      socket.value.on('connect', () => {
+        console.log('Socket connected for provider bookings');
+      });
+
+      // Listen for booking updates
+      socket.value.on('booking-updated', (data) => {
+        console.log('Booking updated via socket:', data);
+        // Update the booking in the list
+        const index = bookings.value.findIndex(b => b.id === data.bookingId);
+        if (index !== -1) {
+          // Update the booking with new data
+          bookings.value[index] = { ...bookings.value[index], ...data.booking };
+          // Force reactivity
+          bookings.value = [...bookings.value];
+        } else {
+          // If booking not in list, refresh the list
+          fetchBookings(currentFilter.value === 'ALL' ? null : currentFilter.value);
+        }
+      });
+
+      // Listen for notifications
+      socket.value.on('notification', (notification) => {
+        console.log('New notification received:', notification);
+        // You can show a toast or update notification count here
+      });
+    };
     
     const ratingText = computed(() => {
       switch (rating.value) {
@@ -415,12 +454,6 @@ export default {
       }
     });
 
-    // Computed property to check if payment proof exists
-    const hasPaymentProof = computed(() => {
-      return selectedBooking.value && 
-             selectedBooking.value.payment && 
-             selectedBooking.value.payment.paymentProofUrl;
-    });
 
     // Status options for filtering
     const statusOptions = [
@@ -442,22 +475,6 @@ export default {
         
         if (response.success) {
           console.log('Bookings:', response.data);
-          
-          // Debug payment information
-          const bookingsWithPayment = response.data.filter(booking => booking.payment);
-          console.log('Bookings with payment:', bookingsWithPayment);
-          
-          // Check for confirmed bookings
-          const confirmedBookings = response.data.filter(booking => booking.status === 'CONFIRMED');
-          console.log('Confirmed bookings:', confirmedBookings);
-          
-          if (bookingsWithPayment.length > 0) {
-            console.log('Payment data example:', bookingsWithPayment[0].payment);
-            if (bookingsWithPayment[0].payment.paymentProofUrl) {
-              console.log('Payment proof URL:', bookingsWithPayment[0].payment.paymentProofUrl);
-              console.log('Formatted URL:', getFileUrl(bookingsWithPayment[0].payment.paymentProofUrl));
-            }
-          }
           
           bookings.value = response.data;
         } else {
@@ -886,27 +903,6 @@ export default {
       }
     };
 
-    // Get payment proof URL with proper formatting
-    const getPaymentProofUrl = (booking) => {
-      if (booking && booking.payment && booking.payment.paymentProofUrl) {
-        return getFileUrl(booking.payment.paymentProofUrl);
-      }
-      return '';
-    };
-    
-    // Open image in new tab for better viewing
-    const openImageInNewTab = (imageUrl) => {
-      if (imageUrl) {
-        window.open(imageUrl, '_blank');
-      }
-    };
-    
-    // View payment proof directly
-    const viewPaymentProof = (booking) => {
-      if (booking && booking.payment && booking.payment.paymentProofUrl) {
-        openImageInNewTab(getFileUrl(booking.payment.paymentProofUrl));
-      }
-    };
 
     // Check if booking has been rated
     const isBookingRated = (booking) => {
@@ -1034,6 +1030,14 @@ export default {
     onMounted(() => {
       fetchBookings();
       fetchRatings();
+      initializeSocket(); // Initialize real-time updates
+    });
+
+    // Cleanup socket on unmount
+    onBeforeUnmount(() => {
+      if (socket.value) {
+        socket.value.disconnect();
+      }
     });
     
     return {
@@ -1054,7 +1058,6 @@ export default {
       rating,
       ratingComment,
       ratingText,
-      hasPaymentProof,
       fetchBookings,
       filterByStatus,
       formatDate,
@@ -1073,9 +1076,6 @@ export default {
       completeService,
       confirmMarkPaymentCompleted,
       markPaymentCompleted,
-      getPaymentProofUrl,
-      openImageInNewTab,
-      viewPaymentProof,
       isBookingRated,
       getBookingRating,
       openRatingModal,

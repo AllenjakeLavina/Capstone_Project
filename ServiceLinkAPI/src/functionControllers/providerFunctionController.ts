@@ -1037,8 +1037,23 @@ export const acceptBooking = async (userId: string, bookingId: string) => {
       // Don't fail the booking acceptance if chat creation fails
     }
 
+    // Get full booking data for real-time update
+    const fullBooking = await prisma.serviceBooking.findUnique({
+      where: { id: bookingId },
+      include: {
+        service: true,
+        client: {
+          include: { user: true }
+        },
+        serviceProvider: {
+          include: { user: true }
+        },
+        payment: true
+      }
+    });
+
     // Create notification for client
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         receiverId: booking.client.userId,
         type: 'BOOKING_CONFIRMED',
@@ -1051,6 +1066,40 @@ export const acceptBooking = async (userId: string, bookingId: string) => {
         })
       }
     });
+
+    // Emit real-time updates
+    try {
+      const { io } = await import('../index');
+      if (io && fullBooking) {
+        // Emit booking update to client
+        io.to(`user:${booking.client.userId}`).emit('booking-updated', {
+          bookingId: booking.id,
+          booking: fullBooking
+        });
+
+        // Emit notification to client
+        io.to(`user:${booking.client.userId}`).emit('notification', {
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: JSON.parse(notification.data || '{}'),
+          createdAt: notification.createdAt,
+          isRead: false
+        });
+      }
+    } catch (socketError) {
+      console.error('Error emitting socket update:', socketError);
+    }
+
+    // Log activity
+    const { logActivity } = await import('../utils/activityLogger');
+    await logActivity(
+      'PROVIDER_ACCEPTED',
+      `Provider ${user.firstName} ${user.lastName} accepted booking for "${booking.service.title}"`,
+      userId,
+      bookingId
+    );
 
     return updatedBooking;
   } catch (error) {
@@ -1106,8 +1155,23 @@ export const declineBooking = async (userId: string, bookingId: string, reason?:
       }
     });
 
+    // Get full booking data for real-time update
+    const fullBooking = await prisma.serviceBooking.findUnique({
+      where: { id: bookingId },
+      include: {
+        service: true,
+        client: {
+          include: { user: true }
+        },
+        serviceProvider: {
+          include: { user: true }
+        },
+        payment: true
+      }
+    });
+
     // Create notification for client
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         receiverId: booking.client.userId,
         type: 'BOOKING_CANCELLED',
@@ -1120,6 +1184,40 @@ export const declineBooking = async (userId: string, bookingId: string, reason?:
         })
       }
     });
+
+    // Emit real-time updates
+    try {
+      const { io } = await import('../index');
+      if (io && fullBooking) {
+        // Emit booking update to client
+        io.to(`user:${booking.client.userId}`).emit('booking-updated', {
+          bookingId: booking.id,
+          booking: fullBooking
+        });
+
+        // Emit notification to client
+        io.to(`user:${booking.client.userId}`).emit('notification', {
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: JSON.parse(notification.data || '{}'),
+          createdAt: notification.createdAt,
+          isRead: false
+        });
+      }
+    } catch (socketError) {
+      console.error('Error emitting socket update:', socketError);
+    }
+
+    // Log activity
+    const { logActivity } = await import('../utils/activityLogger');
+    await logActivity(
+      'PROVIDER_DECLINED',
+      `Provider ${user.firstName} ${user.lastName} declined booking for "${booking.service.title}"${reason ? `: ${reason}` : ''}`,
+      userId,
+      bookingId
+    );
 
     return updatedBooking;
   } catch (error) {
@@ -1179,8 +1277,23 @@ export const startService = async (userId: string, bookingId: string) => {
       }
     });
 
+    // Get full booking data for real-time update
+    const fullBooking = await prisma.serviceBooking.findUnique({
+      where: { id: bookingId },
+      include: {
+        service: true,
+        client: {
+          include: { user: true }
+        },
+        serviceProvider: {
+          include: { user: true }
+        },
+        payment: true
+      }
+    });
+
     // Create notification for client
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         receiverId: booking.client.userId,
         type: 'GENERAL',
@@ -1193,6 +1306,31 @@ export const startService = async (userId: string, bookingId: string) => {
         })
       }
     });
+
+    // Emit real-time updates
+    try {
+      const { io } = await import('../index');
+      if (io && fullBooking) {
+        // Emit booking update to client
+        io.to(`user:${booking.client.userId}`).emit('booking-updated', {
+          bookingId: booking.id,
+          booking: fullBooking
+        });
+
+        // Emit notification to client
+        io.to(`user:${booking.client.userId}`).emit('notification', {
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: JSON.parse(notification.data || '{}'),
+          createdAt: notification.createdAt,
+          isRead: false
+        });
+      }
+    } catch (socketError) {
+      console.error('Error emitting socket update:', socketError);
+    }
 
     return updatedBooking;
   } catch (error) {
@@ -1300,8 +1438,23 @@ export const completeService = async (userId: string, bookingId: string) => {
       };
     });
     
+    // Get full booking data for real-time update
+    const fullBooking = await prisma.serviceBooking.findUnique({
+      where: { id: bookingId },
+      include: {
+        service: true,
+        client: {
+          include: { user: true }
+        },
+        serviceProvider: {
+          include: { user: true }
+        },
+        payment: true
+      }
+    });
+
     // Create notification for client
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         receiverId: booking.client.userId,
         type: 'SERVICE_COMPLETED',
@@ -1315,6 +1468,40 @@ export const completeService = async (userId: string, bookingId: string) => {
         })
       }
     });
+
+    // Emit real-time updates
+    try {
+      const { io } = await import('../index');
+      if (io && fullBooking) {
+        // Emit booking update to client
+        io.to(`user:${booking.client.userId}`).emit('booking-updated', {
+          bookingId: booking.id,
+          booking: fullBooking
+        });
+
+        // Emit notification to client
+        io.to(`user:${booking.client.userId}`).emit('notification', {
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: JSON.parse(notification.data || '{}'),
+          createdAt: notification.createdAt,
+          isRead: false
+        });
+      }
+    } catch (socketError) {
+      console.error('Error emitting socket update:', socketError);
+    }
+
+    // Log activity
+    const { logActivity } = await import('../utils/activityLogger');
+    await logActivity(
+      'PROVIDER_COMPLETED_JOB',
+      `Provider ${user.firstName} ${user.lastName} completed service "${booking.service.title}" for booking`,
+      userId,
+      bookingId
+    );
 
     return result.booking;
   } catch (error) {

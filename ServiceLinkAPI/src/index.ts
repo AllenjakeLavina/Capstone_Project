@@ -91,7 +91,7 @@ function getAllLocalIpAddresses(): string[] {
   return addresses.length ? addresses : ['localhost'];
 }
 // Setup Socket.IO server
-setupSocketServer(server);
+export const io = setupSocketServer(server);
 
 // Start the server
 server.listen(PORT, (): void => {

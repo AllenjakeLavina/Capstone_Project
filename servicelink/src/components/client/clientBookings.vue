@@ -57,6 +57,13 @@
           <div class="booking-address" v-if="booking.address">
             <i class="fa fa-map-marker"></i> {{ formatAddress(booking.address) }}
           </div>
+
+          <div class="booking-payment-status" v-if="booking.payment">
+            <span :class="['payment-status-badge', booking.payment.status === 'COMPLETED' ? 'paid' : 'unpaid']">
+              <i :class="booking.payment.status === 'COMPLETED' ? 'fa fa-check-circle' : 'fa fa-clock'"></i>
+              Payment Status: {{ booking.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+            </span>
+          </div>
           
           <div class="booking-actions">
             <button class="btn btn-details" @click="viewBookingDetails(booking.id)">
@@ -153,21 +160,9 @@
             <div class="payment-method">
               <p class="payment-note">
                 <i class="fa fa-info-circle"></i> 
-                Payment will be collected in cash when the service is provided.
+                <strong>Payment Method: Cash On-Service</strong><br>
+                Payment will be collected in cash when the service is provided. The provider will mark the payment as paid after receiving it.
               </p>
-              
-              <div class="file-upload">
-                <label for="paymentProof">Upload Payment Proof (optional):</label>
-                <input 
-                  type="file" 
-                  id="paymentProof" 
-                  ref="paymentProofInput"
-                  @change="handlePaymentProofUpload"
-                  accept="image/*"
-                  class="form-control"
-                />
-                <p class="file-hint">Supported formats: JPG, PNG, GIF (max 5MB)</p>
-              </div>
             </div>
             
             <div class="modal-actions">
@@ -325,13 +320,15 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { clientService } from '@/services/apiService';
 import Swal from 'sweetalert2';
 import AddAddressModal from '@/components/modals/AddAddressModal.vue';
+import { io } from 'socket.io-client';
 
 const API_BASE_URL = process.env.VUE_APP_FILE_URL || (process.env.VUE_APP_API_URL ? process.env.VUE_APP_API_URL.replace(/\/?api\/?$/, '') : 'http://localhost:5500');
+const SOCKET_URL = API_BASE_URL;
 
 // Helper function to get file URL
 const getFileUrl = (relativePath) => {
@@ -370,8 +367,6 @@ export default {
     const isProcessingPayment = ref(false);
 
     // Payment related refs
-    const paymentProofInput = ref(null);
-    const paymentProofFile = ref(null);
     
     // Review related refs
     const showReviewModal = ref(false);
@@ -393,6 +388,48 @@ export default {
     const isEditing = ref(false);
     const addresses = ref([]);
     const showAddAddressModal = ref(false);
+    const socket = ref(null);
+
+    // Initialize socket connection for real-time updates
+    const initializeSocket = () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      socket.value = io(SOCKET_URL, {
+        path: '/socket',
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
+
+      socket.value.on('connect', () => {
+        console.log('Socket connected for bookings');
+      });
+
+      // Listen for booking updates
+      socket.value.on('booking-updated', (data) => {
+        console.log('Booking updated via socket:', data);
+        // Update the booking in the list
+        const index = bookings.value.findIndex(b => b.id === data.bookingId);
+        if (index !== -1) {
+          // Update the booking with new data
+          bookings.value[index] = { ...bookings.value[index], ...data.booking };
+          // Force reactivity
+          bookings.value = [...bookings.value];
+        } else {
+          // If booking not in list, refresh the list
+          fetchBookings(currentFilter.value === 'ALL' ? null : currentFilter.value);
+        }
+      });
+
+      // Listen for notifications
+      socket.value.on('notification', (notification) => {
+        console.log('New notification received:', notification);
+        // You can show a toast or update notification count here
+      });
+    };
 
     // Status options for filtering
     const statusOptions = [
@@ -575,23 +612,6 @@ export default {
       showPaymentModal.value = true;
     };
 
-    // File handling methods
-    const handlePaymentProofUpload = (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-          Swal.fire({
-            title: 'File Too Large',
-            text: 'File size should not exceed 5MB',
-            icon: 'warning',
-            confirmButtonColor: '#ff9800'
-          });
-          event.target.value = '';
-          return;
-        }
-        paymentProofFile.value = file;
-      }
-    };
 
     const handleReviewImagesUpload = (event) => {
       const files = Array.from(event.target.files);
@@ -652,8 +672,7 @@ export default {
         
         isProcessingPayment.value = true;
         const result = await clientService.processPayment(
-          selectedBooking.value.id,
-          paymentProofFile.value
+          selectedBooking.value.id
         );
 
         if (result.success) {
@@ -707,10 +726,6 @@ export default {
         });
       } finally {
         isProcessingPayment.value = false;
-        paymentProofFile.value = null;
-        if (paymentProofInput.value) {
-          paymentProofInput.value.value = '';
-        }
       }
     };
 
@@ -917,6 +932,14 @@ export default {
       fetchBookings();
       fetchUserReviews();
       fetchAddresses(); // Fetch addresses for the edit form
+      initializeSocket(); // Initialize real-time updates
+    });
+
+    // Cleanup socket on unmount
+    onBeforeUnmount(() => {
+      if (socket.value) {
+        socket.value.disconnect();
+      }
     });
     
     // Add function to fetch user reviews
@@ -1011,8 +1034,6 @@ export default {
       selectedBooking,
       isCancelling,
       isProcessingPayment,
-      paymentProofInput,
-      handlePaymentProofUpload,
       showReviewModal,
       reviewImagesInput,
       selectedImages,

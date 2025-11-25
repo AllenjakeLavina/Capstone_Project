@@ -70,6 +70,95 @@
       </div>
     </div>
 
+    <!-- All Transactions Section -->
+    <div class="all-transactions-section">
+      <div class="section-header">
+        <h3>All Transactions</h3>
+        <div class="filters-section">
+          <div class="filter-group">
+            <label>Payment Status:</label>
+            <select v-model="transactionFilters.paymentStatus" @change="applyTransactionFilters">
+              <option value="">All</option>
+              <option value="PENDING">Unpaid</option>
+              <option value="COMPLETED">Paid</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Sort By:</label>
+            <select v-model="transactionFilters.sortBy" @change="applyTransactionFilters">
+              <option value="date">Date</option>
+              <option value="amount">Amount</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Order:</label>
+            <select v-model="transactionFilters.sortOrder" @change="applyTransactionFilters">
+              <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </div>
+
+          <button class="btn btn-secondary" @click="resetTransactionFilters">Reset</button>
+        </div>
+      </div>
+
+      <div v-if="loadingTransactions" class="loading-transactions">
+        <div class="loading-spinner"></div>
+        <p>Loading transactions...</p>
+      </div>
+
+      <div v-else-if="transactionError" class="error-container">
+        <div class="error">{{ transactionError }}</div>
+      </div>
+
+      <div v-else class="table-container">
+        <table class="transactions-table">
+          <thead>
+            <tr>
+              <th>Booking ID</th>
+              <th>Client Name</th>
+              <th>Provider Name</th>
+              <th>Service Name</th>
+              <th>Amount</th>
+              <th>Payment Method</th>
+              <th>Payment Status</th>
+              <th>Date Paid</th>
+              <th>Booking Status</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="transaction in transactions" :key="transaction.id">
+              <td>{{ transaction.id.substring(0, 8) }}...</td>
+              <td>{{ getTransactionClientName(transaction) }}</td>
+              <td>{{ getTransactionProviderName(transaction) }}</td>
+              <td>{{ transaction.service?.title || 'N/A' }}</td>
+              <td>₱{{ Number(transaction.payment?.amount || transaction.totalAmount || 0).toFixed(2) }}</td>
+              <td>{{ transaction.payment?.paymentMethod || 'Cash' }}</td>
+              <td>
+                <span :class="['status-badge', transaction.payment?.status === 'COMPLETED' ? 'paid' : 'unpaid']">
+                  {{ transaction.payment?.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+                </span>
+              </td>
+              <td>{{ transaction.payment?.paymentDate ? formatTransactionDate(transaction.payment.paymentDate) : 'N/A' }}</td>
+              <td>
+                <span :class="['status-badge', getStatusClass(transaction.status)]">
+                  {{ formatTransactionStatus(transaction.status) }}
+                </span>
+              </td>
+              <td>{{ formatTransactionDate(transaction.createdAt) }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-if="transactions.length === 0" class="no-transactions">
+          <p>No transactions found.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Provider Ratings Section -->
     <div class="provider-ratings-section">
       <div class="ratings-summary">
@@ -195,6 +284,14 @@ export default {
     const currentTime = ref('');
     const currentDate = ref('');
     const timeInterval = ref(null);
+    const transactions = ref([]);
+    const loadingTransactions = ref(false);
+    const transactionError = ref('');
+    const transactionFilters = ref({
+      paymentStatus: '',
+      sortBy: 'date',
+      sortOrder: 'desc'
+    });
     let lineChartInstance = null;
     let pieChartInstance = null;
 
@@ -376,6 +473,88 @@ export default {
       return new Date(dateString).toLocaleDateString();
     };
 
+    const fetchTransactions = async () => {
+      try {
+        loadingTransactions.value = true;
+        transactionError.value = '';
+        
+        const queryParams = new URLSearchParams();
+        if (transactionFilters.value.paymentStatus) {
+          queryParams.append('paymentStatus', transactionFilters.value.paymentStatus);
+        }
+        if (transactionFilters.value.sortBy) {
+          queryParams.append('sortBy', transactionFilters.value.sortBy);
+        }
+        if (transactionFilters.value.sortOrder) {
+          queryParams.append('sortOrder', transactionFilters.value.sortOrder);
+        }
+
+        const response = await adminService.getAllTransactions(queryParams.toString());
+        
+        if (response.success) {
+          transactions.value = response.data;
+        } else {
+          transactionError.value = response.message || 'Failed to load transactions';
+        }
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+        transactionError.value = 'Unable to load transactions. Please try again later.';
+      } finally {
+        loadingTransactions.value = false;
+      }
+    };
+
+    const applyTransactionFilters = () => {
+      fetchTransactions();
+    };
+
+    const resetTransactionFilters = () => {
+      transactionFilters.value = {
+        paymentStatus: '',
+        sortBy: 'date',
+        sortOrder: 'desc'
+      };
+      fetchTransactions();
+    };
+
+    const getTransactionClientName = (transaction) => {
+      if (transaction.client?.user) {
+        return `${transaction.client.user.firstName} ${transaction.client.user.lastName}`;
+      }
+      return 'N/A';
+    };
+
+    const getTransactionProviderName = (transaction) => {
+      if (transaction.serviceProvider?.user) {
+        return `${transaction.serviceProvider.user.firstName} ${transaction.serviceProvider.user.lastName}`;
+      }
+      return 'N/A';
+    };
+
+    const formatTransactionDate = (dateString) => {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleString('en-PH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const formatTransactionStatus = (status) => {
+      const statusMap = {
+        'PENDING': 'Pending',
+        'CONFIRMED': 'Confirmed',
+        'IN_PROGRESS': 'In Progress',
+        'COMPLETED': 'Completed',
+        'CANCELLED': 'Cancelled',
+        'DISPUTED': 'Disputed'
+      };
+      return statusMap[status] || status;
+    };
+
     onMounted(() => {
       // Initialize time and date
       updateTimeAndDate();
@@ -385,6 +564,9 @@ export default {
       
       // Load dashboard data
       loadDashboardData();
+      
+      // Load transactions
+      fetchTransactions();
     });
 
     return {
@@ -399,10 +581,21 @@ export default {
       currentTime,
       currentDate,
       timeInterval,
+      transactions,
+      loadingTransactions,
+      transactionError,
+      transactionFilters,
       getClientName,
       getProviderName,
       getStatusClass,
-      formatDate
+      formatDate,
+      fetchTransactions,
+      applyTransactionFilters,
+      resetTransactionFilters,
+      getTransactionClientName,
+      getTransactionProviderName,
+      formatTransactionDate,
+      formatTransactionStatus
     };
   },
   beforeUnmount() {
@@ -940,5 +1133,152 @@ tr:hover {
     margin-top: 90px;
     margin-bottom: 90px;
   }
+}
+
+/* Transactions Section Styles */
+.all-transactions-section {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 1px 6px rgba(44, 62, 80, 0.06);
+  border: 1px solid #ececec;
+  margin-top: 25px;
+  margin-bottom: 30px;
+}
+
+.section-header {
+  margin-bottom: 20px;
+}
+
+.section-header h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.filters-section {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 150px;
+}
+
+.filter-group label {
+  font-weight: 500;
+  font-size: 14px;
+  color: #666;
+}
+
+.filter-group select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.loading-transactions {
+  text-align: center;
+  padding: 40px;
+}
+
+.loading-transactions .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #00C853;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.error-container {
+  text-align: center;
+  padding: 20px;
+  background: #f8d7da;
+  color: #721c24;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.transactions-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.transactions-table th,
+.transactions-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+.transactions-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+  position: sticky;
+  top: 0;
+}
+
+.transactions-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.status-badge.paid {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.unpaid {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.no-transactions {
+  text-align: center;
+  padding: 40px;
+  color: #666;
 }
 </style>

@@ -24,6 +24,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "src/components/admin/userManagement.vue"
+    "src/components/admin/userManagement.vue",
+    "src/components/admin/unverifiedProviders.vue"
   ]
 }

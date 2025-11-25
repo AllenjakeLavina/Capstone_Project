@@ -551,18 +551,12 @@ export const handleProcessPayment = async (req: Request, res: Response) => {
       return;
     }
 
-    // Get payment proof file path if file was uploaded
-    let paymentProofUrl = undefined;
-    if (req.file) {
-      paymentProofUrl = `/uploads/${req.file.filename}`; // Store relative path
-    }
-
-    // Process the payment
-    const result = await processPayment(userId, bookingId, paymentProofUrl);
+    // Process the payment (cash only, no file upload)
+    const result = await processPayment(userId, bookingId);
 
     res.status(200).json({
       success: true,
-      message: 'Payment processed successfully. Cash payment will be collected in person.',
+      message: 'Payment processed successfully. Cash payment will be collected on service.',
       data: result
     });
     return;
