@@ -85,7 +85,7 @@
             </button>
             
             <button 
-              v-if="booking.status === 'COMPLETED' && (!booking.payment || booking.payment.status === 'PENDING')"
+              v-if="booking.status === 'COMPLETED' && !booking.payment"
               class="btn btn-payment" 
               @click="openPaymentModal(booking)">
               Process Payment
@@ -735,15 +735,15 @@ export default {
     // Payment confirmation
     const confirmPayment = async () => {
       try {
-        // Check if payment is already completed
-        if (selectedBooking.value.payment && selectedBooking.value.payment.status === 'COMPLETED') {
+        // Check if payment already exists (any status)
+        if (selectedBooking.value.payment) {
           Swal.fire({
-            title: 'Payment Failed',
+            title: 'Payment Already Processed',
             text: 'Payment has already been processed for this booking',
-            icon: 'error',
-            confirmButtonColor: '#f44336'
+            icon: 'info',
+            confirmButtonColor: '#4CAF50'
           });
-          isProcessingPayment.value = false;
+          showPaymentModal.value = false;
           return;
         }
         
@@ -755,18 +755,18 @@ export default {
         if (result.success) {
           showPaymentModal.value = false;
           
-          // Update the booking locally to maintain COMPLETED status
+          // Update the booking locally with the actual payment data from backend
           const index = bookings.value.findIndex(b => b.id === selectedBooking.value.id);
-          if (index !== -1) {
-            // Create payment object in local booking data with COMPLETED status
-            bookings.value[index].payment = {
-              ...result.data,
-              status: 'COMPLETED'
-            };
+          if (index !== -1 && result.data) {
+            // Use the payment data returned from backend (which has status 'PENDING')
+            // The backend returns: { booking, payment }
+            if (result.data.payment) {
+              bookings.value[index].payment = result.data.payment;
+            }
             
-            // Ensure the status remains COMPLETED
-            if (bookings.value[index].status !== 'COMPLETED') {
-              bookings.value[index].status = 'COMPLETED';
+            // Update booking status if it changed (might be CONFIRMED now)
+            if (result.data.booking && result.data.booking.status) {
+              bookings.value[index].status = result.data.booking.status;
             }
             
             console.log('Updated booking after payment processing:', bookings.value[index]);
@@ -775,14 +775,14 @@ export default {
           // Show success message with SweetAlert2
           Swal.fire({
             title: 'Payment Processed!',
-            text: 'Your payment has been successfully processed',
+            text: 'Your payment has been successfully processed. Cash payment will be collected on service.',
             icon: 'success',
             confirmButtonColor: '#4CAF50',
             timer: 3000
           });
           
-          // Force UI to update immediately
-          bookings.value = [...bookings.value];
+          // Refetch bookings to ensure we have the latest data from backend
+          await fetchBookings(currentFilter.value === 'ALL' ? null : currentFilter.value);
         } else {
           // Error message with SweetAlert2
           Swal.fire({
@@ -891,13 +891,13 @@ export default {
     
     // Function to open payment modal
     const openPaymentModal = (booking) => {
-      // Check if payment is already completed
-      if (booking.payment && booking.payment.status === 'COMPLETED') {
+      // Check if payment already exists (any status)
+      if (booking.payment) {
         Swal.fire({
-          title: 'Payment Failed',
+          title: 'Payment Already Processed',
           text: 'Payment has already been processed for this booking',
-          icon: 'error',
-          confirmButtonColor: '#f44336'
+          icon: 'info',
+          confirmButtonColor: '#4CAF50'
         });
         return;
       }

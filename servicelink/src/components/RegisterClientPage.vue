@@ -117,10 +117,31 @@
               v-model="formData.password" 
               required
               placeholder="Create a password"
-              minlength="8"
+              :class="{ 'input-error': !isPasswordValid && formData.password.length > 0 }"
             />
           </div>
-          <small class="password-hint">Password must be at least 8 characters long</small>
+          <div v-if="formData.password.length > 0" class="password-checklist">
+            <div class="password-requirement" :class="{ 'valid': hasMinLength, 'invalid': !hasMinLength }">
+              <span class="check-icon">{{ hasMinLength ? '✓' : '✗' }}</span>
+              <span>8 characters</span>
+            </div>
+            <div class="password-requirement" :class="{ 'valid': hasUppercase, 'invalid': !hasUppercase }">
+              <span class="check-icon">{{ hasUppercase ? '✓' : '✗' }}</span>
+              <span>1 uppercase</span>
+            </div>
+            <div class="password-requirement" :class="{ 'valid': hasLowercase, 'invalid': !hasLowercase }">
+              <span class="check-icon">{{ hasLowercase ? '✓' : '✗' }}</span>
+              <span>1 lowercase</span>
+            </div>
+            <div class="password-requirement" :class="{ 'valid': hasNumber, 'invalid': !hasNumber }">
+              <span class="check-icon">{{ hasNumber ? '✓' : '✗' }}</span>
+              <span>1 number</span>
+            </div>
+            <div class="password-requirement" :class="{ 'valid': hasSpecialChar, 'invalid': !hasSpecialChar }">
+              <span class="check-icon">{{ hasSpecialChar ? '✓' : '✗' }}</span>
+              <span>1 special character</span>
+            </div>
+          </div>
         </div>
         
         <div class="form-group">
@@ -133,8 +154,11 @@
               v-model="confirmPassword" 
               required
               placeholder="Confirm your password"
-              minlength="8"
+              :class="{ 'input-error': confirmPasswordError && confirmPassword.length > 0 }"
             />
+          </div>
+          <div v-if="confirmPasswordError && confirmPassword.length > 0" class="error-message">
+            {{ confirmPasswordError }}
           </div>
         </div>
         
@@ -178,7 +202,7 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 import { clientService, authService } from '../services/apiService';
@@ -271,6 +295,53 @@ export default {
       return null;
     };
 
+    // Password validation function
+    const validatePassword = (password) => {
+      const errors = [];
+
+      if (password.length < 8) {
+        errors.push('Password must be at least 8 characters long');
+      }
+
+      if (!/[a-z]/.test(password)) {
+        errors.push('Password must contain at least one lowercase letter (a-z)');
+      }
+
+      if (!/[A-Z]/.test(password)) {
+        errors.push('Password must contain at least one uppercase letter (A-Z)');
+      }
+
+      if (!/\d/.test(password)) {
+        errors.push('Password must contain at least one number (0-9)');
+      }
+
+      if (!/[^a-zA-Z\d]/.test(password)) {
+        errors.push('Password must contain at least one special character (!@#$%^&* etc.)');
+      }
+
+      return errors;
+    };
+
+    // Computed properties for individual password requirements
+    const hasMinLength = computed(() => formData.password.length >= 8);
+    const hasUppercase = computed(() => /[A-Z]/.test(formData.password));
+    const hasLowercase = computed(() => /[a-z]/.test(formData.password));
+    const hasNumber = computed(() => /\d/.test(formData.password));
+    const hasSpecialChar = computed(() => /[^a-zA-Z\d]/.test(formData.password));
+    const isPasswordValid = computed(() => {
+      return hasMinLength.value && hasUppercase.value && hasLowercase.value && hasNumber.value && hasSpecialChar.value;
+    });
+
+    const confirmPasswordError = computed(() => {
+      if (confirmPassword.value.length === 0) {
+        return '';
+      }
+      if (formData.password !== confirmPassword.value) {
+        return 'Passwords do not match';
+      }
+      return '';
+    });
+
     const handleRegister = async () => {
       // Validate full name
       const nameError = validateFullName();
@@ -308,23 +379,24 @@ export default {
         return;
       }
       
+      // Validate password strength
+      const passwordValidationErrors = validatePassword(formData.password);
+      if (passwordValidationErrors.length > 0) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Weak Password',
+          text: passwordValidationErrors.join(', '),
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
       // Validate passwords match
       if (formData.password !== confirmPassword.value) {
         await Swal.fire({
           icon: 'error',
           title: 'Password Mismatch',
           text: 'Passwords do not match',
-          confirmButtonColor: '#106e40'
-        });
-        return;
-      }
-
-      // Validate password strength
-      if (formData.password.length < 8) {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Weak Password',
-          text: 'Password must be at least 8 characters long',
           confirmButtonColor: '#106e40'
         });
         return;
@@ -408,6 +480,13 @@ export default {
       loading,
       showVerification,
       showTermsModal,
+      hasMinLength,
+      hasUppercase,
+      hasLowercase,
+      hasNumber,
+      hasSpecialChar,
+      isPasswordValid,
+      confirmPasswordError,
       handleRegister,
       handleVerificationSuccess,
       handleVerificationError
@@ -581,6 +660,47 @@ input[type="checkbox"] {
   color: #718096;
   font-size: 0.85rem;
   margin-left: 4px;
+}
+
+.password-checklist {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.password-requirement {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  gap: 8px;
+}
+
+.password-requirement .check-icon {
+  font-weight: bold;
+  font-size: 1rem;
+  min-width: 16px;
+  text-align: center;
+}
+
+.password-requirement.valid {
+  color: #38b676;
+}
+
+.password-requirement.invalid {
+  color: #e53e3e;
+}
+
+.error-message {
+  color: #e53e3e;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  margin-left: 4px;
+}
+
+.input-error {
+  border-color: #e53e3e !important;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
 }
 
 .required {

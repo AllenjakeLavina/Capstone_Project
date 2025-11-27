@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '../services/emailService';
 import nodemailer from 'nodemailer';
+import { validatePassword } from '../utils/passwordValidator';
 
 const prisma = new PrismaClient();
 
@@ -145,6 +146,12 @@ export const registerClient = async (
 
     if (existingUserByName) {
       throw new Error('User with this name already exists');
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      throw new Error(`Password validation failed: ${passwordValidation.errors.join(', ')}`);
     }
 
     // Hash password

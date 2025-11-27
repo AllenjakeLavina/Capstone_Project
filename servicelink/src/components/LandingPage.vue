@@ -3,13 +3,40 @@
     <!-- Hero Section -->
     <section class="hero">
       <div class="hero-overlay"></div>
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
       <div class="hero-content">
         <img src="../assets/logo.png" alt="ServiceLink Logo" class="hero-logo" />
-        <h1>ServiceLink</h1>
+        <h1 class="hero-title">ServiceLink</h1>
         <p class="hero-tagline">Connect with top-rated professionals in your area</p>
+        <p class="hero-description">Find service providers in Olongapo. Connect with verified professionals for your home, business, or personal needs.</p>
         <div class="hero-actions">
-          <router-link to="/login" class="primary-btn">Find Services</router-link>
-          <router-link to="/register" class="outline-btn">Join Us</router-link>
+          <router-link to="/login" class="primary-btn">
+            <i class="fa fa-search"></i> Find Services
+          </router-link>
+          <router-link to="/register" class="outline-btn">
+            <i class="fa fa-user-plus"></i> Join Us
+          </router-link>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+      <div class="container">
+        <div class="section-header">
+          <h2>Why Choose ServiceLink?</h2>
+          <p class="section-subtitle">Connecting you with trusted service providers in Olongapo</p>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card" v-for="(feature, index) in features" :key="index">
+            <div class="feature-shape" :class="feature.shapeClass"></div>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.description }}</p>
+          </div>
         </div>
       </div>
     </section>
@@ -23,7 +50,7 @@
         </div>
         <div class="categories-grid">
           <div v-for="category in categories" :key="category.name" class="category-card">
-            <div class="category-icon">{{ category.icon }}</div>
+            <div class="category-shape" :class="category.shapeClass"></div>
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
             <router-link to="/login" class="category-link">Explore →</router-link>
@@ -37,7 +64,7 @@
       <div class="container">
         <div class="section-header">
           <h2>Featured Professionals</h2>
-          <p class="section-subtitle">Work with the best talent in their field</p>
+          <p class="section-subtitle">Browse our verified service providers</p>
         </div>
         <div v-if="loading" class="loading">
           <div class="spinner"></div>
@@ -68,11 +95,100 @@
         </div>
       </div>
     </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section">
+      <div class="container">
+        <div class="contact-wrapper">
+          <div class="contact-info">
+            <h2>Get in Touch</h2>
+            <p>Need help? Contact us through email, phone, or Facebook.</p>
+            <div class="contact-details">
+              <div class="contact-item">
+                <div class="contact-icon">
+                  <i class="fa fa-envelope"></i>
+                </div>
+                <div class="contact-text">
+                  <h4>Email</h4>
+                  <a href="mailto:servicelinkolongapo@gmail.com">servicelinkolongapo@gmail.com</a>
+                </div>
+              </div>
+              <div class="contact-item">
+                <div class="contact-icon">
+                  <i class="fa fa-phone"></i>
+                </div>
+                <div class="contact-text">
+                  <h4>Phone</h4>
+                  <a href="tel:09150664403">09150664403</a>
+                </div>
+              </div>
+              <div class="contact-item">
+                <div class="contact-icon">
+                  <i class="fa fa-facebook"></i>
+                </div>
+                <div class="contact-text">
+                  <h4>Facebook</h4>
+                  <a href="https://facebook.com/ServiceLink" target="_blank" rel="noopener noreferrer">Service Link</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="contact-visual">
+            <div class="contact-card">
+              <i class="fa fa-comments"></i>
+              <p>We're here to help!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <img src="../assets/logo.png" alt="ServiceLink Logo" class="footer-logo" />
+            <p class="footer-description">Connecting Olongapo with trusted service providers. Your one-stop platform for all service needs.</p>
+            <div class="social-links">
+              <a href="https://facebook.com/ServiceLink" target="_blank" rel="noopener noreferrer" class="social-link facebook" aria-label="Facebook">
+                <i class="fa fa-facebook"></i>
+              </a>
+              <a href="mailto:servicelinkolongapo@gmail.com" class="social-link email" aria-label="Email">
+                <i class="fa fa-envelope"></i>
+              </a>
+              <a href="tel:09150664403" class="social-link phone" aria-label="Phone">
+                <i class="fa fa-phone"></i>
+              </a>
+            </div>
+          </div>
+          <div class="footer-section">
+            <h4>Quick Links</h4>
+            <ul class="footer-links">
+              <li><router-link to="/login">Find Services</router-link></li>
+              <li><router-link to="/register">Register as Provider</router-link></li>
+              <li><router-link to="/register/client">Register as Client</router-link></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h4>Contact Us</h4>
+            <ul class="footer-links">
+              <li><i class="fa fa-envelope"></i> <a href="mailto:servicelinkolongapo@gmail.com">servicelinkolongapo@gmail.com</a></li>
+              <li><i class="fa fa-phone"></i> <a href="tel:09150664403">09150664403</a></li>
+              <li><i class="fa fa-facebook"></i> <a href="https://facebook.com/ServiceLink" target="_blank" rel="noopener noreferrer">Service Link</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; {{ currentYear }} ServiceLink. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import apiService, { providerService } from '../services/apiService';
 import { useRouter } from 'vue-router';
 
@@ -81,16 +197,51 @@ export default {
   setup() {
     const router = useRouter();
     const categories = ref([
-      { name: 'Tutoring & Education', icon: '📚', description: 'Professional tutors, language teachers & academic support' },
-      { name: 'Home Services', icon: '🏠', description: 'Housekeeping, maintenance & home improvement experts' },
-      { name: 'Handyman Services', icon: '🔧', description: 'Repairs, installations & technical home services' },
-      { name: 'Professional Services', icon: '💼', description: 'Consulting, business & administrative support' },
-      { name: 'IT & Tech Support', icon: '💻', description: 'Technical support, troubleshooting & device setup' },
-      { name: 'Delivery & Errands', icon: '🚚', description: 'Local delivery, shopping & personal errands' },
+      { name: 'Tutoring & Education', shapeClass: 'shape-ring', description: 'Find qualified tutors and educators for various subjects' },
+      { name: 'Home Services', shapeClass: 'shape-square', description: 'Home maintenance, cleaning, and improvement services' },
+      { name: 'Handyman Services', shapeClass: 'shape-block', description: 'Repair and installation services for your home' },
+      { name: 'Professional Services', shapeClass: 'shape-circle', description: 'Business consulting and professional advice' },
+      { name: 'IT & Tech Support', shapeClass: 'shape-ring', description: 'Computer repair and technical assistance' },
+      { name: 'Delivery & Errands', shapeClass: 'shape-square', description: 'Local delivery and personal errand services' },
     ]);
+    
+    const features = ref([
+      { 
+        shapeClass: 'shape-circle', 
+        title: 'Verified Providers', 
+        description: 'All service providers undergo verification process' 
+      },
+      { 
+        shapeClass: 'shape-square', 
+        title: 'Transparent Pricing', 
+        description: 'Clear pricing with no hidden charges' 
+      },
+      { 
+        shapeClass: 'shape-ring', 
+        title: 'Customer Reviews', 
+        description: 'Read authentic reviews from previous customers' 
+      },
+      { 
+        shapeClass: 'shape-block', 
+        title: 'Easy Booking', 
+        description: 'Simple and straightforward booking process' 
+      },
+      { 
+        shapeClass: 'shape-circle', 
+        title: 'Secure Platform', 
+        description: 'Your data and transactions are secure' 
+      },
+      { 
+        shapeClass: 'shape-square', 
+        title: 'Local Services', 
+        description: 'Find services available in Olongapo area' 
+      },
+    ]);
+
     const providers = ref([]);
     const loading = ref(true);
     const error = ref(null);
+    const currentYear = computed(() => new Date().getFullYear());
 
     const DEFAULT_AVATAR =
       "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'><rect width='128' height='128' fill='%23e0e0e0'/><circle cx='64' cy='50' r='26' fill='%239e9e9e'/><rect x='24' y='84' width='80' height='28' rx='14' fill='%239e9e9e'/></svg>";
@@ -132,6 +283,8 @@ export default {
       loading,
       error,
       categories,
+      features,
+      currentYear,
       handleViewProfile,
       getProfileImage
     };
@@ -149,7 +302,7 @@ export default {
 .hero {
   position: relative;
   background: linear-gradient(135deg, #106e40 0%, #38b676 100%);
-  min-height: 600px;
+  min-height: 700px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -167,41 +320,108 @@ export default {
   opacity: 0.1;
 }
 
+.floating-shapes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  animation: float 20s infinite;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 200px;
+  height: 200px;
+  top: 60%;
+  right: 10%;
+  animation-delay: 5s;
+}
+
+.shape-3 {
+  width: 150px;
+  height: 150px;
+  bottom: 20%;
+  left: 50%;
+  animation-delay: 10s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -30px) rotate(120deg);
+  }
+  66% {
+    transform: translate(-20px, 20px) rotate(240deg);
+  }
+}
+
 .hero-content {
   position: relative;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   text-align: center;
   color: white;
+  z-index: 2;
 }
 
 .hero-logo {
   width: 150px;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  animation: fadeInDown 1s ease;
 }
 
-.hero h1 {
-  font-size: 3.5rem;
+.hero-title {
+  font-size: 4rem;
   font-weight: 800;
   line-height: 1.2;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   letter-spacing: -0.02em;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   color: white;
+  animation: fadeInDown 1s ease 0.2s both;
 }
 
 .hero-tagline {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
+  margin-bottom: 16px;
+  opacity: 0.95;
+  font-weight: 500;
+  animation: fadeInDown 1s ease 0.4s both;
+}
+
+.hero-description {
+  font-size: 1.1rem;
   margin-bottom: 40px;
   opacity: 0.9;
-  font-weight: 400;
+  line-height: 1.6;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  animation: fadeInDown 1s ease 0.6s both;
 }
 
 .hero-actions {
   display: flex;
   gap: 20px;
   justify-content: center;
+  margin-bottom: 60px;
+  animation: fadeInUp 1s ease 0.8s both;
 }
 
 .primary-btn, .outline-btn {
@@ -211,28 +431,179 @@ export default {
   font-size: 1.1rem;
   transition: all 0.3s ease;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .primary-btn {
   background-color: #ffffff;
   color: #106e40;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .primary-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
   background-color: #f0f0f0;
 }
 
 .outline-btn {
   border: 2px solid #ffffff;
   color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .outline-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Features Section */
+.features {
+  padding: 100px 0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.feature-card {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #106e40, #38b676);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.feature-card:hover::before {
+  transform: scaleX(1);
+}
+
+.feature-shape {
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Geometric Shapes - Used in both features and categories */
+.shape-circle {
+  width: 50px;
+  height: 50px;
+  background: rgba(16, 110, 64, 0.2);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.shape-square {
+  width: 48px;
+  height: 48px;
+  background: rgba(56, 182, 118, 0.25);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.shape-ring {
+  width: 52px;
+  height: 52px;
+  border: 4px solid rgba(16, 110, 64, 0.25);
+  border-radius: 50%;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.shape-block {
+  width: 55px;
+  height: 12px;
+  background: rgba(56, 182, 118, 0.2);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover .shape-circle,
+.category-card:hover .shape-circle {
+  background: rgba(16, 110, 64, 0.3);
+  transform: scale(1.1);
+}
+
+.feature-card:hover .shape-square,
+.category-card:hover .shape-square {
+  background: rgba(56, 182, 118, 0.35);
+  transform: scale(1.1);
+}
+
+.feature-card:hover .shape-ring,
+.category-card:hover .shape-ring {
+  border-color: rgba(16, 110, 64, 0.35);
+  transform: scale(1.1);
+}
+
+.feature-card:hover .shape-block,
+.category-card:hover .shape-block {
+  background: rgba(56, 182, 118, 0.3);
+  transform: scaleX(1.15);
+}
+
+.feature-card h3 {
+  font-size: 1.4rem;
+  margin-bottom: 16px;
+  color: #106e40;
+  font-weight: 600;
+}
+
+.feature-card p {
+  color: #4a5568;
+  line-height: 1.6;
+  font-size: 1rem;
 }
 
 /* Sections Common Styles */
@@ -248,7 +619,7 @@ export default {
 }
 
 .section-header h2 {
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   font-weight: 700;
   color: #106e40;
   margin-bottom: 16px;
@@ -261,9 +632,9 @@ export default {
   position: absolute;
   left: 50%;
   bottom: -12px;
-  width: 60px;
+  width: 80px;
   height: 4px;
-  background-color: #38b676;
+  background: linear-gradient(90deg, #106e40, #38b676);
   transform: translateX(-50%);
   border-radius: 2px;
 }
@@ -271,7 +642,10 @@ export default {
 .section-subtitle {
   font-size: 1.2rem;
   color: #4a5568;
-  margin-top: 24px;
+  margin-top: 32px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Categories Section */
@@ -334,16 +708,11 @@ export default {
   transform: scaleX(1);
 }
 
-.category-icon {
-  font-size: 3rem;
-  margin-bottom: 24px;
-  display: inline-block;
-  background: #f0fff4;
-  width: 90px;
-  height: 90px;
-  line-height: 90px;
-  border-radius: 50%;
-  color: #106e40;
+.category-shape {
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .category-card h3 {
@@ -536,6 +905,237 @@ export default {
   background-color: #38b676;
 }
 
+/* Contact Section */
+.contact-section {
+  padding: 100px 0;
+  background: linear-gradient(135deg, #106e40 0%, #38b676 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+  opacity: 0.1;
+}
+
+.contact-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.contact-info h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.contact-info > p {
+  font-size: 1.1rem;
+  margin-bottom: 40px;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.contact-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  flex-shrink: 0;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contact-icon:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.contact-icon i {
+  display: block;
+}
+
+.contact-text h4 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.contact-text a {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.contact-text a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.contact-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.contact-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 60px;
+  border-radius: 20px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.contact-card i {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.9;
+}
+
+.contact-card p {
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+/* Footer */
+.footer {
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 60px 0 20px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-logo {
+  width: 120px;
+  margin-bottom: 20px;
+  filter: brightness(0) invert(1);
+}
+
+.footer-description {
+  color: #b0b0b0;
+  line-height: 1.6;
+  margin-bottom: 30px;
+  max-width: 350px;
+}
+
+.social-links {
+  display: flex;
+  gap: 15px;
+}
+
+.social-link {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.social-link:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.social-link.facebook:hover {
+  background: #1877f2;
+}
+
+.social-link.email:hover {
+  background: #ea4335;
+}
+
+.social-link.phone:hover {
+  background: #38b676;
+}
+
+.footer-section h4 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: white;
+  font-weight: 600;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 12px;
+}
+
+.footer-links a {
+  color: #b0b0b0;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-links a:hover {
+  color: #38b676;
+}
+
+.footer-links i {
+  width: 20px;
+  text-align: center;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b0b0b0;
+  font-size: 0.9rem;
+}
+
 /* Loading and Error States */
 .loading {
   text-align: center;
@@ -567,35 +1167,57 @@ export default {
 }
 
 /* Responsive Design */
+@media (max-width: 968px) {
+  .contact-wrapper {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+}
+
 @media (max-width: 768px) {
-  .hero h1 {
+  .hero-title {
     font-size: 2.5rem;
   }
   
   .hero-tagline {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+  }
+
+  .hero-description {
+    font-size: 1rem;
   }
   
   .hero-actions {
     flex-direction: column;
     gap: 16px;
   }
+
   
   .primary-btn, .outline-btn {
     width: 100%;
     text-align: center;
+    justify-content: center;
   }
 
   .section-header h2 {
     font-size: 2rem;
   }
 
-  .categories-grid, .providers-grid {
+  .categories-grid, .providers-grid, .features-grid {
     grid-template-columns: 1fr;
   }
 
-  .category-card, .provider-card {
-    margin: 0 16px;
+  .category-card, .provider-card, .feature-card {
+    margin: 0;
+  }
+
+  .contact-info h2 {
+    font-size: 2rem;
   }
 }
 </style>

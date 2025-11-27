@@ -11,35 +11,40 @@
       </button>
     </div>
     <!-- Create New Category Modal -->
-    <div v-if="showCreateForm" class="modal enhanced-modal">
-      <div class="modal-content enhanced-modal-content animate-modal">
+    <div v-if="showCreateForm" class="modal-overlay" @click.self="showCreateForm = false">
+      <div class="modal-container">
         <div class="modal-header">
-          <span class="modal-icon"><i class="fa fa-plus-circle"></i></span>
           <h3>Create New Category</h3>
-          <span class="close-button enhanced-close" @click="showCreateForm = false">&times;</span>
+          <button class="close-btn" @click="showCreateForm = false">&times;</button>
         </div>
-        <hr class="modal-divider" />
-        <form @submit.prevent="createCategory">
-          <div class="form-group">
-            <label for="category-name">Category Name:</label>
-            <input type="text" id="category-name" v-model="newCategory.name" placeholder="Enter category name" required>
-          </div>
-          <div class="form-group">
-            <label for="category-description">Description:</label>
-            <textarea id="category-description" v-model="newCategory.description" placeholder="Enter category description" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="category-image">Category Image:</label>
-            <input type="file" id="category-image" @change="handleImageChange" accept="image/*">
-            <div v-if="newCategory.image" class="image-preview">
-              <img :src="newCategoryImagePreview" alt="Preview" />
+        <div class="modal-body">
+          <form @submit.prevent="createCategory" id="create-category-form">
+            <div class="form-group">
+              <label for="category-name">Category Name <span class="required">*</span></label>
+              <input type="text" id="category-name" v-model="newCategory.name" placeholder="Enter category name" required class="form-control">
             </div>
-          </div>
-          <button type="submit" :disabled="loading" class="submit-btn">Create Category</button>
-          <div v-if="createResult" :class="['result', createResult.success ? 'success' : 'error']">
-            {{ createResult.message }}
-          </div>
-        </form>
+            <div class="form-group">
+              <label for="category-description">Description</label>
+              <textarea id="category-description" v-model="newCategory.description" placeholder="Enter category description" rows="3" class="form-control"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="category-image">Category Image</label>
+              <input type="file" id="category-image" @change="handleImageChange" accept="image/*" class="form-control">
+              <div v-if="newCategory.image" class="image-preview">
+                <img :src="newCategoryImagePreview" alt="Preview" />
+              </div>
+            </div>
+            <div v-if="createResult" :class="['result', createResult.success ? 'success' : 'error']">
+              {{ createResult.message }}
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" @click="showCreateForm = false">Cancel</button>
+          <button type="submit" form="create-category-form" :disabled="loading" class="btn-submit">
+            {{ loading ? 'Creating...' : 'Create Category' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -69,44 +74,48 @@
     </div>
 
     <!-- Edit Category Modal -->
-    <div v-if="showEditModal" class="modal enhanced-modal">
-      <div class="modal-content enhanced-modal-content animate-modal">
+    <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+      <div class="modal-container">
         <div class="modal-header">
-          <span class="modal-icon"><i class="fa fa-edit"></i></span>
           <h3>Edit Category</h3>
-          <span class="close-button enhanced-close" @click="closeEditModal">&times;</span>
+          <button class="close-btn" @click="closeEditModal">&times;</button>
         </div>
-        <hr class="modal-divider" />
-        <form @submit.prevent="updateCategory">
-          <div class="form-group">
-            <label for="edit-category-name">Category Name:</label>
-            <input type="text" id="edit-category-name" v-model="editingCategory.name" placeholder="Enter category name" required>
-          </div>
-          <div class="form-group">
-            <label for="edit-category-description">Description:</label>
-            <textarea id="edit-category-description" v-model="editingCategory.description" placeholder="Enter category description" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="edit-category-image">Category Image:</label>
-            <div v-if="editingCategory.imageUrl" class="current-image">
-              <img :src="getFileUrl(editingCategory.imageUrl)" :alt="editingCategory.name" class="current-image-preview">
-              <p><small>Current image</small></p>
+        <div class="modal-body">
+          <form @submit.prevent="updateCategory" id="edit-category-form">
+            <div class="form-group">
+              <label for="edit-category-name">Category Name <span class="required">*</span></label>
+              <input type="text" id="edit-category-name" v-model="editingCategory.name" placeholder="Enter category name" required class="form-control">
             </div>
-            <input type="file" id="edit-category-image" @change="handleEditImageChange" accept="image/*">
-            <div v-if="editingCategory.image" class="image-preview">
-              <img :src="editingCategoryImagePreview" alt="Preview" />
+            <div class="form-group">
+              <label for="edit-category-description">Description</label>
+              <textarea id="edit-category-description" v-model="editingCategory.description" placeholder="Enter category description" rows="3" class="form-control"></textarea>
             </div>
-            <p><small>Leave empty to keep current image</small></p>
-          </div>
-          <div class="form-actions">
-            <button type="button" @click="closeEditModal" class="cancel-btn">Cancel</button>
-            <button type="submit" :disabled="updating" class="save-btn">Save Changes</button>
-            <button type="button" class="delete-btn" @click="confirmDeleteCategory" :disabled="updating">Delete Category</button>
-          </div>
-          <div v-if="editResult" :class="['result', editResult.success ? 'success' : 'error']">
-            {{ editResult.message }}
-          </div>
-        </form>
+            <div class="form-group">
+              <label for="edit-category-image">Category Image</label>
+              <div v-if="editingCategory.imageUrl" class="current-image">
+                <img :src="getFileUrl(editingCategory.imageUrl)" :alt="editingCategory.name" class="current-image-preview">
+                <p><small>Current image</small></p>
+              </div>
+              <input type="file" id="edit-category-image" @change="handleEditImageChange" accept="image/*" class="form-control">
+              <div v-if="editingCategory.image" class="image-preview">
+                <img :src="editingCategoryImagePreview" alt="Preview" />
+              </div>
+              <p><small>Leave empty to keep current image</small></p>
+            </div>
+            <div v-if="editResult" :class="['result', editResult.success ? 'success' : 'error']">
+              {{ editResult.message }}
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" @click="closeEditModal">Cancel</button>
+          <button type="button" class="btn-delete" @click="confirmDeleteCategory" :disabled="updating">
+            {{ updating ? 'Processing...' : 'Delete Category' }}
+          </button>
+          <button type="submit" form="edit-category-form" :disabled="updating" class="btn-submit">
+            {{ updating ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -441,21 +450,39 @@ onUnmounted(() => {
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 24px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 14px;
 }
 
-.form-group input, .form-group textarea {
+.required {
+  color: #f44336;
+}
+
+.form-control {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.3s ease;
+  background: #fafafa;
   box-sizing: border-box;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #00C853;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.1);
 }
 
 .form-group textarea {
@@ -475,49 +502,76 @@ onUnmounted(() => {
   object-fit: cover;
 }
 
-button {
-  background-color: #2196F3;
-  color: white;
+.btn-cancel, .btn-submit, .btn-delete {
+  padding: 12px 24px;
   border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 16px;
-  margin-right: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-button:hover:not(:disabled) {
-  background-color: #0b7dda;
+.btn-cancel {
+  background: #e0e0e0;
+  color: #4a5568;
 }
 
-button:disabled {
-  background-color: #ccc;
+.btn-cancel:hover {
+  background: #d0d0d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
+  color: white;
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 200, 83, 0.3);
+}
+
+.btn-delete {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: white;
+}
+
+.btn-delete:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+}
+
+.btn-submit:disabled, .btn-delete:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none !important;
 }
 
 .edit-btn {
-  background-color: #f39c12;
-  padding: 6px 12px;
-  font-size: 14px;
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: white;
+  padding: 12px 50px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.2);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .edit-btn:hover {
-  background-color: #e67e22;
-}
-
-.cancel-btn {
-  background-color: #ccc;
-}
-
-.save-btn {
-  background-color: #2196F3;
-}
-
-.delete-btn {
-  background-color: #e53935;
-}
-.delete-btn:hover:not(:disabled) {
-  background-color: #c62828;
+  background: linear-gradient(135deg, #1976d2, #0d47a1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(33, 150, 243, 0.3);
 }
 
 .loading {
@@ -563,45 +617,78 @@ button:disabled {
   background: #f5f5f5;
 }
 
-.modal {
-  display: block;
+/* Modal Styles */
+.modal-overlay {
   position: fixed;
-  z-index: 1000;
-  left: 0;
   top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5);
-  overflow: hidden;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.modal-content {
-  background-color: #fefefe;
-  margin: 5% auto;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  width: 80%;
-  max-width: 600px;
+.modal-container {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
   max-height: 90vh;
-  position: relative;
   overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  border: 1px solid #ececec;
 }
 
-.close-button {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 24px;
-  font-weight: bold;
+.modal-header {
+  padding: 24px;
+  border-bottom: 1px solid #ececec;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #4a5568;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #999;
   cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.form-actions {
+.close-btn:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #ececec;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 12px;
+  background: #fafafa;
+  border-radius: 0 0 12px 12px;
 }
 
 .page-header {
@@ -798,68 +885,6 @@ button:disabled {
     padding: 10px;
   }
 }
-.enhanced-modal {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(2px);
-}
-.enhanced-modal-content {
-  background: linear-gradient(135deg, #f8fafc 60%, #e0f7fa 100%);
-  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
-  border-radius: 18px;
-  border: 1.5px solid #e0e0e0;
-  animation: modalPop 0.35s cubic-bezier(0.23, 1, 0.32, 1);
-  max-height: 90vh;
-  overflow-y: auto;
-}
-@keyframes modalPop {
-  0% { transform: scale(0.92) translateY(40px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-.modal-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-bottom: 8px;
-  position: relative;
-}
-.modal-header h3 {
-  flex: 1;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1976d2;
-  margin: 0;
-}
-.modal-icon {
-  font-size: 2rem;
-  color: #2196f3;
-  background: #e3f2fd;
-  border-radius: 50%;
-  padding: 8px;
-  margin-right: 8px;
-  box-shadow: 0 2px 8px rgba(33,150,243,0.08);
-}
-.enhanced-close {
-  color: #888;
-  font-size: 2rem;
-  font-weight: 700;
-  transition: color 0.2s, transform 0.2s;
-  cursor: pointer;
-  position: absolute;
-  right: 0;
-  top: 0;
-  padding: 4px 10px;
-  border-radius: 50%;
-}
-.enhanced-close:hover {
-  color: #e53935;
-  background: #fbe9e7;
-  transform: scale(1.15) rotate(8deg);
-}
-.modal-divider {
-  border: none;
-  border-top: 1.5px solid #e0e0e0;
-  margin: 0 0 18px 0;
-}
 .image-preview {
   margin-top: 10px;
   margin-bottom: 10px;
@@ -867,25 +892,12 @@ button:disabled {
   align-items: center;
   gap: 10px;
 }
+
 .image-preview img {
   max-width: 120px;
   max-height: 120px;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(33,150,243,0.10);
   border: 1px solid #e0e0e0;
-}
-.form-group input[type="text"], .form-group textarea, .form-group input[type="file"] {
-  transition: border 0.2s, box-shadow 0.2s;
-}
-.form-group input[type="text"]:focus, .form-group textarea:focus {
-  border: 1.5px solid #2196f3;
-  box-shadow: 0 0 0 2px #e3f2fd;
-  outline: none;
-}
-.form-group input[type="file"]:hover {
-  border: 1.5px solid #4caf50;
-}
-.animate-modal {
-  animation: modalPop 0.35s cubic-bezier(0.23, 1, 0.32, 1);
 }
 </style>
