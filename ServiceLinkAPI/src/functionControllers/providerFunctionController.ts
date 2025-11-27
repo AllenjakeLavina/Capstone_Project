@@ -1052,56 +1052,74 @@ export const acceptBooking = async (userId: string, bookingId: string) => {
       }
     });
 
-    // Create notification for client
-    const notification = await prisma.notification.create({
-      data: {
-        receiverId: booking.client.userId,
-        type: 'BOOKING_CONFIRMED',
-        title: 'Booking Confirmed',
-        message: `Your booking for "${booking.service.title}" has been confirmed by the provider.`,
-        isRead: false,
-        data: JSON.stringify({
-          bookingId: booking.id,
-          serviceId: booking.service.id
-        })
-      }
-    });
+    // Only create notification if booking status is actually CONFIRMED
+    // Check the updated booking status to ensure it matches
+    if (fullBooking && fullBooking.status === 'CONFIRMED') {
+      // Create notification for client
+      const notification = await prisma.notification.create({
+        data: {
+          receiverId: booking.client.userId,
+          type: 'BOOKING_CONFIRMED',
+          title: 'Booking Confirmed',
+          message: `Your booking for "${booking.service.title}" has been confirmed by the provider.`,
+          isRead: false,
+          data: JSON.stringify({
+            bookingId: booking.id,
+            serviceId: booking.service.id
+          })
+        }
+      });
 
-    // Emit real-time updates
-    try {
-      const { io } = await import('../index');
-      if (io && fullBooking) {
-        // Emit booking update to client
-        io.to(`user:${booking.client.userId}`).emit('booking-updated', {
-          bookingId: booking.id,
-          booking: fullBooking
-        });
+      // Emit real-time updates
+      try {
+        const { io } = await import('../index');
+        if (io && fullBooking) {
+          // Emit booking update to client
+          io.to(`user:${booking.client.userId}`).emit('booking-updated', {
+            bookingId: booking.id,
+            booking: fullBooking
+          });
 
-        // Emit notification to client
-        io.to(`user:${booking.client.userId}`).emit('notification', {
-          id: notification.id,
-          type: notification.type,
-          title: notification.title,
-          message: notification.message,
-          data: JSON.parse(notification.data || '{}'),
-          createdAt: notification.createdAt,
-          isRead: false
-        });
+          // Emit notification to client
+          io.to(`user:${booking.client.userId}`).emit('notification', {
+            id: notification.id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            data: JSON.parse(notification.data || '{}'),
+            createdAt: notification.createdAt,
+            isRead: false
+          });
+        }
+      } catch (socketError) {
+        console.error('Error emitting socket update:', socketError);
       }
-    } catch (socketError) {
-      console.error('Error emitting socket update:', socketError);
+
+      // Log activity
+      const { logActivity } = await import('../utils/activityLogger');
+      await logActivity(
+        'PROVIDER_ACCEPTED',
+        `Provider ${user.firstName} ${user.lastName} accepted booking for "${booking.service.title}"`,
+        userId,
+        bookingId
+      );
+
+      return updatedBooking;
+    } else {
+      // Booking status doesn't match, don't create notification
+      console.warn(`Booking ${bookingId} status is ${fullBooking?.status}, not CONFIRMED. Skipping notification.`);
+      
+      // Log activity anyway
+      const { logActivity } = await import('../utils/activityLogger');
+      await logActivity(
+        'PROVIDER_ACCEPTED',
+        `Provider ${user.firstName} ${user.lastName} attempted to accept booking for "${booking.service.title}" but status is ${fullBooking?.status}`,
+        userId,
+        bookingId
+      );
+
+      return updatedBooking;
     }
-
-    // Log activity
-    const { logActivity } = await import('../utils/activityLogger');
-    await logActivity(
-      'PROVIDER_ACCEPTED',
-      `Provider ${user.firstName} ${user.lastName} accepted booking for "${booking.service.title}"`,
-      userId,
-      bookingId
-    );
-
-    return updatedBooking;
   } catch (error) {
     throw error;
   }
@@ -1453,57 +1471,74 @@ export const completeService = async (userId: string, bookingId: string) => {
       }
     });
 
-    // Create notification for client
-    const notification = await prisma.notification.create({
-      data: {
-        receiverId: booking.client.userId,
-        type: 'SERVICE_COMPLETED',
-        title: 'Service Completed',
-        message: `Your booked service "${booking.service.title}" has been completed. Total amount: ₱${totalAmount.toFixed(2)}.`,
-        isRead: false,
-        data: JSON.stringify({
-          bookingId: booking.id,
-          serviceId: booking.service.id,
-          totalAmount
-        })
-      }
-    });
+    // Only create notification if booking status is actually COMPLETED
+    if (fullBooking && fullBooking.status === 'COMPLETED') {
+      // Create notification for client
+      const notification = await prisma.notification.create({
+        data: {
+          receiverId: booking.client.userId,
+          type: 'SERVICE_COMPLETED',
+          title: 'Service Completed',
+          message: `Your booked service "${booking.service.title}" has been completed. Total amount: ₱${totalAmount.toFixed(2)}.`,
+          isRead: false,
+          data: JSON.stringify({
+            bookingId: booking.id,
+            serviceId: booking.service.id,
+            totalAmount
+          })
+        }
+      });
 
-    // Emit real-time updates
-    try {
-      const { io } = await import('../index');
-      if (io && fullBooking) {
-        // Emit booking update to client
-        io.to(`user:${booking.client.userId}`).emit('booking-updated', {
-          bookingId: booking.id,
-          booking: fullBooking
-        });
+      // Emit real-time updates
+      try {
+        const { io } = await import('../index');
+        if (io && fullBooking) {
+          // Emit booking update to client
+          io.to(`user:${booking.client.userId}`).emit('booking-updated', {
+            bookingId: booking.id,
+            booking: fullBooking
+          });
 
-        // Emit notification to client
-        io.to(`user:${booking.client.userId}`).emit('notification', {
-          id: notification.id,
-          type: notification.type,
-          title: notification.title,
-          message: notification.message,
-          data: JSON.parse(notification.data || '{}'),
-          createdAt: notification.createdAt,
-          isRead: false
-        });
+          // Emit notification to client
+          io.to(`user:${booking.client.userId}`).emit('notification', {
+            id: notification.id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            data: JSON.parse(notification.data || '{}'),
+            createdAt: notification.createdAt,
+            isRead: false
+          });
+        }
+      } catch (socketError) {
+        console.error('Error emitting socket update:', socketError);
       }
-    } catch (socketError) {
-      console.error('Error emitting socket update:', socketError);
+
+      // Log activity
+      const { logActivity } = await import('../utils/activityLogger');
+      await logActivity(
+        'PROVIDER_COMPLETED_JOB',
+        `Provider ${user.firstName} ${user.lastName} completed service "${booking.service.title}" for booking`,
+        userId,
+        bookingId
+      );
+
+      return result.booking;
+    } else {
+      // Booking status doesn't match, don't create notification
+      console.warn(`Booking ${bookingId} status is ${fullBooking?.status}, not COMPLETED. Skipping notification.`);
+      
+      // Log activity anyway
+      const { logActivity } = await import('../utils/activityLogger');
+      await logActivity(
+        'PROVIDER_COMPLETED_JOB',
+        `Provider ${user.firstName} ${user.lastName} attempted to complete service "${booking.service.title}" but status is ${fullBooking?.status}`,
+        userId,
+        bookingId
+      );
+
+      return result.booking;
     }
-
-    // Log activity
-    const { logActivity } = await import('../utils/activityLogger');
-    await logActivity(
-      'PROVIDER_COMPLETED_JOB',
-      `Provider ${user.firstName} ${user.lastName} completed service "${booking.service.title}" for booking`,
-      userId,
-      bookingId
-    );
-
-    return result.booking;
   } catch (error) {
     throw error;
   }

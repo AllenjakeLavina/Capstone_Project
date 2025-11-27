@@ -308,6 +308,47 @@
         </div>
       </div>
 
+      <!-- Booking Details Modal -->
+      <div v-if="showDetailsModal" class="modal-overlay" @click.self="closeDetailsModal">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Booking Details</h2>
+            <button class="close-btn" @click="closeDetailsModal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div v-if="loadingDetails" class="loading-details">
+              <div class="spinner"></div>
+              <p>Loading details...</p>
+            </div>
+            <div v-else-if="selectedBookingDetails">
+              <div class="booking-summary">
+                <div class="status-badge-inline" :class="selectedBookingDetails.status.toLowerCase()">
+                  {{ formatStatus(selectedBookingDetails.status) }}
+                </div>
+                <h4>{{ selectedBookingDetails.service?.title || 'Service' }}</h4>
+                <p><i class="fa fa-calendar"></i> Date: {{ formatDate(selectedBookingDetails.startTime) }}</p>
+                <p><i class="fa fa-user"></i> Provider: {{ getProviderName(selectedBookingDetails) }}</p>
+                <p><i class="fa fa-tag"></i> Amount: ₱{{ Number(selectedBookingDetails.totalAmount || selectedBookingDetails.service?.pricing || 0).toFixed(2) }}</p>
+                <p v-if="selectedBookingDetails.address"><i class="fa fa-map-marker"></i> Location: {{ formatAddress(selectedBookingDetails.address) }}</p>
+                <p v-if="selectedBookingDetails.notes"><i class="fa fa-sticky-note"></i> Notes: {{ selectedBookingDetails.notes }}</p>
+              </div>
+
+              <div v-if="selectedBookingDetails.payment" class="payment-details">
+                <h4>Payment Information</h4>
+                <p><strong>Payment Method:</strong> Cash On-Service</p>
+                <p><strong>Payment Status:</strong> 
+                  <span :class="['payment-status-badge', selectedBookingDetails.payment.status === 'COMPLETED' ? 'paid' : 'unpaid']">
+                    {{ selectedBookingDetails.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+                  </span>
+                </p>
+                <p v-if="selectedBookingDetails.payment.paymentDate"><strong>Date Paid:</strong> {{ formatDate(selectedBookingDetails.payment.paymentDate) }}</p>
+                <p><strong>Amount:</strong> ₱{{ Number(selectedBookingDetails.payment.amount).toFixed(2) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Add Address Modal -->
       <add-address-modal
         v-if="showAddAddressModal"
@@ -362,7 +403,10 @@ export default {
     // Modal states
     const showCancelModal = ref(false);
     const showPaymentModal = ref(false);
+    const showDetailsModal = ref(false);
     const selectedBooking = ref(null);
+    const selectedBookingDetails = ref(null);
+    const loadingDetails = ref(false);
     const isCancelling = ref(false);
     const isProcessingPayment = ref(false);
 
@@ -538,9 +582,42 @@ export default {
       return '';
     };
 
-    // View booking details
-    const viewBookingDetails = (bookingId) => {
-      router.push(`/client/booking/${bookingId}`);
+    // View booking details in modal
+    const viewBookingDetails = async (bookingId) => {
+      showDetailsModal.value = true;
+      loadingDetails.value = true;
+      selectedBookingDetails.value = null;
+      
+      try {
+        const response = await clientService.getBookingDetails(bookingId);
+        if (response.success) {
+          selectedBookingDetails.value = response.data;
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: response.message || 'Failed to load booking details',
+            icon: 'error',
+            confirmButtonColor: '#f44336'
+          });
+          showDetailsModal.value = false;
+        }
+      } catch (err) {
+        console.error('Error fetching booking details:', err);
+        Swal.fire({
+          title: 'Error',
+          text: 'Unable to load booking details. Please try again later.',
+          icon: 'error',
+          confirmButtonColor: '#f44336'
+        });
+        showDetailsModal.value = false;
+      } finally {
+        loadingDetails.value = false;
+      }
+    };
+
+    const closeDetailsModal = () => {
+      showDetailsModal.value = false;
+      selectedBookingDetails.value = null;
     };
 
     // Go to services page
@@ -1069,6 +1146,10 @@ export default {
       openEditModal,
       closeEditModal,
       submitEditBooking,
+      showDetailsModal,
+      selectedBookingDetails,
+      loadingDetails,
+      closeDetailsModal,
       handleAddressAdded,
       closeAddAddressModal,
       currentDateTimeString,
@@ -2016,6 +2097,48 @@ textarea.form-control {
   .bookings-list {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
+}
+
+/* Details Modal Styles */
+.loading-details {
+  text-align: center;
+  padding: 40px;
+}
+
+.status-badge-inline {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 15px;
+}
+
+.status-badge-inline.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge-inline.confirmed {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.status-badge-inline.in_progress {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-badge-inline.completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge-inline.cancelled {
+  background: #f8d7da;
+  color: #721c24;
 }
 
 @media screen and (max-width: 768px) {

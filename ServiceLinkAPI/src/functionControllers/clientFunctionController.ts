@@ -1131,22 +1131,40 @@ export const processPayment = async (
       });
     }
 
-    // Create notification for provider
-    await prisma.notification.create({
-      data: {
-        receiverId: booking.serviceProvider.user.id,
-        type: 'BOOKING_CONFIRMED',
-        title: 'Booking Confirmed',
-        message: `The booking for "${booking.service.title}" has been confirmed. Payment will be collected in cash on service.`,
-        isRead: false,
-        data: JSON.stringify({
-          bookingId: booking.id,
-          serviceId: booking.service.id,
-          paymentMethod: 'CASH',
-          amount: paymentData.amount.toString()
-        })
+    // Get full booking data to check actual status
+    const fullBooking = await prisma.serviceBooking.findUnique({
+      where: { id: booking.id },
+      include: {
+        service: true,
+        serviceProvider: {
+          include: { user: true }
+        },
+        client: true,
+        payment: true
       }
     });
+
+    // Only create notification if booking status is actually CONFIRMED
+    if (fullBooking && fullBooking.status === 'CONFIRMED') {
+      // Create notification for provider
+      await prisma.notification.create({
+        data: {
+          receiverId: booking.serviceProvider.user.id,
+          type: 'BOOKING_CONFIRMED',
+          title: 'Booking Confirmed',
+          message: `The booking for "${booking.service.title}" has been confirmed. Payment will be collected in cash on service.`,
+          isRead: false,
+          data: JSON.stringify({
+            bookingId: booking.id,
+            serviceId: booking.service.id,
+            paymentMethod: 'CASH',
+            amount: paymentData.amount.toString()
+          })
+        }
+      });
+    } else {
+      console.warn(`Booking ${booking.id} status is ${fullBooking?.status}, not CONFIRMED. Skipping notification.`);
+    }
 
     // Return the updated booking and payment information
     return {

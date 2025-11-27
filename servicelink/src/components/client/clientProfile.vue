@@ -840,10 +840,13 @@ export default {
   padding: 0;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #f7f9fc;
-  min-height: 93vh;
+  min-height: 100vh;
   color: #2d3748;
   box-sizing: border-box;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 /* Layout */
@@ -1363,22 +1366,51 @@ export default {
 }
 
 @media (max-width: 900px) {
+  .client-profile {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    height: auto;
+    min-height: 100vh;
+  }
+
   .profile-layout {
     grid-template-columns: 1fr;
     gap: 20px;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
   }
   
-  .profile-sidebar {
-    order: 2;
-  }
-  
+  /* Reorder: Banner first, then sidebar, then rest of content */
+  /* Extract banner from profile-main-content using display: contents */
   .profile-main-content {
-    order: 1;
+    display: contents !important;
+    width: 100%;
+    overflow: visible;
+  }
+  
+  /* Banner appears first */
+  .profile-layout > .profile-banner-wrapper,
+  .profile-main-content > .profile-banner-wrapper {
+    order: 1 !important;
+  }
+  
+  /* Sidebar appears after banner */
+  .profile-sidebar {
+    order: 2 !important;
+    width: 100%;
+  }
+  
+  /* Other sections in profile-main-content appear after sidebar */
+  .profile-layout > .section,
+  .profile-main-content > .section {
+    order: 3 !important;
   }
   
   .profile-right-sidebar {
     order: 3;
+    width: 100%;
   }
   
   .profile-stats-mini {
@@ -2144,9 +2176,19 @@ h2 {
   }
 }
 @media (max-width: 700px) {
+  .client-profile {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    height: auto;
+    min-height: 100vh;
+  }
+
   .profile-layout {
     padding: 15px;
     gap: 15px;
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
   }
   
   .address-list {
@@ -2183,6 +2225,12 @@ h2 {
   
   .section {
     padding: 20px;
+    overflow: visible;
+  }
+
+  .profile-main-content {
+    overflow: visible;
+    min-height: auto;
   }
 }
 </style>
