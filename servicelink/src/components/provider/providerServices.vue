@@ -31,12 +31,24 @@
 
         <!-- Service List -->
         <div v-if="myServices && myServices.length > 0" class="service-list">
-          <div v-for="service in myServices" :key="service.id" class="service-card">
+          <div v-for="service in myServices" :key="service.id" class="service-card" :class="{ 'pending-approval': !service.isApproved }">
             <div class="service-header">
               <h3>{{ service.title }}</h3>
-              <span :class="['status-badge', service.isActive ? 'active' : 'inactive']">
-                {{ service.isActive ? 'Active' : 'Inactive' }}
-              </span>
+              <div class="status-badges">
+                <span :class="['approval-badge', service.isApproved ? 'approved' : 'pending']">
+                  <i :class="service.isApproved ? 'fa fa-check-circle' : 'fa fa-clock'"></i>
+                  {{ service.isApproved ? 'Approved' : 'Pending Approval' }}
+                </span>
+                <span :class="['status-badge', service.isActive ? 'active' : 'inactive']">
+                  {{ service.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+            </div>
+            
+            <!-- Approval Status Alert -->
+            <div v-if="!service.isApproved" class="approval-alert">
+              <i class="fa fa-info-circle"></i>
+              <p>This service is <strong>waiting for admin approval</strong>. It will not be visible to clients until approved.</p>
             </div>
             
             <div class="service-details">
@@ -56,7 +68,12 @@
               <button class="edit-btn" @click="editService(service)">
                 <i class="fa fa-pencil"></i> Edit
               </button>
-              <button class="toggle-btn" @click="toggleServiceStatus(service)">
+              <button 
+                class="toggle-btn" 
+                @click="toggleServiceStatus(service)"
+                :disabled="!service.isApproved && !service.isActive"
+                :title="!service.isApproved && !service.isActive ? 'Service must be approved by admin before activation' : ''"
+              >
                 <i :class="service.isActive ? 'fa fa-power-off' : 'fa fa-check'"></i>
                 {{ service.isActive ? 'Deactivate' : 'Activate' }}
               </button>
@@ -79,6 +96,10 @@
               <button class="close-btn" @click="showCreateForm = false">&times;</button>
             </div>
             <div class="modal-body">
+              <div class="info-notice">
+                <i class="fa fa-info-circle"></i>
+                <p>Your service will be submitted for <strong>admin approval</strong>. It will not be visible to clients until approved by an administrator.</p>
+              </div>
               <form @submit.prevent="createService" class="service-form">
                 <div class="form-group">
                   <label for="title">Service Title*</label>
@@ -394,6 +415,8 @@ export default {
           showCreateForm.value = false;
           resetServiceForm();
           await fetchServices();
+          // Show success message about pending approval
+          error.value = null; // Clear any previous errors
         } else {
           throw new Error(response.message || 'Failed to create service');
         }
@@ -474,6 +497,12 @@ export default {
     };
 
     const toggleServiceStatus = async (service) => {
+      // Prevent activation if service is not approved
+      if (!service.isApproved && !service.isActive) {
+        error.value = 'This service must be approved by admin before it can be activated.';
+        return;
+      }
+      
       try {
         const response = await providerService.updateProviderService(service.id, {
           isActive: !service.isActive
@@ -742,6 +771,8 @@ export default {
   margin-bottom: 20px;
   border-bottom: 1px solid #f1f1f1;
   padding-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .service-header h3 {
@@ -749,6 +780,36 @@ export default {
   color: #2c3e50;
   font-weight: 600;
   font-size: 1.3rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.status-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.approval-badge {
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.approval-badge.pending {
+  background: linear-gradient(135deg, #fff3cd, #ffe69c);
+  color: #856404;
+}
+
+.approval-badge.approved {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  color: #155724;
 }
 
 .status-badge {
@@ -768,6 +829,35 @@ export default {
 .status-badge.inactive {
   background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
   color: #757575;
+}
+
+.approval-alert {
+  background: linear-gradient(to right, rgba(255, 193, 7, 0.1), rgba(255, 235, 59, 0.1));
+  color: #856404;
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #ffc107;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.approval-alert i {
+  font-size: 18px;
+  color: #ffc107;
+  margin-top: 2px;
+}
+
+.approval-alert p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.service-card.pending-approval {
+  border-left: 4px solid #ffc107;
+  background: linear-gradient(to right, #ffffff, rgba(255, 243, 205, 0.1));
 }
 
 .service-details {
@@ -864,10 +954,16 @@ export default {
   justify-content: center;
 }
 
-.toggle-btn:hover {
+.toggle-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #e0e0e0, #bdbdbd);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
 }
 
 .no-services {
@@ -1165,6 +1261,30 @@ textarea.form-control {
   background: linear-gradient(135deg, #b3e5fc, #81d4fa);
   transform: translateY(-2px);
   box-shadow: 0 3px 6px rgba(2, 136, 209, 0.2);
+}
+
+.info-notice {
+  background: linear-gradient(to right, rgba(33, 150, 243, 0.1), rgba(144, 202, 249, 0.1));
+  color: #1565c0;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.info-notice i {
+  font-size: 20px;
+  color: #2196f3;
+  margin-top: 2px;
+}
+
+.info-notice p {
+  margin: 0;
+  line-height: 1.6;
 }
 
 .form-actions {

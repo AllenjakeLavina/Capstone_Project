@@ -135,6 +135,7 @@ CREATE TABLE `Service` (
     `pricingType` ENUM('HOURLY', 'FIXED', 'DAILY', 'SESSION') NOT NULL DEFAULT 'HOURLY',
     `imageUrls` TEXT NULL,
     `isActive` BOOLEAN NOT NULL DEFAULT true,
+    `isApproved` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -252,12 +253,11 @@ CREATE TABLE `Payment` (
     `serviceBookingId` VARCHAR(191) NOT NULL,
     `amount` DECIMAL(10, 2) NOT NULL,
     `status` ENUM('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
-    `paymentMethod` VARCHAR(191) NULL,
+    `paymentMethod` VARCHAR(191) NULL DEFAULT 'CASH',
     `transactionId` VARCHAR(191) NULL,
     `paymentDate` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
-    `paymentProofUrl` VARCHAR(191) NULL,
 
     UNIQUE INDEX `Payment_serviceBookingId_key`(`serviceBookingId`),
     PRIMARY KEY (`id`)
@@ -350,6 +350,20 @@ CREATE TABLE `Availability` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `ProviderUnavailable` (
+    `id` VARCHAR(191) NOT NULL,
+    `serviceProviderId` VARCHAR(191) NOT NULL,
+    `date` DATE NOT NULL,
+    `startTime` VARCHAR(191) NOT NULL,
+    `endTime` VARCHAR(191) NOT NULL,
+    `bookingId` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `ProviderUnavailable_serviceProviderId_date_idx`(`serviceProviderId`, `date`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `VerificationToken` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
@@ -373,6 +387,21 @@ CREATE TABLE `ResetPasswordToken` (
     `isUsed` BOOLEAN NOT NULL DEFAULT false,
 
     UNIQUE INDEX `ResetPasswordToken_token_key`(`token`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ActivityLog` (
+    `id` VARCHAR(191) NOT NULL,
+    `action` VARCHAR(191) NOT NULL,
+    `description` TEXT NOT NULL,
+    `userId` VARCHAR(191) NULL,
+    `bookingId` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `ActivityLog_bookingId_idx`(`bookingId`),
+    INDEX `ActivityLog_userId_idx`(`userId`),
+    INDEX `ActivityLog_createdAt_idx`(`createdAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -500,10 +529,16 @@ ALTER TABLE `Address` ADD CONSTRAINT `Address_clientId_fkey` FOREIGN KEY (`clien
 ALTER TABLE `Availability` ADD CONSTRAINT `Availability_serviceProviderId_fkey` FOREIGN KEY (`serviceProviderId`) REFERENCES `ServiceProvider`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `ProviderUnavailable` ADD CONSTRAINT `ProviderUnavailable_serviceProviderId_fkey` FOREIGN KEY (`serviceProviderId`) REFERENCES `ServiceProvider`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `VerificationToken` ADD CONSTRAINT `VerificationToken_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `ResetPasswordToken` ADD CONSTRAINT `ResetPasswordToken_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ActivityLog` ADD CONSTRAINT `ActivityLog_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `_ServiceProviderToSkill` ADD CONSTRAINT `_ServiceProviderToSkill_A_fkey` FOREIGN KEY (`A`) REFERENCES `ServiceProvider`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
