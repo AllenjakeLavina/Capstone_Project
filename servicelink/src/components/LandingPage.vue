@@ -33,7 +33,9 @@
         </div>
         <div class="features-grid">
           <div class="feature-card" v-for="(feature, index) in features" :key="index">
-            <div class="feature-shape" :class="feature.shapeClass"></div>
+            <div class="feature-icon-wrapper" :class="feature.shapeClass">
+              <i :class="feature.icon"></i>
+            </div>
             <h3>{{ feature.title }}</h3>
             <p>{{ feature.description }}</p>
           </div>
@@ -50,7 +52,9 @@
         </div>
         <div class="categories-grid">
           <div v-for="category in categories" :key="category.name" class="category-card">
-            <div class="category-shape" :class="category.shapeClass"></div>
+            <div class="category-icon-wrapper" :class="category.shapeClass">
+              <i :class="category.icon"></i>
+            </div>
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
             <router-link to="/login" class="category-link">Explore →</router-link>
@@ -105,8 +109,8 @@
             <p>Need help? Contact us through email, phone, or Facebook.</p>
             <div class="contact-details">
               <div class="contact-item">
-                <div class="contact-icon">
-                  <i class="fa fa-envelope"></i>
+                <div class="contact-icon gmail-icon">
+                  <i class="fab fa-google"></i>
                 </div>
                 <div class="contact-text">
                   <h4>Email</h4>
@@ -115,7 +119,7 @@
               </div>
               <div class="contact-item">
                 <div class="contact-icon">
-                  <i class="fa fa-phone"></i>
+                  <i class="fas fa-phone"></i>
                 </div>
                 <div class="contact-text">
                   <h4>Phone</h4>
@@ -123,12 +127,12 @@
                 </div>
               </div>
               <div class="contact-item">
-                <div class="contact-icon">
-                  <i class="fa fa-facebook"></i>
+                <div class="contact-icon facebook-icon">
+                  <i class="fab fa-facebook-f"></i>
                 </div>
                 <div class="contact-text">
                   <h4>Facebook</h4>
-                  <a href="https://facebook.com/ServiceLink" target="_blank" rel="noopener noreferrer">Service Link</a>
+                  <a href="https://www.facebook.com/profile.php?id=61584255115576" target="_blank" rel="noopener noreferrer">Service Link</a>
                 </div>
               </div>
             </div>
@@ -148,17 +152,19 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-section">
-            <img src="../assets/logo.png" alt="ServiceLink Logo" class="footer-logo" />
+            <div class="footer-logo-box">
+              <img :src="logoImage" alt="ServiceLink Logo" class="footer-logo" />
+            </div>
             <p class="footer-description">Connecting Olongapo with trusted service providers. Your one-stop platform for all service needs.</p>
             <div class="social-links">
-              <a href="https://facebook.com/ServiceLink" target="_blank" rel="noopener noreferrer" class="social-link facebook" aria-label="Facebook">
-                <i class="fa fa-facebook"></i>
+              <a href="https://www.facebook.com/profile.php?id=61584255115576" target="_blank" rel="noopener noreferrer" class="social-link facebook" aria-label="Facebook">
+                <i class="fab fa-facebook-f"></i>
               </a>
               <a href="mailto:servicelinkolongapo@gmail.com" class="social-link email" aria-label="Email">
-                <i class="fa fa-envelope"></i>
+                <i class="fab fa-google"></i>
               </a>
               <a href="tel:09150664403" class="social-link phone" aria-label="Phone">
-                <i class="fa fa-phone"></i>
+                <i class="fas fa-phone"></i>
               </a>
             </div>
           </div>
@@ -173,14 +179,14 @@
           <div class="footer-section">
             <h4>Contact Us</h4>
             <ul class="footer-links">
-              <li><i class="fa fa-envelope"></i> <a href="mailto:servicelinkolongapo@gmail.com">servicelinkolongapo@gmail.com</a></li>
-              <li><i class="fa fa-phone"></i> <a href="tel:09150664403">09150664403</a></li>
-              <li><i class="fa fa-facebook"></i> <a href="https://facebook.com/ServiceLink" target="_blank" rel="noopener noreferrer">Service Link</a></li>
+              <li><i class="fab fa-google"></i> <a href="mailto:servicelinkolongapo@gmail.com">servicelinkolongapo@gmail.com</a></li>
+              <li><i class="fas fa-phone"></i> <a href="tel:09150664403">09150664403</a></li>
+              <li><i class="fab fa-facebook-f"></i> <a href="https://www.facebook.com/profile.php?id=61584255115576" target="_blank" rel="noopener noreferrer">Service Link</a></li>
             </ul>
           </div>
         </div>
         <div class="footer-bottom">
-          <p>&copy; {{ currentYear }} ServiceLink. All rights reserved.</p>
+          <p>&copy; {{ currentYear }} ServiceLink - Mabayuan Olongapo City, Zambales. All rights reserved.</p>
         </div>
       </div>
     </footer>
@@ -191,48 +197,55 @@
 import { ref, onMounted, computed } from 'vue';
 import apiService, { providerService } from '../services/apiService';
 import { useRouter } from 'vue-router';
+import logoImage from '../assets/logo.png';
 
 export default {
   name: 'LandingPage',
   setup() {
     const router = useRouter();
     const categories = ref([
-      { name: 'Tutoring & Education', shapeClass: 'shape-ring', description: 'Find qualified tutors and educators for various subjects' },
-      { name: 'Home Services', shapeClass: 'shape-square', description: 'Home maintenance, cleaning, and improvement services' },
-      { name: 'Handyman Services', shapeClass: 'shape-block', description: 'Repair and installation services for your home' },
-      { name: 'Professional Services', shapeClass: 'shape-circle', description: 'Business consulting and professional advice' },
-      { name: 'IT & Tech Support', shapeClass: 'shape-ring', description: 'Computer repair and technical assistance' },
-      { name: 'Delivery & Errands', shapeClass: 'shape-square', description: 'Local delivery and personal errand services' },
+      { name: 'Tutoring & Education', shapeClass: 'shape-ring', icon: 'fa fa-graduation-cap', description: 'Find qualified tutors and educators for various subjects' },
+      { name: 'Home Services', shapeClass: 'shape-square', icon: 'fa fa-home', description: 'Home maintenance, cleaning, and improvement services' },
+      { name: 'Handyman Services', shapeClass: 'shape-block', icon: 'fa fa-wrench', description: 'Repair and installation services for your home' },
+      { name: 'Professional Services', shapeClass: 'shape-circle', icon: 'fa fa-briefcase', description: 'Business consulting and professional advice' },
+      { name: 'IT & Tech Support', shapeClass: 'shape-ring', icon: 'fa fa-laptop', description: 'Computer repair and technical assistance' },
+      { name: 'Delivery & Errands', shapeClass: 'shape-square', icon: 'fa fa-truck', description: 'Local delivery and personal errand services' },
     ]);
     
     const features = ref([
       { 
         shapeClass: 'shape-circle', 
+        icon: 'fa fa-check-circle',
         title: 'Verified Providers', 
         description: 'All service providers undergo verification process' 
       },
       { 
         shapeClass: 'shape-square', 
+        icon: 'fa fa-dollar-sign',
         title: 'Transparent Pricing', 
         description: 'Clear pricing with no hidden charges' 
       },
       { 
         shapeClass: 'shape-ring', 
+        icon: 'fa fa-star',
         title: 'Customer Reviews', 
         description: 'Read authentic reviews from previous customers' 
       },
       { 
         shapeClass: 'shape-block', 
+        icon: 'fa fa-calendar-check',
         title: 'Easy Booking', 
         description: 'Simple and straightforward booking process' 
       },
       { 
         shapeClass: 'shape-circle', 
+        icon: 'fa fa-shield-alt',
         title: 'Secure Platform', 
         description: 'Your data and transactions are secure' 
       },
       { 
         shapeClass: 'shape-square', 
+        icon: 'fa fa-map-marker-alt',
         title: 'Local Services', 
         description: 'Find services available in Olongapo area' 
       },
@@ -286,7 +299,8 @@ export default {
       features,
       currentYear,
       handleViewProfile,
-      getProfileImage
+      getProfileImage,
+      logoImage
     };
   }
 };
@@ -528,69 +542,86 @@ export default {
   transform: scaleX(1);
 }
 
-.feature-shape {
+.feature-icon-wrapper,
+.category-icon-wrapper {
   margin: 0 auto 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+.feature-icon-wrapper i,
+.category-icon-wrapper i {
+  font-size: 2rem;
+  color: #106e40;
+  z-index: 1;
+  transition: all 0.3s ease;
 }
 
 /* Geometric Shapes - Used in both features and categories */
 .shape-circle {
-  width: 50px;
-  height: 50px;
-  background: rgba(16, 110, 64, 0.2);
+  width: 80px;
+  height: 80px;
+  background: rgba(16, 110, 64, 0.1);
   border-radius: 50%;
   transition: all 0.3s ease;
 }
 
 .shape-square {
-  width: 48px;
-  height: 48px;
-  background: rgba(56, 182, 118, 0.25);
-  border-radius: 6px;
+  width: 80px;
+  height: 80px;
+  background: rgba(56, 182, 118, 0.15);
+  border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 .shape-ring {
-  width: 52px;
-  height: 52px;
-  border: 4px solid rgba(16, 110, 64, 0.25);
+  width: 80px;
+  height: 80px;
+  border: 3px solid rgba(16, 110, 64, 0.25);
   border-radius: 50%;
-  background: transparent;
+  background: rgba(16, 110, 64, 0.05);
   transition: all 0.3s ease;
 }
 
 .shape-block {
-  width: 55px;
-  height: 12px;
-  background: rgba(56, 182, 118, 0.2);
-  border-radius: 3px;
+  width: 80px;
+  height: 80px;
+  background: rgba(56, 182, 118, 0.1);
+  border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 .feature-card:hover .shape-circle,
 .category-card:hover .shape-circle {
-  background: rgba(16, 110, 64, 0.3);
+  background: rgba(16, 110, 64, 0.2);
   transform: scale(1.1);
 }
 
 .feature-card:hover .shape-square,
 .category-card:hover .shape-square {
-  background: rgba(56, 182, 118, 0.35);
+  background: rgba(56, 182, 118, 0.25);
   transform: scale(1.1);
 }
 
 .feature-card:hover .shape-ring,
 .category-card:hover .shape-ring {
-  border-color: rgba(16, 110, 64, 0.35);
+  border-color: rgba(16, 110, 64, 0.4);
+  background: rgba(16, 110, 64, 0.1);
   transform: scale(1.1);
 }
 
 .feature-card:hover .shape-block,
 .category-card:hover .shape-block {
-  background: rgba(56, 182, 118, 0.3);
-  transform: scaleX(1.15);
+  background: rgba(56, 182, 118, 0.2);
+  transform: scale(1.1);
+}
+
+.feature-card:hover .feature-icon-wrapper i,
+.category-card:hover .category-icon-wrapper i {
+  color: #38b676;
+  transform: scale(1.1);
 }
 
 .feature-card h3 {
@@ -708,12 +739,6 @@ export default {
   transform: scaleX(1);
 }
 
-.category-shape {
-  margin: 0 auto 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .category-card h3 {
   font-size: 1.5rem;
@@ -960,14 +985,14 @@ export default {
 }
 
 .contact-icon {
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   background: rgba(255, 255, 255, 0.25);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.7rem;
+  font-size: 2rem;
   flex-shrink: 0;
   color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -979,6 +1004,44 @@ export default {
   background: rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.contact-icon.facebook-icon {
+  background: rgba(24, 119, 242, 0.5) !important;
+  border-color: rgba(24, 119, 242, 0.8) !important;
+}
+
+.contact-icon.facebook-icon:hover {
+  background: #1877f2 !important;
+  transform: translateY(-2px) scale(1.05);
+}
+
+.contact-icon.facebook-icon i {
+  color: white !important;
+  font-size: 2.5rem !important;
+  font-weight: normal;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  display: block;
+  line-height: 1;
+}
+
+.contact-icon.gmail-icon {
+  background: rgba(234, 67, 53, 0.5) !important;
+  border-color: rgba(234, 67, 53, 0.8) !important;
+}
+
+.contact-icon.gmail-icon:hover {
+  background: #ea4335 !important;
+  transform: translateY(-2px) scale(1.05);
+}
+
+.contact-icon.gmail-icon i {
+  color: white !important;
+  font-size: 2.5rem !important;
+  font-weight: normal;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  display: block;
+  line-height: 1;
 }
 
 .contact-icon i {
@@ -1023,11 +1086,13 @@ export default {
   font-size: 4rem;
   margin-bottom: 20px;
   opacity: 0.9;
+  color: white;
 }
 
 .contact-card p {
   font-size: 1.2rem;
   font-weight: 500;
+  color: white;
 }
 
 /* Footer */
@@ -1045,9 +1110,12 @@ export default {
 }
 
 .footer-logo {
-  width: 120px;
+  width: 180px;
+  height: auto;
   margin-bottom: 20px;
-  filter: brightness(0) invert(1);
+  display: block;
+  filter: none;
+  opacity: 1;
 }
 
 .footer-description {
@@ -1081,12 +1149,24 @@ export default {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+.social-link.facebook {
+  background: rgba(24, 119, 242, 0.2);
+  border: 2px solid rgba(24, 119, 242, 0.4);
+}
+
 .social-link.facebook:hover {
   background: #1877f2;
+  transform: translateY(-3px) scale(1.1);
+}
+
+.social-link.email {
+  background: rgba(234, 67, 53, 0.2);
+  border: 2px solid rgba(234, 67, 53, 0.4);
 }
 
 .social-link.email:hover {
   background: #ea4335;
+  transform: translateY(-3px) scale(1.1);
 }
 
 .social-link.phone:hover {

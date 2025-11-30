@@ -14,7 +14,7 @@
       <div class="page-header-section">
         <h1 class="page-title">Service Categories</h1>
         
-        <!-- Search and Filter Section - Compact floating design -->
+        <!-- Search and Filter Section - Enhanced design -->
         <div class="search-filter-section-fixed">
           <div class="search-filter-row">
             <div class="search-container">
@@ -1189,6 +1189,13 @@ export default {
   display: inline-block;
   padding: 8px 15px;
   border-radius: 50px;
+  width: fit-content;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .services-list {
@@ -1837,12 +1844,14 @@ export default {
   margin-bottom: 25px;
   gap: 20px;
   position: relative;
+  flex-wrap: wrap;
 }
 
-/* Search and Filter Styles - Clean, no box design */
+/* Search and Filter Styles - Enhanced design */
 .search-filter-section-fixed {
   position: relative;
-  width: 280px;
+  width: 100%;
+  max-width: 600px;
   flex-shrink: 0;
   background: transparent;
   padding: 0;
@@ -1853,7 +1862,7 @@ export default {
 
 .search-filter-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -1863,35 +1872,37 @@ export default {
 }
 
 .filter-toggle-btn {
-  width: 50px;
-  height: 50px;
+  width: 55px;
+  height: 55px;
   padding: 0;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 0.85rem;
+  border: 2px solid rgba(39, 174, 96, 0.2);
+  border-radius: 14px;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #2c3e50;
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
 }
 
 .filter-toggle-btn:hover {
   border-color: #27ae60;
-  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
-  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.25);
+  transform: translateY(-2px);
+  background: #ffffff;
 }
 
 .filter-toggle-btn.active {
   border-color: #27ae60;
-  background: linear-gradient(135deg, rgba(39, 174, 96, 0.05), rgba(52, 152, 219, 0.05));
+  background: linear-gradient(135deg, rgba(39, 174, 96, 0.1), rgba(52, 152, 219, 0.1));
   color: #27ae60;
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
 }
 
 .filter-toggle-btn i {
@@ -1906,29 +1917,44 @@ export default {
 
 .search-icon {
   position: absolute;
-  left: 14px;
+  left: 18px;
   color: #27ae60;
-  font-size: 1rem;
+  font-size: 1.1rem;
   z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.search-input-wrapper:focus-within .search-icon {
+  color: #219d55;
+  transform: scale(1.1);
 }
 
 .search-input {
   width: 100%;
-  height: 50px;
-  padding: 11px 40px 11px 40px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 0.9rem;
+  height: 55px;
+  padding: 14px 50px 14px 50px;
+  border: 2px solid rgba(39, 174, 96, 0.2);
+  border-radius: 14px;
+  font-size: 1rem;
   transition: all 0.3s ease;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06), inset 0 1px 3px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.search-input::placeholder {
+  color: #95a5a6;
+  font-weight: 400;
 }
 
 .search-input:focus {
   border-color: #27ae60;
-  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.25), inset 0 1px 3px rgba(39, 174, 96, 0.1);
   outline: none;
+  background: #ffffff;
+  transform: translateY(-1px);
 }
 
 .clear-search-btn {
@@ -2097,6 +2123,7 @@ export default {
     top: auto;
     right: auto;
     width: 100%;
+    max-width: 100%;
     max-height: none;
     margin-bottom: 20px;
   }

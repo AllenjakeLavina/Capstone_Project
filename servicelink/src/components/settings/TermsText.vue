@@ -86,9 +86,9 @@
       <h2>12. Contact Information</h2>
       <p>If you have any questions about these Terms and Conditions, please contact us at:</p>
       <ul>
-        <li>Email: support@servicetogo.online</li>
+        <li>Email: servicelinkolongapo@gmail.com</li>
         <li>Phone: 0915 066 4403</li>
-        <li>Address: Irving Street, East Tapinac Olongapo City</li>
+        <li>Address: Mabayuan Olongapo City, Zambales</li>
       </ul>
     </section>
   </div>

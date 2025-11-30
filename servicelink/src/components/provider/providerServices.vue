@@ -30,8 +30,8 @@
         </div>
 
         <!-- Service List -->
-        <div v-if="myServices && myServices.length > 0" class="service-list">
-          <div v-for="service in myServices" :key="service.id" class="service-card" :class="{ 'pending-approval': !service.isApproved }">
+        <div v-if="filteredServices && filteredServices.length > 0" class="service-list">
+          <div v-for="service in filteredServices" :key="service.id" class="service-card" :class="{ 'pending-approval': !service.isApproved }">
             <div class="service-header">
               <h3>{{ service.title }}</h3>
               <div class="status-badges">
@@ -80,11 +80,18 @@
             </div>
           </div>
         </div>
-        <div v-else class="no-services">
+        <div v-else-if="myServices && myServices.length === 0" class="no-services">
           <i class="fa fa-briefcase empty-icon"></i>
           <p>You haven't created any services yet.</p>
           <button class="primary-btn" @click="showCreateForm = true">
             <i class="fa fa-plus-circle"></i> Create Your First Service
+          </button>
+        </div>
+        <div v-else class="no-services">
+          <i class="fa fa-search empty-icon"></i>
+          <p>No services found matching your search.</p>
+          <button class="primary-btn" @click="clearSearch">
+            <i class="fa fa-times"></i> Clear Search
           </button>
         </div>
 
@@ -296,6 +303,9 @@ export default {
     const selectedSkills = ref([]);
     const editSkillInput = ref('');
     const editSelectedSkills = ref([]);
+
+    // Search functionality
+    const searchQuery = ref('');
 
     // Computed properties for image URLs
     const imageUrlsText = computed({
@@ -535,6 +545,28 @@ export default {
       }
     };
 
+    // Filtered services based on search
+    const filteredServices = computed(() => {
+      if (!myServices.value || myServices.value.length === 0) return [];
+      
+      if (!searchQuery.value.trim()) {
+        return myServices.value;
+      }
+      
+      const query = searchQuery.value.toLowerCase().trim();
+      return myServices.value.filter(service => {
+        const titleMatch = service.title?.toLowerCase().includes(query);
+        const descMatch = service.description?.toLowerCase().includes(query);
+        const categoryMatch = service.category?.name?.toLowerCase().includes(query);
+        return titleMatch || descMatch || categoryMatch;
+      });
+    });
+
+    // Clear search
+    const clearSearch = () => {
+      searchQuery.value = '';
+    };
+
     // Lifecycle hooks
     onMounted(() => {
       initData();
@@ -566,7 +598,10 @@ export default {
       updateService,
       toggleServiceStatus,
       truncateText,
-      formatPricingType
+      formatPricingType,
+      searchQuery,
+      filteredServices,
+      clearSearch
     };
   }
 };
@@ -1373,6 +1408,16 @@ textarea.form-control {
   
   .page-title {
     font-size: 1.8rem;
+  }
+
+  .search-input-wrapper {
+    max-width: 100%;
+    padding: 12px;
+  }
+
+  .search-input {
+    height: 50px;
+    font-size: 0.95rem;
   }
   
   .service-list {

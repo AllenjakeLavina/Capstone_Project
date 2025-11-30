@@ -24,7 +24,7 @@
     <section class="terms-section">
       <h2>Contact Support</h2>
       <ul>
-        <li><strong>Email:</strong> 202210416@gordoncollege.edu.ph</li>
+        <li><strong>Email:</strong> servicelinkolongapo@gmail.com</li>
         <li><strong>Phone:</strong> +63 915 066 4403</li>
       </ul>
     </section>
@@ -50,25 +50,82 @@
           <label for="details">Details</label>
           <textarea id="details" v-model="form.details" rows="5" placeholder="Provide clear details to help us assist you" required></textarea>
         </div>
-        <button class="submit-btn" type="submit">Submit</button>
+        <button class="submit-btn" type="submit" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Submitting...' : 'Submit' }}
+        </button>
       </form>
     </section>
   </div>
 </template>
 
 <script>
+import Swal from 'sweetalert2';
+
 export default {
   name: 'CustomerService',
   data() {
     return {
-      form: { name: '', email: '', issue: '', details: '' }
+      form: { name: '', email: '', issue: '', details: '' },
+      isSubmitting: false
     };
   },
   methods: {
-    submit() {
-      // Simple client-side acknowledgment; integrate API if needed
-      alert('Thanks! Your support request has been recorded.');
-      this.form = { name: '', email: '', issue: '', details: '' };
+    async submit() {
+      if (this.isSubmitting) return;
+      
+      this.isSubmitting = true;
+      
+      try {
+        // Simulate API call - replace with actual API integration
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Show success alert
+        await Swal.fire({
+          icon: 'success',
+          title: 'Support Request Submitted!',
+          html: `
+            <p style="font-size: 1.1rem; color: #334155; margin: 1rem 0;">
+              Thank you, <strong>${this.form.name}</strong>!
+            </p>
+            <p style="font-size: 0.95rem; color: #64748b; margin: 0.5rem 0;">
+              Your support request has been received. Our team will review your concern and get back to you at <strong>${this.form.email}</strong> within 24-48 hours.
+            </p>
+            <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 1rem;">
+              Reference: <strong>${this.form.issue}</strong>
+            </p>
+          `,
+          confirmButtonText: 'Got it!',
+          confirmButtonColor: '#00C853',
+          buttonsStyling: true,
+          customClass: {
+            popup: 'support-alert-popup',
+            title: 'support-alert-title',
+            confirmButton: 'support-alert-button'
+          },
+          width: '500px',
+          padding: '2rem',
+          showClass: {
+            popup: 'animate__animated animate__fadeInUp animate__faster'
+          },
+          hideClass: {
+            popup: 'animate__animated animate__fadeOutDown animate__faster'
+          }
+        });
+        
+        // Reset form
+        this.form = { name: '', email: '', issue: '', details: '' };
+      } catch (error) {
+        // Show error alert if something goes wrong
+        await Swal.fire({
+          icon: 'error',
+          title: 'Oops!',
+          text: 'Something went wrong. Please try again later.',
+          confirmButtonColor: '#e74c3c',
+          confirmButtonText: 'OK'
+        });
+      } finally {
+        this.isSubmitting = false;
+      }
     }
   }
 }
@@ -93,8 +150,27 @@ export default {
 .form-field label { font-weight: 600; color: #1e293b; font-size: 0.95rem; }
 .form-field input, .form-field textarea { padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s; }
 .form-field input:focus, .form-field textarea:focus { border-color: #00C853; box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.15); }
-.submit-btn { padding: 0.75rem 1.5rem; border-radius: 8px; border: none; color: #ffffff; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #00C853 0%, #009688 100%); transition: filter 0.2s; }
-.submit-btn:hover { filter: brightness(1.05); }
+.submit-btn { 
+  padding: 0.75rem 1.5rem; 
+  border-radius: 8px; 
+  border: none; 
+  color: #ffffff; 
+  font-weight: 600; 
+  cursor: pointer; 
+  background: linear-gradient(135deg, #00C853 0%, #009688 100%); 
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+.submit-btn:hover:not(:disabled) { 
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 200, 83, 0.3);
+}
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
 
 @media (min-width: 768px) {
   .form-grid { grid-template-columns: 1fr 1fr; }

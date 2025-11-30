@@ -549,7 +549,7 @@ export default {
 
 .refresh-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
+  background-color: #4299e1;
   color: white;
   border: none;
   border-radius: 8px;
