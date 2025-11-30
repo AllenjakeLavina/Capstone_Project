@@ -255,7 +255,8 @@ export default {
 <style scoped>
 .booking-details-page {
   background-color: #f5f7f9;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
+  min-height: calc(100vh - 80px); /* Fallback for older browsers */
   padding: 30px 0;
 }
 

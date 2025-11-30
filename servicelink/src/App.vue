@@ -47,12 +47,17 @@ export default {
   color: #2c3e50;
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 button {
@@ -92,14 +97,17 @@ input {
 /* Add margin for content when nav is present */
 .content-with-nav {
   padding-top: 60px;
-  min-height: calc(100vh - 60px);
+  min-height: calc(100dvh - 60px);
+  min-height: calc(100vh - 60px); /* Fallback for older browsers */
+  width: 100%;
 }
 
 @media (max-width: 767px) {
   .content-with-nav {
     padding-top: 0;
     padding-bottom: 60px;
-    min-height: calc(100vh - 60px);
+    min-height: calc(100dvh - 60px);
+    min-height: calc(100vh - 60px); /* Fallback for older browsers */
   }
 }
 </style>

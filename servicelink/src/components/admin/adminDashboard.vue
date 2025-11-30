@@ -616,7 +616,8 @@ export default {
   box-shadow: none;
   padding: 20px 30px;
   border: none;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
+  min-height: calc(100vh - 80px); /* Fallback for older browsers */
 }
 
 .page-header {

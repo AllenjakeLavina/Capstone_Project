@@ -474,7 +474,8 @@ export default {
   box-shadow: none;
   padding: 20px 30px;
   border: none;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
+  min-height: calc(100vh - 80px); /* Fallback for older browsers */
 }
 
 .pending-services {
@@ -913,7 +914,8 @@ export default {
   border-radius: 12px;
   width: 90%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: 90dvh;
+  max-height: 90vh; /* Fallback for older browsers */
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
   border: 1px solid #ececec;

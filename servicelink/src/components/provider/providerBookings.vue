@@ -1177,10 +1177,11 @@ export default {
   margin: 0;
   padding: 20px 30px 0 30px;
   background-color: #f5f5f5;
-  height: calc(100vh - 60px);
-  overflow: hidden;
+  min-height: calc(100dvh - 60px);
+  min-height: calc(100vh - 60px); /* Fallback for older browsers */
   position: relative;
   box-sizing: border-box;
+  padding-bottom: 20px;
   margin-bottom: 0;
   padding-bottom: 0;
 }
@@ -1275,10 +1276,11 @@ export default {
 .bookings-container {
   position: relative;
   z-index: 1;
-  height: 100%;
-  overflow-y: auto;
+  min-height: 100%;
+  overflow-y: visible;
   padding-right: 10px;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .filter-container {
@@ -1708,7 +1710,8 @@ export default {
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: 90dvh;
+  max-height: 90vh; /* Fallback for older browsers */
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   animation: modalIn 0.3s ease-out;

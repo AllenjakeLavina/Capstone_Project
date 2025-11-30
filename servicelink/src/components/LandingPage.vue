@@ -309,7 +309,10 @@ export default {
 <style scoped>
 .landing-page {
   background-color: #f8fafc;
-  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* Hero Section */

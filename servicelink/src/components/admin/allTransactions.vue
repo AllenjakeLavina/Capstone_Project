@@ -226,7 +226,8 @@ export default {
 .all-transactions {
   padding: 20px;
   background-color: #f5f5f5;
-  min-height: calc(100vh - 60px);
+  min-height: calc(100dvh - 60px);
+  min-height: calc(100vh - 60px); /* Fallback for older browsers */
 }
 
 .page-header {

@@ -96,8 +96,9 @@
         </div>
 
         <!-- Create Service Modal -->
-        <div v-if="showCreateForm" class="modal-overlay">
-          <div class="modal">
+        <Teleport to="body">
+          <div v-if="showCreateForm" class="modal-overlay" @click.self="showCreateForm = false">
+            <div class="modal">
             <div class="modal-header">
               <h2>Create New Service</h2>
               <button class="close-btn" @click="showCreateForm = false">&times;</button>
@@ -175,11 +176,13 @@
               </form>
             </div>
           </div>
-        </div>
+          </div>
+        </Teleport>
 
         <!-- Edit Service Modal -->
-        <div v-if="showEditForm" class="modal-overlay">
-          <div class="modal">
+        <Teleport to="body">
+          <div v-if="showEditForm" class="modal-overlay" @click.self="showEditForm = false">
+            <div class="modal">
             <div class="modal-header">
               <h2>Edit Service</h2>
               <button class="close-btn" @click="showEditForm = false">&times;</button>
@@ -253,7 +256,8 @@
               </form>
             </div>
           </div>
-        </div>
+          </div>
+        </Teleport>
       </div>
     </div>
   </div>
@@ -618,10 +622,11 @@ export default {
   width: 100%;
   padding: 0;
   background-color: #f5f5f5;
-  height: calc(100vh - 60px);
-  overflow: hidden;
+  min-height: calc(100dvh - 60px);
+  min-height: calc(100vh - 60px); /* Fallback for older browsers */
   position: relative;
   box-sizing: border-box;
+  padding-bottom: 20px;
   margin-bottom: 0;
   padding-bottom: 0;
 }
@@ -1040,13 +1045,21 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height */
   background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000 !important;
   backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .modal {
@@ -1054,10 +1067,14 @@ export default {
   border-radius: 12px;
   width: 100%;
   max-width: 600px;
-  max-height: 90vh;
+  max-height: 90dvh;
+  max-height: 90vh; /* Fallback for older browsers */
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   animation: modalIn 0.3s ease-out;
+  position: relative;
+  z-index: 10001 !important;
+  margin: auto;
 }
 
 @keyframes fadeIn {

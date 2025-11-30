@@ -1,32 +1,33 @@
 <template>
-  <div v-if="showModal" class="modal-overlay">
-    <div class="modal provider-details-modal">
-      <div class="modal-header">
-        <div class="header-content">
-          <div class="provider-quick-info">
-            <img 
-              :src="getFileUrl(provider.profilePicture)" 
-              :alt="provider.fullName"
-              class="header-profile-pic"
-            />
-            <div class="provider-header-details">
-              <h2>{{ provider.fullName }}</h2>
-              <div class="rating-container">
-                <div class="stars">
-                  <i v-for="i in 5" :key="i" 
-                     :class="['fa', i <= Math.round(provider.rating || 0) ? 'fa-star' : 'fa-star-o']">
-                  </i>
+  <Teleport to="body">
+    <div v-if="showModal" class="modal-overlay" @click.self="$emit('close')">
+      <div class="modal provider-details-modal">
+        <div class="modal-header">
+          <div class="header-content">
+            <div class="provider-quick-info">
+              <img 
+                :src="getFileUrl(provider.profilePicture)" 
+                :alt="provider.fullName"
+                class="header-profile-pic"
+              />
+              <div class="provider-header-details">
+                <h2>{{ provider.fullName }}</h2>
+                <div class="rating-container">
+                  <div class="stars">
+                    <i v-for="i in 5" :key="i" 
+                       :class="['fa', i <= Math.round(provider.rating || 0) ? 'fa-star' : 'fa-star-o']">
+                    </i>
+                  </div>
+                  <span class="rating-text">
+                    {{ provider.rating ? provider.rating.toFixed(1) : 'No' }} 
+                    ({{ provider.reviewCount || 0 }} reviews)
+                  </span>
                 </div>
-                <span class="rating-text">
-                  {{ provider.rating ? provider.rating.toFixed(1) : 'No' }} 
-                  ({{ provider.reviewCount || 0 }} reviews)
-                </span>
               </div>
             </div>
+            <button class="close-btn" @click="$emit('close')">&times;</button>
           </div>
-          <button class="close-btn" @click="$emit('close')">&times;</button>
         </div>
-      </div>
 
       <div class="modal-body">
         <div class="tab-container">
@@ -158,6 +159,7 @@
       </div>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script>
@@ -241,22 +243,38 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height */
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000 !important;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .provider-details-modal {
   width: 90%;
   max-width: 900px;
-  max-height: 90vh;
+  max-height: 90dvh;
+  max-height: 90vh; /* Fallback for older browsers */
   background: white;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 10001 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  animation: modalIn 0.3s ease-out;
+  margin: auto;
 }
 
 .modal-header {
@@ -529,6 +547,11 @@ export default {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {

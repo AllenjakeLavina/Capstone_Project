@@ -840,7 +840,8 @@ export default {
   padding: 0;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #f7f9fc;
-  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   color: #2d3748;
   box-sizing: border-box;
   overflow-x: hidden;
@@ -1370,7 +1371,8 @@ export default {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   }
 
   .profile-layout {
@@ -2180,7 +2182,8 @@ h2 {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   }
 
   .profile-layout {

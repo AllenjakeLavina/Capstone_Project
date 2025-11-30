@@ -487,7 +487,8 @@ onMounted(fetchUsers);
   width: 100%;
   padding: 0;
   background-color: #f8f9fa;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
+  min-height: calc(100vh - 80px); /* Fallback for older browsers */
 }
 
 .provider-services {

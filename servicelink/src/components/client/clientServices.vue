@@ -218,105 +218,108 @@
       </div>
 
       <!-- Booking Modal -->
-      <div v-if="showBookingModal" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h2>Book Service</h2>
-            <button class="close-btn" @click="closeBookingModal">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div class="booking-service-details">
-              <h3>{{ selectedService.title }}</h3>
-              <p class="modal-price">₱{{ Number(selectedService.pricing).toFixed(2) }} / {{ formatPriceType(selectedService.pricingType) }}</p>
-              <p>Provider: {{ selectedService.provider.name }}</p>
+      <Teleport to="body">
+        <div v-if="showBookingModal" class="modal-overlay" @click.self="closeBookingModal">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Book Service</h2>
+              <button class="close-btn" @click="closeBookingModal">&times;</button>
             </div>
-            
-            <form @submit.prevent="submitBooking">
-              <div class="form-group">
-                <label>Select Available Time Slot</label>
-                
-                <div v-if="loadingAvailability" class="loading-availability">
-                  <i class="fa fa-spinner fa-spin"></i> Loading availability...
-                </div>
-                
-                <div v-else-if="availabilityByDay.length === 0" class="no-availability">
-                  <i class="fa fa-calendar-times"></i>
-                  <p>No available time slots set by this provider.</p>
-                  <p>Please contact the provider for booking options.</p>
-                </div>
-                
-                <div v-else class="availability-slots">
-                  <div 
-                    v-for="day in availabilityByDay" 
-                    :key="day.dayOfWeek" 
-                    class="day-slot-group"
-                  >
-                    <h4 class="day-name">{{ day.dayName }}</h4>
-                    <div class="time-slots-grid">
-                      <button
-                        v-for="slot in day.slots.filter(s => s.isAvailable !== false)"
-                        :key="slot.id"
-                        type="button"
-                        class="time-slot-btn"
-                        :class="{ active: bookingForm.selectedSlot?.id === slot.id }"
-                        @click="bookingForm.selectedSlot = { ...slot, dayOfWeek: day.dayOfWeek, dayName: day.dayName }"
-                      >
-                        {{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}
-                      </button>
+            <div class="modal-body">
+              <div class="booking-service-details">
+                <h3>{{ selectedService.title }}</h3>
+                <p class="modal-price">₱{{ Number(selectedService.pricing).toFixed(2) }} / {{ formatPriceType(selectedService.pricingType) }}</p>
+                <p>Provider: {{ selectedService.provider.name }}</p>
+              </div>
+              
+              <form @submit.prevent="submitBooking">
+                <div class="form-group">
+                  <label>Select Available Time Slot</label>
+                  
+                  <div v-if="loadingAvailability" class="loading-availability">
+                    <i class="fa fa-spinner fa-spin"></i> Loading availability...
+                  </div>
+                  
+                  <div v-else-if="availabilityByDay.length === 0" class="no-availability">
+                    <i class="fa fa-calendar-times"></i>
+                    <p>No available time slots set by this provider.</p>
+                    <p>Please contact the provider for booking options.</p>
+                  </div>
+                  
+                  <div v-else class="availability-slots">
+                    <div 
+                      v-for="day in availabilityByDay" 
+                      :key="day.dayOfWeek" 
+                      class="day-slot-group"
+                    >
+                      <h4 class="day-name">{{ day.dayName }}</h4>
+                      <div class="time-slots-grid">
+                        <button
+                          v-for="slot in day.slots.filter(s => s.isAvailable !== false)"
+                          :key="slot.id"
+                          type="button"
+                          class="time-slot-btn"
+                          :class="{ active: bookingForm.selectedSlot?.id === slot.id }"
+                          @click="bookingForm.selectedSlot = { ...slot, dayOfWeek: day.dayOfWeek, dayName: day.dayName }"
+                        >
+                          {{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="booking-address">Address</label>
-                <div class="address-input-group">
-                  <select id="booking-address" v-model="bookingForm.addressId" required>
-                    <option value="">-- Select an address --</option>
-                    <option v-for="address in addresses" :key="address.id" :value="address.id">
-                      {{ formatAddress(address) }}
-                    </option>
-                  </select>
-                  <button 
-                    type="button" 
-                    class="add-address-btn" 
-                    @click="showAddAddressModal = true"
-                    title="Add new address"
-                  >
-                    <i class="fa fa-plus"></i>
+                
+                <div class="form-group">
+                  <label for="booking-address">Address</label>
+                  <div class="address-input-group">
+                    <select id="booking-address" v-model="bookingForm.addressId" required>
+                      <option value="">-- Select an address --</option>
+                      <option v-for="address in addresses" :key="address.id" :value="address.id">
+                        {{ formatAddress(address) }}
+                      </option>
+                    </select>
+                    <button 
+                      type="button" 
+                      class="add-address-btn" 
+                      @click="showAddAddressModal = true"
+                      title="Add new address"
+                    >
+                      <i class="fa fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="booking-notes">Additional Notes</label>
+                  <textarea id="booking-notes" v-model="bookingForm.notes"></textarea>
+                </div>
+                
+                <div class="booking-actions">
+                  <button type="button" class="btn btn-cancel" @click="closeBookingModal">Cancel</button>
+                  <button type="submit" class="btn btn-confirm" :disabled="isBookingSubmitting">
+                    {{ isBookingSubmitting ? 'Processing...' : 'Confirm Booking' }}
                   </button>
                 </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="booking-notes">Additional Notes</label>
-                <textarea id="booking-notes" v-model="bookingForm.notes"></textarea>
-              </div>
-              
-              <div class="booking-actions">
-                <button type="button" class="btn btn-cancel" @click="closeBookingModal">Cancel</button>
-                <button type="submit" class="btn btn-confirm" :disabled="isBookingSubmitting">
-                  {{ isBookingSubmitting ? 'Processing...' : 'Confirm Booking' }}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
+      </Teleport>
 
       <!-- Booking Success Modal -->
-      <div v-if="showBookingSuccess" class="modal-overlay">
-        <div class="modal success-modal">
-          <div class="modal-header success">
-            <h2>Booking Successful!</h2>
-            <button class="close-btn" @click="closeSuccessModal">&times;</button>
-          </div>
-          <div class="modal-body text-center">
-            <div class="success-icon">
-              <i class="fa fa-check-circle"></i>
+      <Teleport to="body">
+        <div v-if="showBookingSuccess" class="modal-overlay" @click.self="closeSuccessModal">
+          <div class="modal success-modal">
+            <div class="modal-header success">
+              <h2>Booking Successful!</h2>
+              <button class="close-btn" @click="closeSuccessModal">&times;</button>
             </div>
-            <p>Your booking has been successfully created.</p>
-            <p>The service provider will be notified and will confirm your booking.</p>
+            <div class="modal-body text-center">
+              <div class="success-icon">
+                <i class="fa fa-check-circle"></i>
+              </div>
+              <p>Your booking has been successfully created.</p>
+              <p>The service provider will be notified and will confirm your booking.</p>
             <div class="booking-actions">
               <button class="btn btn-primary" @click="goToBookings">View My Bookings</button>
               <button class="btn btn-secondary" @click="closeSuccessModal">Continue Browsing</button>
@@ -324,6 +327,7 @@
           </div>
         </div>
       </div>
+      </Teleport>
 
       <!-- Provider Details Modal -->
       <provider-details-modal
@@ -922,12 +926,11 @@ export default {
   margin: 0;
   padding: 20px 30px 0 50px;
   background-color: #f5f5f5;
-  height: calc(100vh - 60px);
-  overflow: hidden;
+  min-height: calc(100dvh - 60px);
+  min-height: calc(100vh - 60px); /* Fallback for older browsers */
   position: relative;
   box-sizing: border-box;
-  margin-bottom: 0;
-  padding-bottom: 0;
+  padding-bottom: 20px;
 }
 
 .client-services::before {
@@ -1031,10 +1034,11 @@ export default {
 .services-container {
   position: relative;
   z-index: 1;
-  height: 100%;
-  overflow-y: auto;
+  min-height: 100%;
+  overflow-y: visible;
   padding-right: 10px;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .categories-selection {
@@ -1429,10 +1433,15 @@ export default {
   border-radius: 12px;
   width: 100%;
   max-width: 450px;
-  max-height: 85vh;
+  max-height: 85dvh;
+  max-height: 85vh; /* Fallback for older browsers */
   overflow-y: auto;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
   animation: slideIn 0.3s ease;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  position: relative;
+  z-index: 10001 !important;
+  margin: auto;
 }
 
 @keyframes slideIn {

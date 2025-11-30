@@ -174,7 +174,8 @@ export default {
   border-radius: 10px;
   width: 90%;
   max-width: 420px;
-  max-height: 85vh;
+  max-height: 85dvh;
+  max-height: 85vh; /* Fallback for older browsers */
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }

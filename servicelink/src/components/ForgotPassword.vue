@@ -111,17 +111,13 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   background: linear-gradient(135deg, #106e40 0%, #38b676 100%);
   padding: 20px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  margin: 0;
-  overflow: hidden;
+  position: relative;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* Reset any potential spacers or margins */

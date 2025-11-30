@@ -111,243 +111,253 @@
       </div>
 
       <!-- Cancel Confirmation Modal -->
-      <div v-if="showCancelModal" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header warning">
-            <h2>Cancel Booking</h2>
-            <button class="close-btn" @click="showCancelModal = false">&times;</button>
-          </div>
-          <div class="modal-body">
-            <p>Are you sure you want to cancel this booking?</p>
-            <p class="warning-text">This action cannot be undone.</p>
-            
-            <div class="booking-summary">
-              <h4>{{ selectedBooking?.title || selectedBooking?.service.title }}</h4>
-              <p>Date: {{ formatDate(selectedBooking?.startTime) }}</p>
-              <p>Provider: {{ getProviderName(selectedBooking) }}</p>
+      <Teleport to="body">
+        <div v-if="showCancelModal" class="modal-overlay" @click.self="showCancelModal = false">
+          <div class="modal">
+            <div class="modal-header warning">
+              <h2>Cancel Booking</h2>
+              <button class="close-btn" @click="showCancelModal = false">&times;</button>
             </div>
-            
-            <div class="modal-actions">
-              <button class="btn btn-secondary" @click="showCancelModal = false">No, Keep It</button>
-              <button 
-                class="btn btn-danger" 
-                @click="cancelBooking()" 
-                :disabled="isCancelling">
-                {{ isCancelling ? 'Cancelling...' : 'Yes, Cancel Booking' }}
-              </button>
+            <div class="modal-body">
+              <p>Are you sure you want to cancel this booking?</p>
+              <p class="warning-text">This action cannot be undone.</p>
+              
+              <div class="booking-summary">
+                <h4>{{ selectedBooking?.title || selectedBooking?.service.title }}</h4>
+                <p>Date: {{ formatDate(selectedBooking?.startTime) }}</p>
+                <p>Provider: {{ getProviderName(selectedBooking) }}</p>
+              </div>
+              
+              <div class="modal-actions">
+                <button class="btn btn-secondary" @click="showCancelModal = false">No, Keep It</button>
+                <button 
+                  class="btn btn-danger" 
+                  @click="cancelBooking()" 
+                  :disabled="isCancelling">
+                  {{ isCancelling ? 'Cancelling...' : 'Yes, Cancel Booking' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Teleport>
 
       <!-- Payment Confirmation Modal -->
-      <div v-if="showPaymentModal" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h2>Process Payment</h2>
-            <button class="close-btn" @click="showPaymentModal = false">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div class="payment-details">
-              <h3>{{ selectedBooking?.title || selectedBooking?.service.title }}</h3>
-              <p class="payment-amount">
-                Amount Due: ₱{{ Number(selectedBooking?.totalAmount || selectedBooking?.service.pricing).toFixed(2) }}
-              </p>
-              <p>Date: {{ formatDate(selectedBooking?.startTime) }}</p>
-              <p>Provider: {{ getProviderName(selectedBooking) }}</p>
+      <Teleport to="body">
+        <div v-if="showPaymentModal" class="modal-overlay" @click.self="showPaymentModal = false">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Process Payment</h2>
+              <button class="close-btn" @click="showPaymentModal = false">&times;</button>
             </div>
-            
-            <div class="payment-method">
-              <p class="payment-note">
-                <i class="fa fa-info-circle"></i> 
-                <strong>Payment Method: Cash On-Service</strong><br>
-                Payment will be collected in cash when the service is provided. The provider will mark the payment as paid after receiving it.
-              </p>
-            </div>
-            
-            <div class="modal-actions">
-              <button class="btn btn-secondary" @click="showPaymentModal = false">Cancel</button>
-              <button 
-                class="btn btn-primary" 
-                @click="confirmPayment()" 
-                :disabled="isProcessingPayment">
-                {{ isProcessingPayment ? 'Processing...' : 'Process Payment' }}
-              </button>
+            <div class="modal-body">
+              <div class="payment-details">
+                <h3>{{ selectedBooking?.title || selectedBooking?.service.title }}</h3>
+                <p class="payment-amount">
+                  Amount Due: ₱{{ Number(selectedBooking?.totalAmount || selectedBooking?.service.pricing).toFixed(2) }}
+                </p>
+                <p>Date: {{ formatDate(selectedBooking?.startTime) }}</p>
+                <p>Provider: {{ getProviderName(selectedBooking) }}</p>
+              </div>
+              
+              <div class="payment-method">
+                <p class="payment-note">
+                  <i class="fa fa-info-circle"></i> 
+                  <strong>Payment Method: Cash On-Service</strong><br>
+                  Payment will be collected in cash when the service is provided. The provider will mark the payment as paid after receiving it.
+                </p>
+              </div>
+              
+              <div class="modal-actions">
+                <button class="btn btn-secondary" @click="showPaymentModal = false">Cancel</button>
+                <button 
+                  class="btn btn-primary" 
+                  @click="confirmPayment()" 
+                  :disabled="isProcessingPayment">
+                  {{ isProcessingPayment ? 'Processing...' : 'Process Payment' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Teleport>
 
       <!-- Review Modal -->
-      <div v-if="showReviewModal" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h2>Write a Review</h2>
-            <button class="close-btn" @click="showReviewModal = false">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div class="review-form">
-              <div class="rating-input">
-                <label>Rating:</label>
-                <div class="star-rating">
-                  <button 
-                    v-for="star in 5" 
-                    :key="star"
-                    @click="setRating(star)"
-                    :class="['star-btn', star <= reviewData.rating ? 'active' : '']"
-                    type="button">
-                    <i class="fa fa-star"></i>
-                  </button>
+      <Teleport to="body">
+        <div v-if="showReviewModal" class="modal-overlay" @click.self="showReviewModal = false">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Write a Review</h2>
+              <button class="close-btn" @click="showReviewModal = false">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="review-form">
+                <div class="rating-input">
+                  <label>Rating:</label>
+                  <div class="star-rating">
+                    <button 
+                      v-for="star in 5" 
+                      :key="star"
+                      @click="setRating(star)"
+                      :class="['star-btn', star <= reviewData.rating ? 'active' : '']"
+                      type="button">
+                      <i class="fa fa-star"></i>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div class="form-group">
-                <label for="reviewComment">Comment:</label>
-                <textarea 
-                  id="reviewComment"
-                  v-model="reviewData.comment"
-                  placeholder="Share your experience..."
-                  rows="4"
-                  class="form-control"
-                ></textarea>
-              </div>
+                <div class="form-group">
+                  <label for="reviewComment">Comment:</label>
+                  <textarea 
+                    id="reviewComment"
+                    v-model="reviewData.comment"
+                    placeholder="Share your experience..."
+                    rows="4"
+                    class="form-control"
+                  ></textarea>
+                </div>
 
-              <div class="file-upload">
-                <label>Add Photos (optional):</label>
-                <input 
-                  type="file" 
-                  ref="reviewImagesInput"
-                  @change="handleReviewImagesUpload"
-                  accept="image/*"
-                  multiple
-                  class="form-control"
-                />
-                <p class="file-hint">You can upload up to 5 images (JPG, PNG, GIF - max 5MB each)</p>
-                
-                <div v-if="selectedImages.length > 0" class="selected-images">
-                  <div v-for="(image, index) in selectedImages" :key="index" class="image-preview">
-                    <img :src="image.preview" :alt="'Selected image ' + (index + 1)" />
-                    <button class="remove-image" @click="removeImage(index)">&times;</button>
+                <div class="file-upload">
+                  <label>Add Photos (optional):</label>
+                  <input 
+                    type="file" 
+                    ref="reviewImagesInput"
+                    @change="handleReviewImagesUpload"
+                    accept="image/*"
+                    multiple
+                    class="form-control"
+                  />
+                  <p class="file-hint">You can upload up to 5 images (JPG, PNG, GIF - max 5MB each)</p>
+                  
+                  <div v-if="selectedImages.length > 0" class="selected-images">
+                    <div v-for="(image, index) in selectedImages" :key="index" class="image-preview">
+                      <img :src="image.preview" :alt="'Selected image ' + (index + 1)" />
+                      <button class="remove-image" @click="removeImage(index)">&times;</button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <div class="modal-actions">
-              <button class="btn btn-secondary" @click="showReviewModal = false">Cancel</button>
-              <button 
-                class="btn btn-primary" 
-                @click="submitReview()" 
-                :disabled="isSubmittingReview || !reviewData.rating">
-                {{ isSubmittingReview ? 'Submitting...' : 'Submit Review' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Edit Booking Modal -->
-      <div v-if="showEditModal" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h2>Edit Booking</h2>
-            <button class="close-btn" @click="closeEditModal">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div class="booking-service-details">
-              <h3>{{ selectedBooking?.title || selectedBooking?.service.title }}</h3>
-              <p class="modal-price">₱{{ Number(selectedBooking?.totalAmount || selectedBooking?.service.pricing).toFixed(2) }}</p>
-              <p>Provider: {{ getProviderName(selectedBooking) }}</p>
-            </div>
-            
-            <form @submit.prevent="submitEditBooking">
-              <div class="form-group">
-                <label for="edit-booking-date">Date & Time</label>
-                <input 
-                  type="datetime-local" 
-                  id="edit-booking-date" 
-                  v-model="editForm.dateTime" 
-                  required
-                  :min="currentDateTimeString"
-                />
-              </div>
               
-              <div class="form-group">
-                <label for="edit-booking-address">Address</label>
-                <div class="address-input-group">
-                  <select id="edit-booking-address" v-model="editForm.addressId" required>
-                    <option value="">-- Select an address --</option>
-                    <option v-for="address in addresses" :key="address.id" :value="address.id">
-                      {{ formatAddress(address) }}
-                    </option>
-                  </select>
-                  <button 
-                    type="button" 
-                    class="add-address-btn" 
-                    @click="showAddAddressModal = true"
-                    title="Add new address"
-                  >
-                    <i class="fa fa-plus"></i>
-                  </button>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="edit-booking-notes">Additional Notes</label>
-                <textarea id="edit-booking-notes" v-model="editForm.notes"></textarea>
-              </div>
-              
-              <div class="booking-actions">
-                <button type="button" class="btn btn-cancel" @click="closeEditModal">Cancel</button>
-                <button type="submit" class="btn btn-confirm" :disabled="isEditing">
-                  {{ isEditing ? 'Updating...' : 'Update Booking' }}
+              <div class="modal-actions">
+                <button class="btn btn-secondary" @click="showReviewModal = false">Cancel</button>
+                <button 
+                  class="btn btn-primary" 
+                  @click="submitReview()" 
+                  :disabled="isSubmittingReview || !reviewData.rating">
+                  {{ isSubmittingReview ? 'Submitting...' : 'Submit Review' }}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
-      </div>
+      </Teleport>
+
+      <!-- Edit Booking Modal -->
+      <Teleport to="body">
+        <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Edit Booking</h2>
+              <button class="close-btn" @click="closeEditModal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="booking-service-details">
+                <h3>{{ selectedBooking?.title || selectedBooking?.service.title }}</h3>
+                <p class="modal-price">₱{{ Number(selectedBooking?.totalAmount || selectedBooking?.service.pricing).toFixed(2) }}</p>
+                <p>Provider: {{ getProviderName(selectedBooking) }}</p>
+              </div>
+              
+              <form @submit.prevent="submitEditBooking">
+                <div class="form-group">
+                  <label for="edit-booking-date">Date & Time</label>
+                  <input 
+                    type="datetime-local" 
+                    id="edit-booking-date" 
+                    v-model="editForm.dateTime" 
+                    required
+                    :min="currentDateTimeString"
+                  />
+                </div>
+                
+                <div class="form-group">
+                  <label for="edit-booking-address">Address</label>
+                  <div class="address-input-group">
+                    <select id="edit-booking-address" v-model="editForm.addressId" required>
+                      <option value="">-- Select an address --</option>
+                      <option v-for="address in addresses" :key="address.id" :value="address.id">
+                        {{ formatAddress(address) }}
+                      </option>
+                    </select>
+                    <button 
+                      type="button" 
+                      class="add-address-btn" 
+                      @click="showAddAddressModal = true"
+                      title="Add new address"
+                    >
+                      <i class="fa fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="edit-booking-notes">Additional Notes</label>
+                  <textarea id="edit-booking-notes" v-model="editForm.notes"></textarea>
+                </div>
+                
+                <div class="booking-actions">
+                  <button type="button" class="btn btn-cancel" @click="closeEditModal">Cancel</button>
+                  <button type="submit" class="btn btn-confirm" :disabled="isEditing">
+                    {{ isEditing ? 'Updating...' : 'Update Booking' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </Teleport>
 
       <!-- Booking Details Modal -->
-      <div v-if="showDetailsModal" class="modal-overlay" @click.self="closeDetailsModal">
-        <div class="modal">
-          <div class="modal-header">
-            <h2>Booking Details</h2>
-            <button class="close-btn" @click="closeDetailsModal">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div v-if="loadingDetails" class="loading-details">
-              <div class="spinner"></div>
-              <p>Loading details...</p>
+      <Teleport to="body">
+        <div v-if="showDetailsModal" class="modal-overlay" @click.self="closeDetailsModal">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Booking Details</h2>
+              <button class="close-btn" @click="closeDetailsModal">&times;</button>
             </div>
-            <div v-else-if="selectedBookingDetails">
-              <div class="booking-summary">
-                <div class="status-badge-inline" :class="selectedBookingDetails.status.toLowerCase()">
-                  {{ formatStatus(selectedBookingDetails.status) }}
-                </div>
-                <h4>{{ selectedBookingDetails.service?.title || 'Service' }}</h4>
-                <p><i class="fa fa-calendar"></i> Date: {{ formatDate(selectedBookingDetails.startTime) }}</p>
-                <p><i class="fa fa-user"></i> Provider: {{ getProviderName(selectedBookingDetails) }}</p>
-                <p><i class="fa fa-tag"></i> Amount: ₱{{ Number(selectedBookingDetails.totalAmount || selectedBookingDetails.service?.pricing || 0).toFixed(2) }}</p>
-                <p v-if="selectedBookingDetails.address"><i class="fa fa-map-marker"></i> Location: {{ formatAddress(selectedBookingDetails.address) }}</p>
-                <p v-if="selectedBookingDetails.notes"><i class="fa fa-sticky-note"></i> Notes: {{ selectedBookingDetails.notes }}</p>
+            <div class="modal-body">
+              <div v-if="loadingDetails" class="loading-details">
+                <div class="spinner"></div>
+                <p>Loading details...</p>
               </div>
+              <div v-else-if="selectedBookingDetails">
+                <div class="booking-summary">
+                  <div class="status-badge-inline" :class="selectedBookingDetails.status.toLowerCase()">
+                    {{ formatStatus(selectedBookingDetails.status) }}
+                  </div>
+                  <h4>{{ selectedBookingDetails.service?.title || 'Service' }}</h4>
+                  <p><i class="fa fa-calendar"></i> Date: {{ formatDate(selectedBookingDetails.startTime) }}</p>
+                  <p><i class="fa fa-user"></i> Provider: {{ getProviderName(selectedBookingDetails) }}</p>
+                  <p><i class="fa fa-tag"></i> Amount: ₱{{ Number(selectedBookingDetails.totalAmount || selectedBookingDetails.service?.pricing || 0).toFixed(2) }}</p>
+                  <p v-if="selectedBookingDetails.address"><i class="fa fa-map-marker"></i> Location: {{ formatAddress(selectedBookingDetails.address) }}</p>
+                  <p v-if="selectedBookingDetails.notes"><i class="fa fa-sticky-note"></i> Notes: {{ selectedBookingDetails.notes }}</p>
+                </div>
 
-              <div v-if="selectedBookingDetails.payment" class="payment-details">
-                <h4>Payment Information</h4>
-                <p><strong>Payment Method:</strong> Cash On-Service</p>
-                <p><strong>Payment Status:</strong> 
-                  <span :class="['payment-status-badge', selectedBookingDetails.payment.status === 'COMPLETED' ? 'paid' : 'unpaid']">
-                    {{ selectedBookingDetails.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
-                  </span>
-                </p>
-                <p v-if="selectedBookingDetails.payment.paymentDate"><strong>Date Paid:</strong> {{ formatDate(selectedBookingDetails.payment.paymentDate) }}</p>
-                <p><strong>Amount:</strong> ₱{{ Number(selectedBookingDetails.payment.amount).toFixed(2) }}</p>
+                <div v-if="selectedBookingDetails.payment" class="payment-details">
+                  <h4>Payment Information</h4>
+                  <p><strong>Payment Method:</strong> Cash On-Service</p>
+                  <p><strong>Payment Status:</strong> 
+                    <span :class="['payment-status-badge', selectedBookingDetails.payment.status === 'COMPLETED' ? 'paid' : 'unpaid']">
+                      {{ selectedBookingDetails.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+                    </span>
+                  </p>
+                  <p v-if="selectedBookingDetails.payment.paymentDate"><strong>Date Paid:</strong> {{ formatDate(selectedBookingDetails.payment.paymentDate) }}</p>
+                  <p><strong>Amount:</strong> ₱{{ Number(selectedBookingDetails.payment.amount).toFixed(2) }}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </Teleport>
 
       <!-- Add Address Modal -->
       <add-address-modal
@@ -1171,12 +1181,11 @@ export default {
   margin: 0;
   padding: 20px 30px 0 30px;
   background-color: #f5f5f5;
-  height: calc(100vh - 60px);
-  overflow: hidden;
+  min-height: calc(100dvh - 60px);
+  min-height: calc(100vh - 60px); /* Fallback for older browsers */
   position: relative;
   box-sizing: border-box;
-  margin-bottom: 0;
-  padding-bottom: 0;
+  padding-bottom: 20px;
 }
 
 .client-bookings::before {
@@ -1677,13 +1686,21 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height */
   background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
+  z-index: 10000 !important;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .modal {
@@ -1691,10 +1708,15 @@ export default {
   border-radius: 15px;
   width: 100%;
   max-width: 550px;
-  max-height: 90vh;
+  max-height: 90dvh;
+  max-height: 90vh; /* Fallback for older browsers */
   overflow-y: auto;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
   animation: modalIn 0.3s ease-out;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  position: relative;
+  z-index: 10001 !important;
+  margin: auto;
 }
 
 @keyframes modalIn {
@@ -1982,10 +2004,11 @@ textarea.form-control {
 .bookings-container {
   position: relative;
   z-index: 1;
-  height: 100%;
-  overflow-y: auto;
+  min-height: 100%;
+  overflow-y: visible;
   padding-right: 10px;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .booking-service-details {

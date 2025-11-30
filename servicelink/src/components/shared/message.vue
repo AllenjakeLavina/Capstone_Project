@@ -1122,8 +1122,10 @@ export default {
 <style scoped>
 .messenger {
   display: flex;
-  height: calc(100vh - 80px); /* Adjust height to account for header/navbar */
-  max-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
+  min-height: calc(100vh - 80px); /* Fallback for older browsers */
+  height: calc(100dvh - 80px);
+  height: calc(100vh - 80px); /* Fallback for older browsers */
   background-color: #f5f7fa;
   position: relative;
   border-radius: 12px;
@@ -1136,6 +1138,7 @@ export default {
 .conversations-sidebar {
   width: 350px;
   min-width: 350px;
+  flex-shrink: 0;
   background-color: white;
   border-right: 1px solid #e1e4e8;
   display: flex;
@@ -1216,6 +1219,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   height: 100%;
   position: relative;
   background: linear-gradient(to bottom, #f5f7fa, #edf2f7);
@@ -1247,9 +1251,12 @@ export default {
 
 .messages-scroll {
   flex: 1;
+  flex-grow: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px;
   scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
   background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
 
@@ -1388,6 +1395,9 @@ export default {
   border-top: 1px solid #e1e4e8;
   flex-shrink: 0;
   box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .input-actions {
@@ -1482,8 +1492,10 @@ export default {
 
 @media (max-width: 767px) {
   .messenger {
-    height: calc(100vh - 60px);
-    max-height: calc(100vh - 60px);
+    min-height: calc(100dvh - 60px);
+    min-height: calc(100vh - 60px); /* Fallback for older browsers */
+    height: calc(100dvh - 60px);
+    height: calc(100vh - 60px); /* Fallback for older browsers */
     margin: 10px;
     border-radius: 8px;
   }
@@ -1759,11 +1771,12 @@ export default {
 /* Image preview styling */
 .image-preview {
   padding: 10px;
-  margin-bottom: 10px;
+  margin: 0;
   background-color: #f5f7fa;
   border-radius: 8px;
   position: relative;
   border: 1px dashed #cbd5e0;
+  flex-shrink: 0;
 }
 
 .image-preview img {
@@ -1804,8 +1817,9 @@ export default {
   padding: 12px 15px;
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  margin: 0;
   animation: fadeIn 0.3s ease-in-out;
+  flex-shrink: 0;
 }
 
 .conversation-closed-banner i {
@@ -1815,5 +1829,35 @@ export default {
 
 .conversation-closed-banner p {
   margin: 0;
+}
+
+.send-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.retry-send {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 10px;
+  transition: all 0.2s;
+}
+
+.retry-send:hover {
+  background-color: #c82333;
 }
 </style>

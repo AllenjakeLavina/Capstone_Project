@@ -417,11 +417,13 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   background-color: #f5f5f5;
   padding: 20px;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .login-container::before {
@@ -711,7 +713,8 @@ export default {
   border-radius: 20px;
   max-width: 900px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 90dvh;
+  max-height: 90vh; /* Fallback for older browsers */
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);

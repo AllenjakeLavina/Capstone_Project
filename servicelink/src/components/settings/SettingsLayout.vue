@@ -58,7 +58,8 @@
     gap: 24px;
     padding: 0;
     /* Fill the screen height beneath the fixed top navbar */
-    min-height: calc(100vh - 80px);
+    min-height: calc(100dvh - 80px);
+    min-height: calc(100vh - 80px); /* Fallback for older browsers */
   }
   
   .settings-content {
@@ -78,7 +79,8 @@
     left: 0;
     background: linear-gradient(135deg, #00C853 0%, #009688 100%);
     /* full height to the bottom with no outer white space */
-    height: calc(100vh - 80px);
+    height: calc(100dvh - 80px);
+    height: calc(100vh - 80px); /* Fallback for older browsers */
     display: flex;
     transition: transform 0.25s ease;
   }
@@ -206,7 +208,8 @@
       top: 80px;
       left: 0;
       width: 280px;
-      height: calc(100vh - 80px);
+      height: calc(100dvh - 80px);
+      height: calc(100vh - 80px); /* Fallback for older browsers */
       transform: translateX(-100%);
       z-index: 1200; /* above overlay */
     }

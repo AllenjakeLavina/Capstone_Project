@@ -66,7 +66,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   background: linear-gradient(135deg, #106e40 0%, #38b676 100%);
   padding: 20px;
   position: relative;

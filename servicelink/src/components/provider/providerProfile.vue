@@ -2,7 +2,448 @@
   <div class="provider-profile">
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="profile-layout">
+    
+    <!-- Mobile Layout - Completely Separate -->
+    <template v-else-if="isMobile">
+      <div class="mobile-profile-layout">
+        <!-- Mobile Tabs Navigation -->
+        <div class="mobile-profile-tabs">
+          <div 
+            v-for="tab in tabs" 
+            :key="tab.id" 
+            :class="['mobile-tab', { active: activeTab === tab.id }]"
+            @click="handleTabClick(tab.id)"
+          >
+            <i :class="tab.icon"></i> {{ tab.name }}
+          </div>
+        </div>
+        
+        <!-- Mobile Sections - Using v-show to keep components mounted -->
+        <!-- Personal Information -->
+        <section v-show="activeTab === 'personal'" class="mobile-section">
+          <!-- Profile Info Card - Mobile -->
+          <div class="mobile-profile-info-card">
+            <div class="profile-picture-wrapper">
+              <div class="profile-picture-container large">
+                <div v-if="profile.profilePicture" class="profile-picture">
+                  <img :src="getFullFileUrl(profile.profilePicture)" alt="Profile Picture" />
+                </div>
+                <div v-else class="profile-picture placeholder-img">
+                  <div class="profile-initials">{{ getUserInitials }}</div>
+                </div>
+                <div class="profile-picture-overlay" @click="triggerFileUpload">
+                  <i class="fas fa-camera"></i>
+                  <span>Change Photo</span>
+                </div>
+                <input 
+                  type="file" 
+                  ref="profileImageInput" 
+                  @change="handleProfileImageChange" 
+                  accept="image/*" 
+                  class="hidden-input" 
+                />
+                <div v-if="uploadingProfileImage" class="upload-progress">
+                  <div class="spinner"></div>
+                </div>
+              </div>
+            </div>
+            <div class="profile-info-content">
+              <div class="profile-name-row">
+                <h3>{{ profile.firstName }} {{ profile.lastName }}</h3>
+                <div v-if="verificationStatus.isVerified" class="verification-badge">
+                  <i class="fas fa-check-circle"></i>
+                  <span>Verified</span>
+                </div>
+              </div>
+              <div class="profile-role">Provider Account</div>
+              <div class="profile-stats-mini">
+                <div class="stat-mini">
+                  <i class="fas fa-calendar-check"></i>
+                  <span>{{ activityStats.totalBookings }}</span>
+                  <small>Bookings</small>
+                </div>
+                <div class="stat-mini">
+                  <i class="fas fa-check-circle"></i>
+                  <span>{{ activityStats.completedBookings }}</span>
+                  <small>Completed</small>
+                </div>
+              </div>
+              <div class="profile-contact-info">
+                <div class="contact-item">
+                  <i class="fas fa-envelope"></i>
+                  <span>{{ profile.email }}</span>
+                </div>
+                <div v-if="profile.phone" class="contact-item">
+                  <i class="fas fa-phone"></i>
+                  <span>{{ profile.phone }}</span>
+                </div>
+                <div class="contact-item">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span>Joined {{ formatDate(profile.createdAt) }}</span>
+                </div>
+              </div>
+              <button class="edit-profile-btn-sidebar" @click="toggleEditPersonal">
+                <i class="fas fa-edit"></i> Edit Profile
+              </button>
+            </div>
+          </div>
+
+          <!-- Activity Summary - Mobile -->
+          <div class="mobile-activity-summary">
+            <div class="activity-summary">
+              <h4>Activity Summary</h4>
+              <div class="activity-cards">
+                <div class="activity-card">
+                  <div class="activity-icon pending">
+                    <i class="fas fa-clock"></i>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-number">{{ activityStats.pendingBookings }}</div>
+                    <div class="activity-label">Pending</div>
+                  </div>
+                </div>
+                <div class="activity-card">
+                  <div class="activity-icon confirmed">
+                    <i class="fas fa-check"></i>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-number">{{ activityStats.confirmedBookings }}</div>
+                    <div class="activity-label">Confirmed</div>
+                  </div>
+                </div>
+                <div class="activity-card">
+                  <div class="activity-icon completed">
+                    <i class="fas fa-check-double"></i>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-number">{{ activityStats.completedBookings }}</div>
+                    <div class="activity-label">Completed</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal Information Section -->
+          <div class="personal-info-section">
+            <h2>Personal Information</h2>
+            <div v-if="!editingPersonal" class="profile-info">
+              <div class="profile-details">
+                <div class="detail-item">
+                  <h3>Basic Info</h3>
+                  <p><strong>Name:</strong> {{ profile.firstName || '' }} {{ profile.lastName || '' }}</p>
+                  <p><strong>Email:</strong> {{ profile.email || '' }}</p>
+                  <p><strong>Phone:</strong> {{ profile.phone || '' }}</p>
+                </div>
+                
+                <div class="detail-item">
+                  <h3>Professional Info</h3>
+                  <p><strong>Headline:</strong> {{ profile.serviceProvider?.headline || 'Not set' }}</p>
+                </div>
+                
+                <div class="detail-item">
+                  <h3>Bio</h3>
+                  <p class="bio-text">{{ profile.serviceProvider?.bio || 'No bio added yet.' }}</p>
+                </div>
+              </div>
+            </div>
+            
+            <form v-else @submit.prevent="updatePersonalInfo" class="edit-form">
+              <div class="form-group">
+                <label>First Name:</label>
+                <input v-model.trim="personalForm.firstName" required />
+              </div>
+              <div class="form-group">
+                <label>Last Name:</label>
+                <input v-model.trim="personalForm.lastName" required />
+              </div>
+              <div class="form-group">
+                <label>Phone:</label>
+                <input v-model.trim="personalForm.phone" />
+              </div>
+              <div class="form-group">
+                <label>Headline:</label>
+                <input v-model.trim="personalForm.headline" placeholder="Short professional headline (e.g., Experienced Web Developer)" />
+              </div>
+              <div class="form-group">
+                <label>Bio:</label>
+                <textarea v-model.trim="personalForm.bio" rows="4" placeholder="Tell clients about yourself, your skills, and experience"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn" @click="toggleEditPersonal">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </section>
+        
+        <!-- Work Experience -->
+        <section v-show="activeTab === 'experience'" class="mobile-section">
+          <div class="section-header">
+            <h2>Work Experience</h2>
+            <button @click="toggleAddExperience" class="add-btn">
+              <i class="fas fa-plus"></i> Add Experience
+            </button>
+          </div>
+          
+          <div v-if="profile.serviceProvider?.workExperience && profile.serviceProvider.workExperience.length > 0" class="experience-list">
+            <div v-for="experience in profile.serviceProvider.workExperience" :key="experience.id" class="experience-item">
+              <div class="experience-header">
+                <h3>{{ experience.position }}</h3>
+                <div class="experience-company">{{ experience.company }}</div>
+                <div class="experience-dates">
+                  {{ formatDate(experience.startDate) }} - {{ experience.isCurrentPosition ? 'Present' : formatDate(experience.endDate) }}
+                </div>
+              </div>
+              <p class="experience-description">{{ experience.description }}</p>
+            </div>
+          </div>
+          <div v-else class="no-data">
+            <p>No work experience added yet.</p>
+            <p>Add work experience to showcase your professional history to potential clients.</p>
+          </div>
+        </section>
+        
+        <!-- Education -->
+        <section v-show="activeTab === 'education'" class="mobile-section">
+          <div class="section-header">
+            <h2>Education</h2>
+            <button @click="toggleAddEducation" class="add-btn">
+              <i class="fas fa-plus"></i> Add Education
+            </button>
+          </div>
+          
+          <div v-if="profile.serviceProvider?.education && profile.serviceProvider.education.length > 0" class="education-list">
+            <div v-for="edu in profile.serviceProvider.education" :key="edu.id" class="education-item">
+              <div class="education-header">
+                <h3>{{ edu.degree }}</h3>
+                <div class="education-field" v-if="edu.fieldOfStudy">{{ edu.fieldOfStudy }}</div>
+                <div class="education-institution">{{ edu.institution }}</div>
+                <div class="education-dates">
+                  {{ formatDate(edu.startDate) }} - {{ edu.isCurrentlyStudying ? 'Present' : formatDate(edu.endDate) }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="no-data">
+            <p>No education history added yet.</p>
+            <p>Add your educational background to highlight your qualifications.</p>
+          </div>
+        </section>
+        
+        <!-- Skills & Portfolio -->
+        <section v-show="activeTab === 'skillsportfolio'" class="mobile-section">
+          <div class="section-header">
+            <h2>Skills, Documents & Portfolio</h2>
+          </div>
+
+          <!-- Skills Section -->
+          <div class="subsection">
+            <div class="subsection-header">
+              <h3>Professional Skills</h3>
+              <button @click="toggleAddSkill" class="add-btn">
+                <i class="fas fa-plus"></i> Add Skill
+              </button>
+            </div>
+            
+            <div v-if="profile.serviceProvider?.skills && profile.serviceProvider.skills.length > 0" class="skills-list">
+              <span v-for="skill in profile.serviceProvider.skills" :key="skill.id" class="skill-tag">{{ skill.name }}</span>
+            </div>
+            <div v-else class="no-data">
+              <p>No skills added yet.</p>
+              <p>Add skills to help clients find you and understand your expertise.</p>
+            </div>
+          </div>
+
+          <!-- Documents Section -->
+          <div class="subsection">
+            <div class="subsection-header">
+              <h3>Documents</h3>
+              <button @click="toggleAddDocument" class="add-btn">
+                <i class="fas fa-plus"></i> Add Document
+              </button>
+            </div>
+            
+            <div v-if="profile.serviceProvider?.documents && profile.serviceProvider.documents.length > 0" class="documents-list">
+              <div v-for="doc in profile.serviceProvider.documents" :key="doc.id" class="document-item">
+                <div class="document-icon">
+                  <i :class="getFileIcon(doc.fileUrl)"></i>
+                </div>
+                <div class="document-info">
+                  <h4>{{ doc.title }}</h4>
+                  <p>{{ doc.type }}</p>
+                </div>
+                <button @click="openFileModal(doc.fileUrl, doc.title, isPdfFile(doc.fileUrl) ? 'PDF' : 'Document')" class="view-doc-btn">
+                  <i class="fas fa-eye"></i> View
+                </button>
+              </div>
+            </div>
+            <div v-else class="no-data">
+              <p>No documents added yet.</p>
+              <p>Add documents to verify your credentials and build trust with clients.</p>
+            </div>
+          </div>
+
+          <!-- Portfolio Section -->
+          <div class="subsection">
+            <div class="subsection-header">
+              <h3>Portfolio</h3>
+              <button @click="toggleAddPortfolio" class="add-btn">
+                <i class="fas fa-plus"></i> Add Portfolio Item
+              </button>
+            </div>
+            
+            <div v-if="profile.serviceProvider?.portfolio && profile.serviceProvider.portfolio.length > 0" class="portfolio-grid">
+              <div v-for="item in profile.serviceProvider.portfolio" :key="item.id" class="portfolio-item">
+                <div class="portfolio-header">
+                  <h3>{{ item.title }}</h3>
+                  <a v-if="item.projectUrl" :href="item.projectUrl" target="_blank" class="project-link">
+                    <i class="fas fa-external-link-alt"></i> View Project
+                  </a>
+                </div>
+                <p v-if="item.description" class="portfolio-description">{{ item.description }}</p>
+                
+                <div class="portfolio-images">
+                  <div v-if="item.files && item.files.length > 0" class="image-gallery">
+                    <div v-for="file in item.files" :key="file.id" class="gallery-item" @click="openFileModal(file.fileUrl, item.title, file.fileType)">
+                      <img v-if="isImageFile(file.fileUrl)" :src="getFullFileUrl(file.fileUrl)" :alt="item.title" />
+                      <div v-else class="document-preview">
+                        <i :class="getFileIcon(file.fileUrl)"></i>
+                        <span>{{ getFileName(file.fileUrl) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="no-data">
+              <p>No portfolio items added yet.</p>
+              <p>Add portfolio items to showcase your work and projects.</p>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Availability -->
+        <section v-show="activeTab === 'availability'" class="mobile-section">
+          <div class="section-header">
+            <h2>Availability Schedule</h2>
+            <button @click="toggleAddAvailability" class="add-btn">
+              <i class="fas fa-plus"></i> Add Time Slot
+            </button>
+          </div>
+          
+          <p class="availability-description">
+            Set your weekly availability schedule. Clients will see when you're available to book services.
+          </p>
+
+          <!-- Availability Schedule by Day -->
+          <div class="availability-schedule">
+            <div v-for="(day, index) in weekDays" :key="index" class="day-schedule">
+              <div class="day-header">
+                <h3>{{ day.name }}</h3>
+                <span v-if="getDaySlots(index).length > 0" class="slot-count">
+                  {{ getDaySlots(index).length }} {{ getDaySlots(index).length === 1 ? 'slot' : 'slots' }}
+                </span>
+                <span v-else class="no-slots">Not available</span>
+              </div>
+              
+              <div v-if="getDaySlots(index).length > 0" class="time-slots">
+                <div v-for="slot in getDaySlots(index)" :key="slot.id" class="time-slot-item">
+                  <div class="slot-time">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}</span>
+                    <span v-if="!slot.isAvailable" class="unavailable-badge">Unavailable</span>
+                  </div>
+                  <div class="slot-actions">
+                    <button @click="editAvailabilitySlot(slot)" class="edit-slot-btn">
+                      <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button @click="deleteAvailabilitySlot(slot.id)" class="delete-slot-btn">
+                      <i class="fas fa-trash"></i> Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="no-slots-message">
+                <i class="fas fa-calendar-times"></i>
+                <p>No time slots set for this day</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Reviews -->
+        <section v-show="activeTab === 'reviews'" class="mobile-section">
+          <div class="section-header">
+            <h2>Reviews & Ratings</h2>
+          </div>
+
+          <!-- Overall Rating Summary -->
+          <div class="rating-summary">
+            <div class="overall-rating">
+              <div class="rating-display">
+                <div class="rating-number">{{ averageRating.toFixed(1) }}</div>
+                <div class="rating-stars">
+                  <i v-for="i in 5" :key="i" 
+                     :class="['fas', i <= Math.round(averageRating) ? 'fa-star' : 'fa-star-o']">
+                  </i>
+                </div>
+                <div class="rating-text">
+                  {{ totalReviews }} {{ totalReviews === 1 ? 'review' : 'reviews' }}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Rating Distribution -->
+            <div class="rating-distribution">
+              <div v-for="i in 5" :key="i" class="rating-bar">
+                <span class="star-label">{{ 6 - i }}★</span>
+                <div class="bar-container">
+                  <div class="bar-fill" :style="{ width: getRatingPercentage(6 - i) + '%' }"></div>
+                </div>
+                <span class="count">{{ getRatingCount(6 - i) }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Reviews List -->
+          <div v-if="reviews.length > 0" class="reviews-list">
+            <div v-for="review in reviews" :key="review.id" class="review-item">
+              <div class="reviewer-avatar">
+                <div class="avatar placeholder">
+                  {{ (review.giver?.firstName?.[0] || review.client?.firstName?.[0] || 'U') }}{{ (review.giver?.lastName?.[0] || review.client?.lastName?.[0] || '') }}
+                </div>
+              </div>
+              <div class="review-content">
+                <div class="reviewer-details">
+                  <span class="reviewer-name">{{ (review.giver?.firstName || review.client?.firstName || 'Unknown') }} {{ (review.giver?.lastName || review.client?.lastName || 'User') }}</span>
+                  <span class="review-date">{{ formatDate(review.createdAt) }}</span>
+                </div>
+                <div class="review-rating">
+                  <i v-for="i in 5" :key="i" 
+                     :class="['fas', i <= review.rating ? 'fa-star' : 'fa-star-o']">
+                  </i>
+                </div>
+                <p class="review-comment">{{ review.comment }}</p>
+                <div v-if="review.images && review.images.length > 0" class="review-images">
+                  <div v-for="(image, idx) in review.images" :key="idx" class="review-image" @click="openFileModal(image, 'Review Image', 'image')">
+                    <img :src="getFullFileUrl(image)" alt="Review image" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="no-data">
+            <p>No reviews yet.</p>
+            <p>Reviews from clients will appear here once you start receiving bookings.</p>
+          </div>
+        </section>
+      </div>
+    </template>
+    
+    <!-- Desktop Layout - Original Structure -->
+    <template v-else>
+      <div class="profile-layout">
       <!-- Left Sidebar -->
       <div class="profile-sidebar">
         <!-- Profile Info Card -->
@@ -91,7 +532,7 @@
           v-for="tab in tabs" 
           :key="tab.id" 
           :class="['tab', { active: activeTab === tab.id }]"
-          @click="activeTab = tab.id"
+          @click="handleTabClick(tab.id)"
         >
           <i :class="tab.icon"></i> {{ tab.name }}
         </div>
@@ -399,9 +840,9 @@
               <div class="review-header">
                 <div class="reviewer-info">
                   <img 
-                    v-if="review.giver.profilePicture" 
-                    :src="getFullFileUrl(review.giver.profilePicture)" 
-                    :alt="review.giver.firstName"
+                    v-if="review.giver?.profilePicture || review.client?.profilePicture" 
+                    :src="getFullFileUrl(review.giver?.profilePicture || review.client?.profilePicture)" 
+                    :alt="review.giver?.firstName || review.client?.firstName || 'User'"
                     class="reviewer-avatar"
                   />
                   <div v-else class="reviewer-avatar placeholder">
@@ -409,7 +850,7 @@
                   </div>
                   <div class="reviewer-details">
                     <div class="reviewer-name">
-                      {{ review.giver.firstName }} {{ review.giver.lastName }}
+                      {{ (review.giver?.firstName || review.client?.firstName || 'Unknown') }} {{ (review.giver?.lastName || review.client?.lastName || 'User') }}
                     </div>
                     <div class="review-date">
                       {{ formatDate(review.createdAt) }}
@@ -438,38 +879,49 @@
           </div>
         </div>
       </div>
-
-      <!-- File View Modal -->
-      <div v-if="showFileModal" class="file-modal">
-        <div class="modal-overlay" @click="closeFileModal"></div>
-        <div class="modal-container">
-          <div class="modal-header">
-            <h3>{{ modalFile.title || 'File Preview' }}</h3>
-            <button class="close-btn" @click="closeFileModal">
-              <i class="fas fa-times"></i>
-            </button>
           </div>
-          <div class="modal-content">
-            <!-- Image viewer -->
-            <img v-if="isImageFile(modalFile.url)" :src="getFullFileUrl(modalFile.url)" :alt="modalFile.title" class="modal-image" />
-            
-            <!-- PDF viewer -->
-            <iframe v-else-if="isPdfFile(modalFile.url)" :src="getFullFileUrl(modalFile.url)" class="modal-document"></iframe>
-            
-            <!-- Other file types -->
-            <div v-else class="modal-file-info">
-              <i :class="getFileIcon(modalFile.url)" class="file-icon"></i>
-              <p>{{ getFileName(modalFile.url) }}</p>
-              <a :href="getFullFileUrl(modalFile.url)" target="_blank" class="download-btn">
-                <i class="fas fa-download"></i> Open File
-              </a>
+
+      <!-- Right Sidebar - Activity Summary -->
+      <div class="profile-right-sidebar">
+        <div class="activity-summary">
+          <h4>Activity Summary</h4>
+          <div class="activity-cards">
+            <div class="activity-card">
+              <div class="activity-icon pending">
+                <i class="fas fa-clock"></i>
+            </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.pendingBookings }}</div>
+                <div class="activity-label">Pending</div>
+          </div>
+        </div>
+            <div class="activity-card">
+              <div class="activity-icon confirmed">
+                <i class="fas fa-check"></i>
+      </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.confirmedBookings }}</div>
+                <div class="activity-label">Confirmed</div>
+              </div>
+            </div>
+            <div class="activity-card">
+              <div class="activity-icon completed">
+                <i class="fas fa-check-double"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-number">{{ activityStats.completedBookings }}</div>
+                <div class="activity-label">Completed</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
+      </div>
+    </template>
+    
+    <!-- All Modals - Always available for both mobile and desktop (outside templates) -->
       <!-- Edit Profile Modal -->
-      <div v-if="showEditProfileModal" class="modal-overlay">
+    <div v-if="showEditProfileModal" class="modal-overlay" @click.self="showEditProfileModal = false">
         <div class="modal">
           <div class="modal-header">
             <h2>Edit Profile</h2>
@@ -489,7 +941,6 @@
                 <label>Phone:</label>
                 <input v-model.trim="personalForm.phone" class="form-control" />
               </div>
-              <!-- Removed hourly rate input per new pricing policy -->
               <div class="form-group">
                 <label>Headline:</label>
                 <input v-model.trim="personalForm.headline" placeholder="Short professional headline (e.g., Experienced Web Developer)" class="form-control" />
@@ -510,7 +961,7 @@
       </div>
 
       <!-- Add Experience Modal -->
-      <div v-if="showAddExperienceModal" class="modal-overlay">
+    <div v-if="showAddExperienceModal" class="modal-overlay" @click.self="showAddExperienceModal = false">
         <div class="modal">
           <div class="modal-header">
             <h2>Add Work Experience</h2>
@@ -554,7 +1005,7 @@
       </div>
 
       <!-- Add Education Modal -->
-      <div v-if="showAddEducationModal" class="modal-overlay">
+    <div v-if="showAddEducationModal" class="modal-overlay" @click.self="showAddEducationModal = false">
         <div class="modal">
           <div class="modal-header">
             <h2>Add Education</h2>
@@ -598,7 +1049,7 @@
       </div>
 
       <!-- Add Skill Modal -->
-      <div v-if="showAddSkillModal" class="modal-overlay">
+    <div v-if="showAddSkillModal" class="modal-overlay" @click.self="showAddSkillModal = false">
         <div class="modal">
           <div class="modal-header">
             <h2>Add Skill</h2>
@@ -622,7 +1073,7 @@
       </div>
 
       <!-- Add Document Modal -->
-      <div v-if="showAddDocumentModal" class="modal-overlay">
+    <div v-if="showAddDocumentModal" class="modal-overlay" @click.self="showAddDocumentModal = false">
         <div class="modal">
           <div class="modal-header">
             <h2>Upload Document</h2>
@@ -660,7 +1111,7 @@
       </div>
 
       <!-- Add/Edit Availability Modal -->
-      <div v-if="showAddAvailabilityModal || showEditAvailabilityModal" class="modal-overlay">
+    <div v-if="showAddAvailabilityModal || showEditAvailabilityModal" class="modal-overlay" @click.self="closeAvailabilityModal">
         <div class="modal">
           <div class="modal-header">
             <h2>{{ showEditAvailabilityModal ? 'Edit Time Slot' : 'Add Time Slot' }}</h2>
@@ -704,7 +1155,7 @@
       </div>
 
       <!-- Add Portfolio Modal -->
-      <div v-if="showAddPortfolioModal" class="modal-overlay">
+    <div v-if="showAddPortfolioModal" class="modal-overlay" @click.self="showAddPortfolioModal = false">
         <div class="modal">
           <div class="modal-header">
             <h2>Add Portfolio Item</h2>
@@ -739,49 +1190,40 @@
           </div>
         </div>
       </div>
+    
+    <!-- File View Modal - Always mounted globally, shown/hidden with v-show -->
+    <div v-show="showFileModal" class="file-modal">
+      <div class="modal-overlay" @click="closeFileModal"></div>
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>{{ modalFile.title || 'File Preview' }}</h3>
+          <button class="close-btn" @click="closeFileModal">
+            <i class="fas fa-times"></i>
+          </button>
       </div>
-
-      <!-- Right Sidebar - Activity Summary -->
-      <div class="profile-right-sidebar">
-        <div class="activity-summary">
-          <h4>Activity Summary</h4>
-          <div class="activity-cards">
-            <div class="activity-card">
-              <div class="activity-icon pending">
-                <i class="fas fa-clock"></i>
+        <div class="modal-content">
+          <!-- Image viewer -->
+          <img v-if="isImageFile(modalFile.url)" :src="getFullFileUrl(modalFile.url)" :alt="modalFile.title" class="modal-image" />
+          
+          <!-- PDF viewer -->
+          <iframe v-else-if="isPdfFile(modalFile.url)" :src="getFullFileUrl(modalFile.url)" class="modal-document"></iframe>
+          
+          <!-- Other file types -->
+          <div v-else class="modal-file-info">
+            <i :class="getFileIcon(modalFile.url)" class="file-icon"></i>
+            <p>{{ getFileName(modalFile.url) }}</p>
+            <a :href="getFullFileUrl(modalFile.url)" target="_blank" class="download-btn">
+              <i class="fas fa-download"></i> Open File
+            </a>
               </div>
-              <div class="activity-content">
-                <div class="activity-number">{{ activityStats.pendingBookings }}</div>
-                <div class="activity-label">Pending</div>
-              </div>
-            </div>
-            <div class="activity-card">
-              <div class="activity-icon confirmed">
-                <i class="fas fa-check"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-number">{{ activityStats.confirmedBookings }}</div>
-                <div class="activity-label">Confirmed</div>
               </div>
             </div>
-            <div class="activity-card">
-              <div class="activity-icon completed">
-                <i class="fas fa-check-double"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-number">{{ activityStats.completedBookings }}</div>
-                <div class="activity-label">Completed</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed, nextTick } from 'vue';
+import { ref, reactive, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue';
 import { providerService } from '../../services/apiService';
 import apiService from '../../services/apiService';
 import Swal from 'sweetalert2';
@@ -796,6 +1238,30 @@ export default {
     const activeTab = ref('personal');
     const profileImageInput = ref(null);
     const uploadingProfileImage = ref(false);
+    
+    // Mobile detection
+    const isMobile = ref(window.innerWidth <= 767);
+    
+    // Handle window resize
+    const handleResize = () => {
+      isMobile.value = window.innerWidth <= 767;
+    };
+    
+    // Handle tab click with mobile scroll to top
+    const handleTabClick = (tabId) => {
+      activeTab.value = tabId;
+      if (isMobile.value) {
+        // Scroll to top of mobile layout on mobile
+        nextTick(() => {
+          const mobileLayout = document.querySelector('.mobile-profile-layout');
+          if (mobileLayout) {
+            mobileLayout.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Also scroll window to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+      }
+    };
 
     // Tabs configuration
     const tabs = [
@@ -1624,6 +2090,31 @@ export default {
       }
     };
 
+    // Watch for modal state changes to manage body scroll
+    const anyModalOpen = computed(() => {
+      return showEditProfileModal.value || 
+             showAddExperienceModal.value || 
+             showAddEducationModal.value || 
+             showAddSkillModal.value || 
+             showAddDocumentModal.value || 
+             showAddPortfolioModal.value || 
+             showAddAvailabilityModal.value || 
+             showEditAvailabilityModal.value ||
+             showFileModal.value;
+    });
+
+    watch(anyModalOpen, (isOpen) => {
+      if (isOpen) {
+        // Prevent body scroll when modal is open
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+      } else {
+        // Restore body scroll when modal is closed
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+      }
+    });
+
     onMounted(() => {
       fetchProfileData();
       fetchReviews();
@@ -1646,6 +2137,17 @@ export default {
           tabBar.scrollLeft = 0;
         }
       });
+      
+      // Add resize listener for mobile detection
+      window.addEventListener('resize', handleResize);
+    });
+    
+    onBeforeUnmount(() => {
+      // Clean up resize listener
+      window.removeEventListener('resize', handleResize);
+      // Ensure body scroll is restored
+      document.body.style.overflow = '';
+      document.body.classList.remove('modal-open');
     });
 
     return {
@@ -1655,6 +2157,8 @@ export default {
       verificationStatus,
       activeTab,
       tabs,
+      isMobile,
+      handleTabClick,
       editingPersonal,
       addingExperience,
       addingEducation,
@@ -1736,7 +2240,8 @@ export default {
   padding: 0;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #f7f9fc;
-  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   color: #2d3748;
   box-sizing: border-box;
   overflow-x: hidden;
@@ -2943,13 +3448,33 @@ h3 {
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
-  height: 100%;
-  z-index: 1000;
+  height: 100dvh;
+  height: 100vh; /* Fallback for older browsers */
+  z-index: 99999;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden; /* Prevent body scroll when modal is open */
+  pointer-events: none;
+}
+
+.file-modal .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 99998;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: fadeIn 0.2s ease;
+  pointer-events: auto;
 }
 
 .modal-overlay {
@@ -2962,9 +3487,13 @@ h3 {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000;
   backdrop-filter: blur(3px);
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .modal {
@@ -2972,10 +3501,15 @@ h3 {
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: 90dvh;
+  max-height: 90vh; /* Fallback for older browsers */
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   animation: modalIn 0.3s ease-out;
+  position: relative;
+  z-index: 10001;
+  margin: auto;
 }
 
 @keyframes modalIn {
@@ -3117,19 +3651,22 @@ textarea.form-control {
 }
 
 /* File Modal Specific Styles */
-.modal-container {
+.file-modal .modal-container {
   background-color: white;
   border-radius: 20px;
-  max-width: 90vw;
+  max-width: 90%;
   width: 900px;
-  max-height: 90vh;
-  z-index: 1001;
+  max-height: 90dvh;
+  max-height: 90vh; /* Fallback for older browsers */
+  z-index: 99999;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   animation: modalFadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   border: 1px solid #e2e8f0;
+  position: relative;
+  pointer-events: auto;
 }
 
 @keyframes modalFadeIn {
@@ -3137,7 +3674,7 @@ textarea.form-control {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.modal-content {
+.file-modal .modal-content {
   padding: 30px;
   overflow-y: auto;
   flex: 1;
@@ -3145,32 +3682,51 @@ textarea.form-control {
   align-items: center;
   justify-content: center;
   background: white;
-  max-height: calc(90vh - 80px);
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+  filter: none !important;
+  -webkit-filter: none !important;
+  transform: none !important;
+  will-change: auto;
+  backface-visibility: visible;
+  -webkit-font-smoothing: antialiased;
 }
 
-.modal-image {
+.file-modal .modal-image {
   max-width: 100%;
-  max-height: 75vh;
+  max-height: 70dvh;
+  max-height: 70vh; /* Fallback */
+  width: auto;
+  height: auto;
   object-fit: contain;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
   border-radius: 12px;
   border: 3px solid white;
   transition: transform 0.3s ease;
+  display: block;
+  margin: 0 auto;
+  filter: none !important;
+  -webkit-filter: none !important;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 .modal-image:hover {
   transform: scale(1.02);
 }
 
-.modal-document {
+.file-modal .modal-document {
   width: 100%;
-  height: 75vh;
+  height: 70dvh;
+  height: 70vh; /* Fallback */
   border: none;
   border-radius: 12px;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+  display: block;
 }
 
-.modal-file-info {
+.file-modal .modal-file-info {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3184,6 +3740,8 @@ textarea.form-control {
   width: 100%;
   max-width: 500px;
   border: 1px solid #e2e8f0;
+  position: relative;
+  z-index: 1;
 }
 
 .modal-file-info .file-icon {
@@ -3476,7 +4034,8 @@ textarea.form-control {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   }
 
   .profile-layout {
@@ -3599,7 +4158,8 @@ textarea.form-control {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
   }
 
   .profile-layout {
@@ -3801,6 +4361,356 @@ textarea.form-control {
   margin: 0;
   font-size: 0.9rem;
   font-style: italic;
+}
+
+/* Mobile Layout - Completely Separate from Desktop */
+.mobile-profile-layout {
+  position: static;
+  margin: 0;
+  padding: 0;
+  min-height: 100dvh;
+  min-height: 100vh; /* Fallback for older browsers */
+  width: 100%;
+  background: white;
+  padding-bottom: 60px; /* Space for bottom navigation */
+  box-sizing: border-box;
+}
+
+.mobile-profile-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #f7f9fc;
+  padding: 10px;
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-profile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-tab {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background-color: white;
+  border-radius: 12px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  color: #4a5568;
+  font-size: 0.9rem;
+  border: 1px solid #e2e8f0;
+}
+
+.mobile-tab:hover {
+  background-color: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.mobile-tab.active {
+  background: #27ae60;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 8px 16px rgba(39, 174, 96, 0.15);
+  transform: translateY(-2px);
+  border-color: #27ae60;
+}
+
+.mobile-tab i {
+  font-size: 16px;
+  color: #718096;
+}
+
+.mobile-tab.active i {
+  color: white;
+}
+
+.mobile-section {
+  position: static;
+  margin: 0;
+  padding: 20px;
+  min-height: auto;
+  height: auto;
+  background: white;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.mobile-section h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #4a5568;
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+.mobile-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.mobile-section .section-header h2 {
+  margin: 0;
+}
+
+/* Mobile Profile Info Card */
+.mobile-profile-info-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  text-align: center;
+}
+
+.mobile-profile-info-card .profile-picture-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.mobile-profile-info-card .profile-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.mobile-profile-info-card .profile-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mobile-profile-info-card .profile-role {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.mobile-profile-info-card .profile-stats-mini {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 15px 0;
+}
+
+.mobile-profile-info-card .profile-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.mobile-profile-info-card .contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.mobile-profile-info-card .edit-profile-btn-sidebar {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #27ae60, #219d55);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.mobile-profile-info-card .edit-profile-btn-sidebar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+/* Mobile Activity Summary */
+.mobile-activity-summary {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+
+.mobile-activity-summary .activity-summary {
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.mobile-activity-summary .activity-summary h4 {
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.mobile-activity-summary .activity-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-activity-summary .activity-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f7f9fc;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.mobile-activity-summary .activity-card:hover {
+  background: #edf2f7;
+  transform: translateX(5px);
+}
+
+.mobile-activity-summary .activity-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.mobile-activity-summary .activity-content {
+  flex: 1;
+}
+
+.mobile-activity-summary .activity-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.mobile-activity-summary .activity-label {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+/* Personal Info Section spacing */
+.personal-info-section {
+  margin-top: 20px;
+}
+
+.personal-info-section h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 767px) {
+  .provider-profile {
+    margin: 0;
+    padding: 0;
+    min-height: 100dvh;
+    min-height: 100vh; /* Fallback for older browsers */
+    background: white;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+  }
+  
+  /* Hide desktop layout on mobile */
+  .profile-layout {
+    display: none !important;
+  }
+  
+  /* Ensure mobile layout stretches full height */
+  .mobile-profile-layout {
+    min-height: 100dvh;
+    min-height: 100vh; /* Fallback for older browsers */
+    background: white;
+    padding-bottom: 60px; /* Space for bottom navigation */
+  }
+  
+  /* Remove any fixed heights that prevent stretching */
+  .mobile-section {
+    min-height: auto !important;
+    height: auto !important;
+  }
+  
+  /* Ensure smooth scrolling */
+  .provider-profile,
+  .mobile-profile-layout {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Modal fixes for mobile */
+  .modal-overlay {
+    z-index: 10000 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    padding: 10px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex !important;
+    align-items: flex-start;
+    padding-top: 20px;
+  }
+  
+  .modal {
+    z-index: 10001 !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto;
+    max-height: calc(100dvh - 40px);
+    max-height: calc(100vh - 40px); /* Fallback */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  .modal-body {
+    overflow-y: visible;
+    max-height: none;
+  }
+  
+  /* Ensure parent containers don't clip modals */
+  .provider-profile,
+  .mobile-profile-layout,
+  .mobile-section {
+    overflow: visible !important;
+  }
+  
+  /* Prevent body scroll when modal is open */
+  body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
