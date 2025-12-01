@@ -88,21 +88,21 @@
               id="addressLine1" 
               v-model="formData.addressLine1" 
               required
-              placeholder="Street address, building number, barangay"
+              placeholder="Street address, Building number "
               minlength="5"
             />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="addressLine2">Address Line 2 (Optional)</label>
+          <label for="addressLine2">Address Line 2</label>
           <div class="input-container">
             <span class="input-icon">📍</span>
             <input 
               type="text" 
               id="addressLine2" 
               v-model="formData.addressLine2" 
-              placeholder="Unit, floor, additional details (optional)"
+              placeholder="Barangay"
             />
           </div>
         </div>
