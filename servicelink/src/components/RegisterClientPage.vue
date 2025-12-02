@@ -95,14 +95,34 @@
         </div>
 
         <div class="form-group">
-          <label for="addressLine2">Address Line 2</label>
+          <label for="addressLine2">Barangay</label>
           <div class="input-container">
             <span class="input-icon">📍</span>
-            <input 
-              type="text" 
-              id="addressLine2" 
-              v-model="formData.addressLine2" 
-              placeholder="Barangay"
+            <select
+              id="addressLine2"
+              v-model="formData.addressLine2"
+            >
+              <option disabled value="">Select Barangay</option>
+              <option
+                v-for="barangay in barangays"
+                :key="barangay"
+                :value="barangay"
+              >
+                {{ barangay }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="city">City</label>
+          <div class="input-container">
+            <span class="input-icon">🏙️</span>
+            <input
+              type="text"
+              id="city"
+              :value="cityName"
+              readonly
             />
           </div>
         </div>
@@ -231,6 +251,28 @@ export default {
     const loading = ref(false);
     const showVerification = ref(false);
     const showTermsModal = ref(false);
+
+    const cityName = 'Olongapo City';
+
+    const barangays = [
+      'Barangay Asinan',
+      'Barangay Banicain',
+      'Barangay Barretto',
+      'Barangay East Bajac-Bajac',
+      'Barangay East Tapinac',
+      'Barangay Gordon Heights',
+      'Barangay Kalaklan',
+      'Barangay Kalalake',
+      'Barangay New Cabalan',
+      'Barangay New Ilalim',
+      'Barangay New Kababae',
+      'Barangay New Kalalake',
+      'Barangay Old Cabalan',
+      'Barangay Pag-Asa',
+      'Barangay Sta. Rita',
+      'Barangay West Bajac-Bajac',
+      'Barangay West Tapinac'
+    ];
 
     // Validation functions
     const validateFullName = () => {
@@ -413,7 +455,8 @@ export default {
           phone: formData.phone.trim(),
           address: {
             addressLine1: formData.addressLine1.trim(),
-            addressLine2: formData.addressLine2?.trim() || ''
+            addressLine2: formData.addressLine2?.trim() || '',
+            city: cityName
             // No default values - only save what user entered
           }
         });
@@ -480,6 +523,8 @@ export default {
       loading,
       showVerification,
       showTermsModal,
+      cityName,
+      barangays,
       hasMinLength,
       hasUppercase,
       hasLowercase,
@@ -604,7 +649,8 @@ label {
   font-size: 1rem;
 }
 
-input {
+input,
+select {
   width: 100%;
   padding: 12px 12px 12px 40px;
   border: 1px solid #e2e8f0;
@@ -614,7 +660,8 @@ input {
   box-sizing: border-box;
 }
 
-input:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: #8cc63f;
   box-shadow: 0 0 0 3px rgba(140, 198, 63, 0.1);

@@ -42,7 +42,7 @@
       
       <div class="card">
         <div class="card-icon">
-          <i class="fas fa-dollar-sign"></i>
+          <i class="fas fa-coins"></i>
         </div>
         <div class="card-content">
           <h3>₱{{ stats.summary?.totalRevenue || 0 }}</h3>

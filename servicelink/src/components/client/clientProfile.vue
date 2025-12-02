@@ -195,7 +195,16 @@
             </div>
             <div class="form-group">
               <label for="addressLine2">Barangay</label>
-              <input id="addressLine2" v-model="addressForm.addressLine2" />
+              <select id="addressLine2" v-model="addressForm.addressLine2">
+                <option disabled value="">Select Barangay</option>
+                <option
+                  v-for="barangay in barangays"
+                  :key="barangay"
+                  :value="barangay"
+                >
+                  {{ barangay }}
+                </option>
+              </select>
             </div>
             <div class="form-group checkbox">
               <input id="isDefault" type="checkbox" v-model="addressForm.isDefault" />
@@ -229,8 +238,17 @@
               <input id="editAddressLine1" v-model="editAddressForm.addressLine1" required />
             </div>
             <div class="form-group">
-              <label for="editAddressLine2">Address Line 2</label>
-              <input id="editAddressLine2" v-model="editAddressForm.addressLine2" />
+              <label for="editAddressLine2">Barangay</label>
+              <select id="editAddressLine2" v-model="editAddressForm.addressLine2">
+                <option disabled value="">Select Barangay</option>
+                <option
+                  v-for="barangay in editBarangayOptions"
+                  :key="barangay"
+                  :value="barangay"
+                >
+                  {{ barangay }}
+                </option>
+              </select>
             </div>
             <div class="form-group checkbox">
               <input id="editIsDefault" type="checkbox" v-model="editAddressForm.isDefault" />
@@ -343,6 +361,40 @@ export default {
       addressLine1: '',
       addressLine2: '',
       isDefault: false
+    });
+
+    // Default location details for client addresses
+    const defaultCity = 'Olongapo City';
+    const defaultState = 'Zambales';
+    const defaultPostalCode = '2200';
+    const defaultCountry = 'Philippines';
+
+    const barangays = [
+      'Barangay Asinan',
+      'Barangay Banicain',
+      'Barangay Barretto',
+      'Barangay East Bajac-Bajac',
+      'Barangay East Tapinac',
+      'Barangay Gordon Heights',
+      'Barangay Kalaklan',
+      'Barangay Kalalake',
+      'Barangay New Cabalan',
+      'Barangay New Ilalim',
+      'Barangay New Kababae',
+      'Barangay New Kalalake',
+      'Barangay Old Cabalan',
+      'Barangay Pag-Asa',
+      'Barangay Sta. Rita',
+      'Barangay West Bajac-Bajac',
+      'Barangay West Tapinac'
+    ];
+
+    const editBarangayOptions = computed(() => {
+      const current = editAddressForm.addressLine2;
+      if (current && !barangays.includes(current)) {
+        return [current, ...barangays];
+      }
+      return barangays;
     });
     
     // Computed
@@ -562,7 +614,16 @@ export default {
         isSubmitting.value = true;
         error.value = null;
         
-        const response = await clientService.addAddress(addressForm);
+        const response = await clientService.addAddress({
+          type: addressForm.type,
+          addressLine1: addressForm.addressLine1,
+          addressLine2: addressForm.addressLine2,
+          city: defaultCity,
+          state: defaultState,
+          postalCode: defaultPostalCode,
+          country: defaultCountry,
+          isDefault: addressForm.isDefault
+        });
         
         if (response.success) {
           // If this is set as default, update other addresses
@@ -630,7 +691,13 @@ export default {
         isSubmitting.value = true;
         error.value = null;
         
-        const response = await clientService.updateAddress(editingAddressId.value, editAddressForm);
+        const response = await clientService.updateAddress(editingAddressId.value, {
+          ...editAddressForm,
+          city: defaultCity,
+          state: defaultState,
+          postalCode: defaultPostalCode,
+          country: defaultCountry
+        });
         
         if (response.success) {
           // Update the address in the list
@@ -826,7 +893,9 @@ export default {
       activeTab,
       activityStats,
       formatDate,
-      getAddressIcon
+      getAddressIcon,
+      barangays,
+      editBarangayOptions
     };
   }
 };
@@ -1780,6 +1849,7 @@ h2 {
 
 .form-group input, .form-group select {
   width: 100%;
+  max-width: 100%;
   padding: 12px 15px;
   border: 1px solid #e0e0e0;
   border-radius: 10px;
@@ -2234,6 +2304,25 @@ h2 {
   .profile-main-content {
     overflow: visible;
     min-height: auto;
+  }
+
+  .modal-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 12px;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .address-form .form-group select {
+    width: 100%;
+    max-width: 100%;
+    font-size: 0.9rem;
+  }
+
+  .modal-overlay {
+    overflow-x: hidden;
   }
 }
 </style>

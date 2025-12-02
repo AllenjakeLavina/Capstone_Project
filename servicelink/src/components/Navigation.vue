@@ -18,7 +18,7 @@
           <!-- Client links -->
           <template v-if="userRole === 'CLIENT'">
             <router-link to="/client/services" class="nav-item">
-              <div class="icon"><i class="fas fa-concierge-bell"></i></div>
+              <div class="icon"><i class="fas fa-handshake"></i></div>
               <span>Services</span>
             </router-link>
             <router-link to="/client/bookings" class="nav-item">

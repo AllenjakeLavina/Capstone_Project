@@ -16,47 +16,64 @@
         
         <!-- Search and Filter Section - Enhanced design -->
         <div class="search-filter-section-fixed">
-          <div class="search-filter-row">
-            <div class="search-container">
-              <div class="search-input-wrapper">
-                <i class="fa fa-search search-icon"></i>
-                <input 
-                  type="text" 
-                  v-model="searchQuery" 
-                  :placeholder="selectedCategory ? 'Search services by title, description, or provider name...' : 'Search categories by name or description...'"
-                  class="search-input"
-                />
-                <button 
-                  v-if="searchQuery" 
-                  @click="clearSearch" 
-                  class="clear-search-btn"
-                  title="Clear search"
-                >
-                  <i class="fa fa-times"></i>
-                </button>
+          <div class="search-filter-column">
+            <div class="search-filter-row">
+              <div class="search-container">
+                <div class="search-input-wrapper">
+                  <i class="fa fa-search search-icon"></i>
+                  <input 
+                    type="text" 
+                    v-model="searchQuery" 
+                    :placeholder="selectedCategory ? 'Search services by title, description, or provider name...' : 'Search categories by name or description...'"
+                    class="search-input"
+                  />
+                  <button 
+                    v-if="searchQuery" 
+                    @click="clearSearch" 
+                    class="clear-search-btn"
+                    title="Clear search"
+                  >
+                    <i class="fa fa-times"></i>
+                  </button>
+                </div>
               </div>
+              
+              <!-- Filter Button (only show when inside a category) -->
+              <button 
+                v-if="selectedCategory"
+                @click="showFilters = !showFilters"
+                class="filter-toggle-btn"
+                :class="{ active: showFilters }"
+                title="Toggle filters"
+              >
+                <i class="fa fa-filter"></i>
+              </button>
+
             </div>
             
-            <!-- Filter Button -->
-            <button 
-              @click="showFilters = !showFilters" 
-              class="filter-toggle-btn"
-              :class="{ active: showFilters || hasActiveFilters }"
-            >
-              <i class="fa fa-filter"></i>
-              <i class="fa" :class="showFilters ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-            </button>
+            <!-- Tag Filter Chips (only show when viewing categories) -->
+            <div v-if="!selectedCategory" class="tag-filter-chips">
+              <button
+                v-for="tag in filterTags"
+                :key="tag"
+                @click="activeTag = tag"
+                class="tag-chip"
+                :class="{ active: activeTag === tag }"
+              >
+                {{ tag }}
+              </button>
+            </div>
           </div>
           
           <!-- Collapsible Filter Panel -->
           <div v-show="showFilters" class="filter-container">
-          <div class="filter-group">
+          <div class="filter-group" v-if="selectedCategory">
             <label for="sort-by">Sort by:</label>
             <select id="sort-by" v-model="sortBy" class="filter-select">
               <option value="default">Default</option>
-              <option v-if="selectedCategory" value="price-low">Price: Low to High</option>
-              <option v-if="selectedCategory" value="price-high">Price: High to Low</option>
-              <option v-if="selectedCategory" value="rating">Rating: High to Low</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Rating: High to Low</option>
               <option value="name">Name: A to Z</option>
             </select>
           </div>
@@ -93,14 +110,6 @@
         </div>
         
         </div>
-      </div>
-      
-      <!-- Results Info - Separate from filters -->
-      <div class="results-info-standalone" v-if="selectedCategory && filteredServices.length !== selectedCategory.services.length">
-        <i class="fa fa-info-circle"></i> Showing {{ filteredServices.length }} of {{ selectedCategory.services.length }} services
-      </div>
-      <div class="results-info-standalone" v-else-if="!selectedCategory && filteredCategories.length !== categories.length">
-        <i class="fa fa-info-circle"></i> Showing {{ filteredCategories.length }} of {{ categories.length }} categories
       </div>
 
       <!-- Category Selection List -->
@@ -713,12 +722,53 @@ export default {
     const initialServiceCount = 6; // Number of services to show initially
     const showAllServices = ref(false);
     const showFilters = ref(false);
+    const activeTag = ref('All');
+    
+    // Tag filter options
+    const filterTags = ['All', 'Home', 'Cleaning', 'Repair', 'Outdoor'];
+    
+    // Manually assign tags to categories (frontend only)
+    const categoriesWithTags = computed(() => {
+      return categories.value.map(category => {
+        // Manually assign tags based on category - you can customize this mapping
+        const categoryName = (category.name || '').toLowerCase();
+        let tags = [];
+        
+        // Example tag assignments - customize based on your actual categories
+        // You can match by ID, name, or any other property
+        if (categoryName.includes('home') || categoryName.includes('house') || categoryName.includes('residential') || categoryName.includes('interior')) {
+          tags.push('Home');
+        }
+        if (categoryName.includes('clean') || categoryName.includes('cleaning') || categoryName.includes('maintenance')) {
+          tags.push('Cleaning');
+        }
+        if (categoryName.includes('repair') || categoryName.includes('fix') || categoryName.includes('maintenance') || categoryName.includes('plumb') || categoryName.includes('electr')) {
+          tags.push('Repair');
+        }
+        if (categoryName.includes('outdoor') || categoryName.includes('garden') || categoryName.includes('landscap') || categoryName.includes('yard')) {
+          tags.push('Outdoor');
+        }
+        
+        // Default to 'Home' if no tags matched
+        if (tags.length === 0) {
+          tags.push('Home');
+        }
+        
+        return {
+          ...category,
+          tags: tags
+        };
+      });
+    });
     
     // Computed property for filtered categories (when no category selected)
     const filteredCategories = computed(() => {
-      if (!categories.value.length) return [];
+      if (!categoriesWithTags.value.length) return [];
       
-      let filtered = [...categories.value];
+      // Apply tag filter first
+      let filtered = categoriesWithTags.value.filter(c => {
+        return activeTag.value === 'All' || c.tags.includes(activeTag.value);
+      });
       
       // Apply search filter
       if (searchQuery.value.trim()) {
@@ -766,8 +816,7 @@ export default {
           switch (priceFilter.value) {
             case '0-500': return price >= 0 && price <= 500;
             case '500-1000': return price > 500 && price <= 1000;
-            case '1000-2000': return price > 1000 && price <= 2000;
-            case '2000+': return price > 2000;
+            case '1000+': return price > 1000;
             default: return true;
           }
         });
@@ -792,6 +841,15 @@ export default {
               return (Number(b.pricing) || 0) - (Number(a.pricing) || 0);
             case 'rating':
               return (b.provider?.rating || 0) - (a.provider?.rating || 0);
+            case 'most-booked': {
+              // Sort by booking count (if available) or rating as fallback
+              const aBookings = a.bookingCount || 0;
+              const bBookings = b.bookingCount || 0;
+              if (aBookings !== bBookings) {
+                return bBookings - aBookings;
+              }
+              return (b.provider?.rating || 0) - (a.provider?.rating || 0);
+            }
             case 'name':
               return (a.title || '').localeCompare(b.title || '');
             default:
@@ -814,10 +872,11 @@ export default {
     // Check if any filters are active
     const hasActiveFilters = computed(() => {
       const hasSearch = searchQuery.value.trim() !== '';
-      const hasSort = sortBy.value !== 'default';
+      const hasTagFilter = !selectedCategory.value && activeTag.value !== 'All';
+      const hasSort = selectedCategory.value && sortBy.value !== 'default';
       const hasPriceFilter = selectedCategory.value && priceFilter.value !== 'all';
       const hasRatingFilter = selectedCategory.value && ratingFilter.value !== '0';
-      return hasSearch || hasSort || hasPriceFilter || hasRatingFilter;
+      return hasSearch || hasTagFilter || hasSort || hasPriceFilter || hasRatingFilter;
     });
     
     // Clear search
@@ -828,6 +887,7 @@ export default {
     // Clear all filters
     const clearFilters = () => {
       searchQuery.value = '';
+      activeTag.value = 'All';
       sortBy.value = 'default';
       priceFilter.value = 'all';
       ratingFilter.value = '0';
@@ -902,6 +962,8 @@ export default {
       hasActiveFilters,
       clearSearch,
       clearFilters,
+      activeTag,
+      filterTags,
       toggleShowMore,
       showAllServices,
       initialServiceCount,
@@ -1867,12 +1929,63 @@ export default {
   border: none;
   box-shadow: none;
   align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.search-filter-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  width: 100%;
 }
 
 .search-filter-row {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+/* Tag Filter Chips */
+.tag-filter-chips {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.tag-chip {
+  padding: 6px 16px;
+  border: 2px solid #0f9d58;
+  border-radius: 20px;
+  background: white;
+  color: #0f9d58;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(15, 157, 88, 0.1);
+}
+
+.tag-chip:hover {
+  background: rgba(15, 157, 88, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(15, 157, 88, 0.15);
+}
+
+.tag-chip.active {
+  background: #0f9d58;
+  color: white;
+  border-color: #0f9d58;
+  box-shadow: 0 3px 8px rgba(15, 157, 88, 0.25);
+  transform: translateY(-1px);
 }
 
 .search-container {
@@ -2135,6 +2248,52 @@ export default {
     max-width: 100%;
     max-height: none;
     margin-bottom: 20px;
+    align-items: stretch;
+  }
+  
+  .search-filter-column {
+    align-items: stretch;
+  }
+  
+  .search-filter-row {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  
+  .search-container {
+    flex: 1;
+  }
+  
+  .tag-filter-chips {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 5px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+  
+  .tag-filter-chips::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .tag-filter-chips::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+  }
+  
+  .tag-filter-chips::-webkit-scrollbar-thumb {
+    background: rgba(15, 157, 88, 0.3);
+    border-radius: 10px;
+  }
+  
+  .tag-chip {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    padding: 5px 14px;
   }
   
   .filter-container {
@@ -2189,6 +2348,15 @@ export default {
   .search-filter-section-fixed {
     width: 100%;
     margin-bottom: 15px;
+    align-items: stretch;
+  }
+  
+  .search-filter-column {
+    align-items: stretch;
+  }
+  
+  .search-filter-row {
+    justify-content: stretch;
   }
   
   .category-header {
