@@ -175,50 +175,13 @@
           </div>
         </div>
       </div>
-      <!-- Add Address Modal -->
-      <div v-if="showAddAddressForm" class="modal-overlay">
-        <div class="modal-card">
-          <span class="close-btn" @click="showAddAddressForm = false">&times;</span>
-          <h2>Add New Address</h2>
-          <form @submit.prevent="addAddress" class="address-form">
-            <div class="form-group">
-              <label for="addressType">Address Type</label>
-              <select id="addressType" v-model="addressForm.type" required>
-                <option value="HOME">Home</option>
-                <option value="WORK">Work</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="addressLine1">Street Address</label>
-              <input id="addressLine1" v-model="addressForm.addressLine1" required />
-            </div>
-            <div class="form-group">
-              <label for="addressLine2">Barangay</label>
-              <select id="addressLine2" v-model="addressForm.addressLine2">
-                <option disabled value="">Select Barangay</option>
-                <option
-                  v-for="barangay in barangays"
-                  :key="barangay"
-                  :value="barangay"
-                >
-                  {{ barangay }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group checkbox">
-              <input id="isDefault" type="checkbox" v-model="addressForm.isDefault" />
-              <label for="isDefault">Set as default address</label>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="cancel-btn" @click="showAddAddressForm = false">Cancel</button>
-              <button type="submit" class="save-btn" :disabled="isSubmitting">
-                {{ isSubmitting ? 'Adding...' : 'Add Address' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <!-- Add Address Modal (shared component) -->
+      <add-address-modal
+        v-if="showAddAddressForm"
+        :showModal="showAddAddressForm"
+        @close="showAddAddressForm = false"
+        @addressAdded="handleAddressAddedFromProfile"
+      />
       <!-- Edit Address Modal -->
       <div v-if="showEditAddressForm" class="modal-overlay">
         <div class="modal-card">
@@ -313,9 +276,13 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { clientService } from '../../services/apiService';
 import apiService from '../../services/apiService';
 import Swal from 'sweetalert2';
+import AddAddressModal from '@/components/modals/AddAddressModal.vue';
 
 export default {
   name: 'ClientProfile',
+  components: {
+    AddAddressModal
+  },
   setup() {
     // State
     const user = ref({});
@@ -609,71 +576,18 @@ export default {
       }
     };
     
-    const addAddress = async () => {
-      try {
-        isSubmitting.value = true;
-        error.value = null;
-        
-        const response = await clientService.addAddress({
-          type: addressForm.type,
-          addressLine1: addressForm.addressLine1,
-          addressLine2: addressForm.addressLine2,
-          city: defaultCity,
-          state: defaultState,
-          postalCode: defaultPostalCode,
-          country: defaultCountry,
-          isDefault: addressForm.isDefault
-        });
-        
-        if (response.success) {
-          // If this is set as default, update other addresses
-          if (addressForm.isDefault) {
-            addresses.value.forEach(addr => {
-              addr.isDefault = false;
-            });
-          }
-          
-          // Add new address to the list
-          addresses.value.push(response.data);
-          
-          // Reset form and close modal
-          resetAddressForm();
-          showAddAddressForm.value = false;
-          
-          // Show success notification
-          await Swal.fire({
-            title: 'Address Added!',
-            text: 'Your address has been added successfully.',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false,
-            position: 'top-end',
-            toast: true
-          });
-        } else {
-          throw new Error(response.message || 'Failed to add address');
-        }
-      } catch (err) {
-        error.value = err.message || 'An error occurred while adding the address';
-        console.error('Error adding address:', err);
-        
-        // Show error notification
-        await Swal.fire({
-          title: 'Add Failed',
-          text: err.message || 'Failed to add address. Please try again.',
-          icon: 'error',
-          confirmButtonColor: '#27ae60'
-        });
-      } finally {
-        isSubmitting.value = false;
-      }
-    };
-    
-    const resetAddressForm = () => {
-      addressForm.type = 'HOME';
-      addressForm.addressLine1 = '';
-      addressForm.addressLine2 = '';
-      addressForm.isDefault = false;
+    const handleAddressAddedFromProfile = async () => {
+      await fetchClientProfile();
+      showAddAddressForm.value = false;
+      await Swal.fire({
+        title: 'Address Added!',
+        text: 'Your address has been added successfully.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
     };
     
     const editAddress = (address) => {
@@ -878,7 +792,7 @@ export default {
       startEditProfile,
       cancelEditProfile,
       updateProfile,
-      addAddress,
+      handleAddressAddedFromProfile,
       editAddress,
       updateAddress,
       deleteAddress,

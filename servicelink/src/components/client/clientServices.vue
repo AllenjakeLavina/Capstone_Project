@@ -101,7 +101,7 @@
           </div>
           
           <button 
-            v-if="hasActiveFilters" 
+            v-if="selectedCategory && hasActiveFilters" 
             @click="clearFilters" 
             class="clear-filters-btn"
           >
@@ -338,6 +338,16 @@
       </div>
       </Teleport>
 
+      <!-- Booking Add Address Modal (separate overlay at root) -->
+      <Teleport to="body">
+        <add-address-modal
+          v-if="showAddAddressModal"
+          :showModal="showAddAddressModal"
+          @close="closeAddAddressModal"
+          @addressAdded="handleAddressAdded"
+        />
+      </Teleport>
+
       <!-- Provider Details Modal -->
       <provider-details-modal
         v-if="selectedProvider"
@@ -346,13 +356,6 @@
         @close="closeProviderModal"
       />
 
-      <!-- Add Address Modal -->
-      <add-address-modal
-        v-if="showAddAddressModal"
-        :showModal="showAddAddressModal"
-        @close="closeAddAddressModal"
-        @addressAdded="handleAddressAdded"
-      />
     </div>
   </div>
 </template>

@@ -1,7 +1,10 @@
 <template>
-  <div v-if="showModal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
+  <div 
+    v-if="showModal" 
+    :class="embedded ? 'embedded-wrapper' : 'modal-overlay'"
+  >
+    <div :class="embedded ? 'embedded-modal' : 'modal'">
+      <div :class="['modal-header', { 'embedded-header': embedded }]">
         <h2>Add New Address</h2>
         <button class="close-btn" @click="$emit('close')">&times;</button>
       </div>
@@ -17,54 +20,31 @@
           </div>
           
           <div class="form-group">
-            <label for="addressLine1">Address Line 1*</label>
-            <input 
-              id="addressLine1" 
-              v-model="addressForm.addressLine1" 
-              required 
-              placeholder="Street address, apartment, suite, etc."
-            />
+            <label for="addressLine1">Street Address</label>
+            <input id="addressLine1" v-model="addressForm.addressLine1" required />
           </div>
-          
+
           <div class="form-group">
-            <label for="addressLine2">Address Line 2</label>
-            <input 
-              id="addressLine2" 
-              v-model="addressForm.addressLine2" 
-              placeholder="Apartment, suite, unit, etc. (optional)"
-            />
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="city">City*</label>
-              <input id="city" v-model="addressForm.city" required />
-            </div>
-            <div class="form-group">
-              <label for="state">State/Province*</label>
-              <input id="state" v-model="addressForm.state" required />
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="postalCode">Postal Code*</label>
-              <input id="postalCode" v-model="addressForm.postalCode" required />
-            </div>
-            <div class="form-group">
-              <label for="country">Country*</label>
-              <input id="country" v-model="addressForm.country" required />
-            </div>
+            <label for="barangay">Barangay</label>
+            <select id="barangay" v-model="addressForm.addressLine2" required>
+              <option disabled value="">Select Barangay</option>
+              <option
+                v-for="barangay in barangays"
+                :key="barangay"
+                :value="barangay"
+              >
+                {{ barangay }}
+              </option>
+            </select>
           </div>
           
           <div class="form-group checkbox">
-            <label>
-              <input 
-                type="checkbox" 
-                v-model="addressForm.isDefault"
-              />
-              Set as default address
-            </label>
+            <input 
+              id="isDefault"
+              type="checkbox" 
+              v-model="addressForm.isDefault"
+            />
+            <label for="isDefault">Set as default address</label>
           </div>
           
           <div class="form-actions">
@@ -84,6 +64,7 @@
 <script>
 import { ref } from 'vue';
 import { clientService } from '@/services/apiService';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'AddAddressModal',
@@ -91,34 +72,70 @@ export default {
     showModal: {
       type: Boolean,
       default: false
+    },
+    embedded: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['close', 'addressAdded'],
   setup(props, { emit }) {
     const isSubmitting = ref(false);
+    const defaultCity = 'Olongapo City';
+    const defaultState = 'Zambales';
+    const defaultPostalCode = '2200';
+    const defaultCountry = 'Philippines';
+
+    const barangays = [
+      'Barangay Asinan',
+      'Barangay Banicain',
+      'Barangay Barretto',
+      'Barangay East Bajac-Bajac',
+      'Barangay East Tapinac',
+      'Barangay Gordon Heights',
+      'Barangay Kalaklan',
+      'Barangay Kalalake',
+      'Barangay New Cabalan',
+      'Barangay New Ilalim',
+      'Barangay New Kababae',
+      'Barangay New Kalalake',
+      'Barangay Old Cabalan',
+      'Barangay Pag-Asa',
+      'Barangay Sta. Rita',
+      'Barangay West Bajac-Bajac',
+      'Barangay West Tapinac'
+    ];
     const addressForm = ref({
       type: 'HOME',
       addressLine1: '',
       addressLine2: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: 'Philippines',
       isDefault: false
     });
 
     const submitAddress = async () => {
-      if (!addressForm.value.addressLine1 || !addressForm.value.city || 
-          !addressForm.value.state || !addressForm.value.postalCode || 
-          !addressForm.value.country) {
-        alert('Please fill in all required fields');
+      if (!addressForm.value.addressLine1 || !addressForm.value.addressLine2) {
+        await Swal.fire({
+          title: 'Incomplete Details',
+          text: 'Please fill in the street address and select a barangay.',
+          icon: 'warning',
+          confirmButtonColor: '#27ae60'
+        });
         return;
       }
 
       isSubmitting.value = true;
 
       try {
-        const response = await clientService.addAddress(addressForm.value);
+        const response = await clientService.addAddress({
+          type: addressForm.value.type,
+          addressLine1: addressForm.value.addressLine1,
+          addressLine2: addressForm.value.addressLine2,
+          city: defaultCity,
+          state: defaultState,
+          postalCode: defaultPostalCode,
+          country: defaultCountry,
+          isDefault: addressForm.value.isDefault
+        });
         
         if (response.success) {
           // Reset form
@@ -126,21 +143,37 @@ export default {
             type: 'HOME',
             addressLine1: '',
             addressLine2: '',
-            city: '',
-            state: '',
-            postalCode: '',
-            country: 'Philippines',
             isDefault: false
           };
           
           emit('addressAdded');
           emit('close');
+
+          await Swal.fire({
+            title: 'Address Added!',
+            text: 'Your new address has been saved.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
         } else {
-          alert('Failed to add address: ' + (response.message || 'Unknown error'));
+          await Swal.fire({
+            title: 'Add Failed',
+            text: response.message || 'Failed to add address. Please try again.',
+            icon: 'error',
+            confirmButtonColor: '#27ae60'
+          });
         }
       } catch (err) {
         console.error('Error adding address:', err);
-        alert('Failed to add address. Please try again later.');
+        await Swal.fire({
+          title: 'Add Failed',
+          text: err.message || 'Failed to add address. Please try again later.',
+          icon: 'error',
+          confirmButtonColor: '#27ae60'
+        });
       } finally {
         isSubmitting.value = false;
       }
@@ -148,6 +181,7 @@ export default {
 
     return {
       addressForm,
+      barangays,
       isSubmitting,
       submitAddress
     };
@@ -169,6 +203,15 @@ export default {
   z-index: 1000;
 }
 
+.embedded-wrapper {
+  position: static;
+  width: 100%;
+  height: auto;
+  background: transparent;
+  display: block;
+  margin-top: 10px;
+}
+
 .modal {
   background: white;
   border-radius: 10px;
@@ -178,6 +221,31 @@ export default {
   max-height: 85vh; /* Fallback for older browsers */
   overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.embedded-modal {
+  background: white;
+  border-radius: 10px;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  box-shadow: none;
+  border: 1px solid #e0e0e0;
+}
+
+.embedded-header {
+  background: #f8f9fa;
+  color: #333;
+  border-radius: 10px 10px 0 0;
+}
+
+.embedded-header h2 {
+  font-size: 1.05rem;
+}
+
+.embedded-header .close-btn {
+  color: #555;
 }
 
 .modal-header {
