@@ -13,7 +13,7 @@ import { uploadFile } from '../middlewares/fileHandler';
 
 const router = express.Router();
 
-router.post('/register', handleRegisterClient);
+router.post('/register', uploadFile.single('idDocument'), handleRegisterClient);
 
 
 // Profile management

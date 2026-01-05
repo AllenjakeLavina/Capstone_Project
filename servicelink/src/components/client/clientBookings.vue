@@ -270,13 +270,11 @@
               <form @submit.prevent="submitEditBooking">
                 <div class="form-group">
                   <label for="edit-booking-date">Date & Time</label>
-                  <input 
-                    type="datetime-local" 
-                    id="edit-booking-date" 
-                    v-model="editForm.dateTime" 
-                    required
-                    :min="currentDateTimeString"
-                  />
+                  <div class="read-only-date-time">
+                    <i class="fa fa-calendar"></i>
+                    {{ formatDate(selectedBooking?.startTime) }}
+                  </div>
+                  <small class="read-only-hint">Date and time cannot be changed after booking</small>
                 </div>
                 
                 <div class="form-group">
@@ -435,7 +433,6 @@ export default {
     // Edit Booking related refs
     const showEditModal = ref(false);
     const editForm = ref({
-      dateTime: '',
       addressId: '',
       notes: ''
     });
@@ -928,8 +925,6 @@ export default {
     const openEditModal = (booking) => {
       selectedBooking.value = booking;
       editForm.value = {
-        // Ensure proper value for input[type="datetime-local"]
-        dateTime: formatForDateTimeLocal(booking.startTime),
         addressId: booking.address ? booking.address.id : '',
         notes: booking.notes || ''
       };
@@ -940,7 +935,6 @@ export default {
     const closeEditModal = () => {
       showEditModal.value = false;
       editForm.value = {
-        dateTime: '',
         addressId: '',
         notes: ''
       };
@@ -948,25 +942,12 @@ export default {
 
     // Submit edited booking
     const submitEditBooking = async () => {
-      if (!editForm.value.dateTime || !editForm.value.addressId) {
+      if (!editForm.value.addressId) {
         Swal.fire({
           title: 'Incomplete Form',
-          text: 'Please select a date and address.',
+          text: 'Please select an address.',
           icon: 'warning',
           confirmButtonColor: '#ff9800'
-        });
-        return;
-      }
-
-      // Prevent selecting past date/time
-      const selected = new Date(editForm.value.dateTime);
-      const now = new Date();
-      if (isNaN(selected.getTime()) || selected.getTime() < now.getTime()) {
-        Swal.fire({
-          title: 'Invalid Date & Time',
-          text: 'Please choose a future date and time.',
-          icon: 'error',
-          confirmButtonColor: '#f44336'
         });
         return;
       }
@@ -976,7 +957,6 @@ export default {
         const result = await clientService.updateBooking(
           selectedBooking.value.id,
           {
-            startTime: editForm.value.dateTime,
             addressId: editForm.value.addressId,
             notes: editForm.value.notes
           }
@@ -1092,24 +1072,6 @@ export default {
       showAddAddressModal.value = false;
     };
 
-    // Helper: format Date to yyyy-MM-ddTHH:mm in local time for <input type="datetime-local">
-    const formatForDateTimeLocal = (date) => {
-      const d = new Date(date);
-      const pad = (n) => String(n).padStart(2, '0');
-      const year = d.getFullYear();
-      const month = pad(d.getMonth() + 1);
-      const day = pad(d.getDate());
-      const hours = pad(d.getHours());
-      const minutes = pad(d.getMinutes());
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
-
-    // Keep min up-to-date so past times are blocked without reload
-    const currentDateTimeString = ref(formatForDateTimeLocal(new Date()));
-    setInterval(() => {
-      currentDateTimeString.value = formatForDateTimeLocal(new Date());
-    }, 60 * 1000);
-
     return {
       bookings,
       loading,
@@ -1162,7 +1124,6 @@ export default {
       closeDetailsModal,
       handleAddressAdded,
       closeAddAddressModal,
-      currentDateTimeString,
     };
   }
 };
@@ -2084,6 +2045,32 @@ textarea.form-control {
 
 .add-address-btn i {
   font-size: 1rem;
+}
+
+.read-only-date-time {
+  padding: 12px 15px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #505a68;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: not-allowed;
+}
+
+.read-only-date-time i {
+  color: #27ae60;
+  font-size: 1rem;
+}
+
+.read-only-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  font-style: italic;
 }
 
 .booking-actions {

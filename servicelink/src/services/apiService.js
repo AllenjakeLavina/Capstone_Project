@@ -812,12 +812,11 @@ export const chatService = {
 
 // Client related functions
 export const clientService = {
-  registerClient: async (userData) => {
+  registerClient: async (formData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/client/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        body: formData
       });
       return await handleApiResponse(response);
     } catch (error) {

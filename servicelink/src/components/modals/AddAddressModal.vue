@@ -95,6 +95,7 @@ export default {
       'Barangay Gordon Heights',
       'Barangay Kalaklan',
       'Barangay Kalalake',
+      'Barangay Mabayuan',
       'Barangay New Cabalan',
       'Barangay New Ilalim',
       'Barangay New Kababae',

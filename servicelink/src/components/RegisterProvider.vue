@@ -18,193 +18,238 @@
       </div>
 
       <form v-else @submit.prevent="handleRegister" key="registration-form">
-        <div class="form-row">
+        <!-- STEP 1: Personal Info + Address + ID Upload -->
+        <div v-if="currentStep === 1">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name <span class="required">*</span></label>
+              <div class="input-container">
+                <span class="input-icon">👤</span>
+                <input 
+                  type="text" 
+                  id="firstName" 
+                  v-model="formData.firstName" 
+                  required
+                  placeholder="Enter your first name"
+                  minlength="2"
+                />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="lastName">Last Name <span class="required">*</span></label>
+              <div class="input-container">
+                <span class="input-icon">👤</span>
+                <input 
+                  type="text" 
+                  id="lastName" 
+                  v-model="formData.lastName" 
+                  required
+                  placeholder="Enter your last name"
+                  minlength="2"
+                />
+              </div>
+            </div>
+          </div>
+          
           <div class="form-group">
-            <label for="firstName">First Name <span class="required">*</span></label>
+            <label for="email">Email <span class="required">*</span></label>
             <div class="input-container">
-              <span class="input-icon">👤</span>
+              <span class="input-icon">✉️</span>
               <input 
-                type="text" 
-                id="firstName" 
-                v-model="formData.firstName" 
+                type="email" 
+                id="email" 
+                v-model="formData.email" 
                 required
-                placeholder="Enter your first name"
-                minlength="2"
+                placeholder="Enter your email"
               />
             </div>
           </div>
           
           <div class="form-group">
-            <label for="lastName">Last Name <span class="required">*</span></label>
+            <label for="phone">Contact Number <span class="required">*</span></label>
             <div class="input-container">
-              <span class="input-icon">👤</span>
+              <span class="input-icon">📱</span>
+              <input 
+                type="tel" 
+                id="phone" 
+                v-model="formData.phone" 
+                required
+                placeholder="e.g., 09123456789 or +639123456789"
+              />
+            </div>
+            <small class="input-hint">Enter a valid Philippine phone number</small>
+          </div>
+
+          <div class="form-group">
+            <label for="addressLine1">Address <span class="required">*</span></label>
+            <div class="input-container">
+              <span class="input-icon">📍</span>
               <input 
                 type="text" 
-                id="lastName" 
-                v-model="formData.lastName" 
+                id="addressLine1" 
+                v-model="formData.addressLine1" 
                 required
-                placeholder="Enter your last name"
-                minlength="2"
+                placeholder="Street address, Building number "
+                minlength="5"
               />
             </div>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="email">Email <span class="required">*</span></label>
-          <div class="input-container">
-            <span class="input-icon">✉️</span>
-            <input 
-              type="email" 
-              id="email" 
-              v-model="formData.email" 
-              required
-              placeholder="Enter your email"
-            />
+
+          <div class="form-group">
+            <label for="addressLine2">Barangay</label>
+            <div class="input-container">
+              <span class="input-icon">📍</span>
+              <select
+                id="addressLine2"
+                v-model="formData.addressLine2"
+              >
+                <option disabled value="">Select Barangay</option>
+                <option
+                  v-for="barangay in barangays"
+                  :key="barangay"
+                  :value="barangay"
+                >
+                  {{ barangay }}
+                </option>
+              </select>
+            </div>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="phone">Contact Number <span class="required">*</span></label>
-          <div class="input-container">
-            <span class="input-icon">📱</span>
-            <input 
-              type="tel" 
-              id="phone" 
-              v-model="formData.phone" 
-              required
-              placeholder="e.g., 09123456789 or +639123456789"
-            />
+
+          <div class="form-group">
+            <label for="city">City</label>
+            <div class="input-container">
+              <span class="input-icon">🏙️</span>
+              <input
+                type="text"
+                id="city"
+                :value="cityName"
+                readonly
+              />
+            </div>
           </div>
-          <small class="input-hint">Enter a valid Philippine phone number</small>
+
+          <div class="form-group">
+            <label for="idDocument">ID Document <span class="required">*</span></label>
+            <div class="file-upload" :class="{ 'file-uploaded': idDocument }">
+              <input 
+                type="file" 
+                id="idDocument" 
+                @change="handleFileChange"
+                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                required
+              />
+              <div class="file-upload-info">
+                <span class="file-icon">{{ idDocument ? '✅' : '📄' }}</span>
+                <span class="file-text">{{ idDocument ? idDocument.name : 'Upload ID document' }}</span>
+                <span v-if="idDocument" class="file-size">({{ getFileSize(idDocument.size) }})</span>
+              </div>
+            </div>
+            <small class="file-hint">Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max size: 10MB)</small>
+          </div>
+
+          <div class="form-actions">
+            <button 
+              type="button" 
+              class="primary-btn provider-btn" 
+              :disabled="loading" 
+              @click="goToStep2"
+            >
+              Next
+            </button>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="addressLine1">Address <span class="required">*</span></label>
-          <div class="input-container">
-            <span class="input-icon">📍</span>
-            <input 
-              type="text" 
-              id="addressLine1" 
-              v-model="formData.addressLine1" 
-              required
-              placeholder="Street address, Building number "
-              minlength="5"
-            />
+        <!-- STEP 2: Security + Agreement -->
+        <div v-else>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-container">
+              <span class="input-icon">🔒</span>
+              <input 
+                type="password" 
+                id="password" 
+                v-model="formData.password" 
+                required
+                placeholder="Create a password"
+                :class="{ 'input-error': !isPasswordValid && formData.password.length > 0 }"
+              />
+            </div>
+            <div v-if="formData.password.length > 0" class="password-checklist">
+              <div class="password-requirement" :class="{ 'valid': hasMinLength, 'invalid': !hasMinLength }">
+                <span class="check-icon">{{ hasMinLength ? '✓' : '✗' }}</span>
+                <span>8 characters</span>
+              </div>
+              <div class="password-requirement" :class="{ 'valid': hasUppercase, 'invalid': !hasUppercase }">
+                <span class="check-icon">{{ hasUppercase ? '✓' : '✗' }}</span>
+                <span>1 uppercase</span>
+              </div>
+              <div class="password-requirement" :class="{ 'valid': hasLowercase, 'invalid': !hasLowercase }">
+                <span class="check-icon">{{ hasLowercase ? '✓' : '✗' }}</span>
+                <span>1 lowercase</span>
+              </div>
+              <div class="password-requirement" :class="{ 'valid': hasNumber, 'invalid': !hasNumber }">
+                <span class="check-icon">{{ hasNumber ? '✓' : '✗' }}</span>
+                <span>1 number</span>
+              </div>
+              <div class="password-requirement" :class="{ 'valid': hasSpecialChar, 'invalid': !hasSpecialChar }">
+                <span class="check-icon">{{ hasSpecialChar ? '✓' : '✗' }}</span>
+                <span>1 special character</span>
+              </div>
+            </div>
           </div>
-        </div>
+          
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-container">
+              <span class="input-icon">🔒</span>
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                v-model="confirmPassword" 
+                required
+                placeholder="Confirm your password"
+                :class="{ 'input-error': confirmPasswordError && confirmPassword.length > 0 }"
+              />
+            </div>
+            <div v-if="confirmPasswordError && confirmPassword.length > 0" class="error-message">
+              {{ confirmPasswordError }}
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label for="addressLine2">Address Line 2</label>
-          <div class="input-container">
-            <span class="input-icon">📍</span>
+          <div class="form-group form-checkbox">
             <input 
-              type="text" 
-              id="addressLine2" 
-              v-model="formData.addressLine2" 
-              placeholder="Barangay"
-            />
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="password">Password</label>
-          <div class="input-container">
-            <span class="input-icon">🔒</span>
-            <input 
-              type="password" 
-              id="password" 
-              v-model="formData.password" 
-              required
-              placeholder="Create a password"
-              :class="{ 'input-error': !isPasswordValid && formData.password.length > 0 }"
-            />
-          </div>
-          <div v-if="formData.password.length > 0" class="password-checklist">
-            <div class="password-requirement" :class="{ 'valid': hasMinLength, 'invalid': !hasMinLength }">
-              <span class="check-icon">{{ hasMinLength ? '✓' : '✗' }}</span>
-              <span>8 characters</span>
-            </div>
-            <div class="password-requirement" :class="{ 'valid': hasUppercase, 'invalid': !hasUppercase }">
-              <span class="check-icon">{{ hasUppercase ? '✓' : '✗' }}</span>
-              <span>1 uppercase</span>
-            </div>
-            <div class="password-requirement" :class="{ 'valid': hasLowercase, 'invalid': !hasLowercase }">
-              <span class="check-icon">{{ hasLowercase ? '✓' : '✗' }}</span>
-              <span>1 lowercase</span>
-            </div>
-            <div class="password-requirement" :class="{ 'valid': hasNumber, 'invalid': !hasNumber }">
-              <span class="check-icon">{{ hasNumber ? '✓' : '✗' }}</span>
-              <span>1 number</span>
-            </div>
-            <div class="password-requirement" :class="{ 'valid': hasSpecialChar, 'invalid': !hasSpecialChar }">
-              <span class="check-icon">{{ hasSpecialChar ? '✓' : '✗' }}</span>
-              <span>1 special character</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
-          <div class="input-container">
-            <span class="input-icon">🔒</span>
-            <input 
-              type="password" 
-              id="confirmPassword" 
-              v-model="confirmPassword" 
-              required
-              placeholder="Confirm your password"
-              :class="{ 'input-error': confirmPasswordError && confirmPassword.length > 0 }"
-            />
-          </div>
-          <div v-if="confirmPasswordError && confirmPassword.length > 0" class="error-message">
-            {{ confirmPasswordError }}
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="idDocument">ID Document <span class="required">*</span></label>
-          <div class="file-upload" :class="{ 'file-uploaded': idDocument }">
-            <input 
-              type="file" 
-              id="idDocument" 
-              @change="handleFileChange"
-              accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+              type="checkbox" 
+              id="terms" 
+              v-model="acceptTerms" 
               required
             />
-            <div class="file-upload-info">
-              <span class="file-icon">{{ idDocument ? '✅' : '📄' }}</span>
-              <span class="file-text">{{ idDocument ? idDocument.name : 'Upload ID document' }}</span>
-              <span v-if="idDocument" class="file-size">({{ getFileSize(idDocument.size) }})</span>
-            </div>
+            <label for="terms">I agree to the <a href="#" @click.prevent="showTermsModal = true" class="terms-link">Terms and Conditions</a></label>
           </div>
-          <small class="file-hint">Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max size: 10MB)</small>
-        </div>
-        
-        <div class="form-group form-checkbox">
-          <input 
-            type="checkbox" 
-            id="terms" 
-            v-model="acceptTerms" 
-            required
-          />
-          <label for="terms">I agree to the <a href="#" @click.prevent="showTermsModal = true" class="terms-link">Terms and Conditions</a></label>
-        </div>
-        
-        <div class="form-group form-checkbox">
-          <input 
-            type="checkbox" 
-            id="verification" 
-            v-model="acceptVerification" 
-            required
-          />
-          <label for="verification">I understand that my account requires verification before I can offer services</label>
-        </div>
-        
-        <div class="form-actions">
-          <button type="submit" class="primary-btn provider-btn" :disabled="loading || !acceptTerms || !acceptVerification">
-            {{ loading ? 'Registering...' : 'Register as Provider' }}
-          </button>
+          
+          <div class="form-group form-checkbox">
+            <input 
+              type="checkbox" 
+              id="verification" 
+              v-model="acceptVerification" 
+              required
+            />
+            <label for="verification">I understand that my account requires verification before I can offer services</label>
+          </div>
+          
+          <div class="form-actions">
+            <button 
+              type="button" 
+              class="primary-btn" 
+              :disabled="loading" 
+              @click="goToStep1"
+            >
+              Back
+            </button>
+            <button type="submit" class="primary-btn provider-btn" :disabled="loading || !acceptTerms || !acceptVerification">
+              {{ loading ? 'Registering...' : 'Register as Provider' }}
+            </button>
+          </div>
         </div>
       </form>
       
@@ -246,6 +291,7 @@ export default {
   },
   setup() {
     const router = useRouter();
+    const currentStep = ref(1);
     const formData = reactive({
       firstName: '',
       lastName: '',
@@ -262,6 +308,29 @@ export default {
     const loading = ref(false);
     const showVerification = ref(false);
     const showTermsModal = ref(false);
+
+    const cityName = 'Olongapo City';
+
+    const barangays = [
+      'Barangay Asinan',
+      'Barangay Banicain',
+      'Barangay Barretto',
+      'Barangay East Bajac-Bajac',
+      'Barangay East Tapinac',
+      'Barangay Gordon Heights',
+      'Barangay Kalaklan',
+      'Barangay Kalalake',
+      'Barangay Mabayuan',
+      'Barangay New Cabalan',
+      'Barangay New Ilalim',
+      'Barangay New Kababae',
+      'Barangay New Kalalake',
+      'Barangay Old Cabalan',
+      'Barangay Pag-Asa',
+      'Barangay Sta. Rita',
+      'Barangay West Bajac-Bajac',
+      'Barangay West Tapinac'
+    ];
 
     // Validation functions
     const validateFullName = () => {
@@ -422,7 +491,11 @@ export default {
       }
     };
 
-    const handleRegister = async () => {
+    const goToStep1 = () => {
+      currentStep.value = 1;
+    };
+
+    const goToStep2 = async () => {
       // Validate full name
       const nameError = validateFullName();
       if (nameError) {
@@ -470,6 +543,46 @@ export default {
         });
         return;
       }
+
+      currentStep.value = 2;
+    };
+
+    const handleRegister = async () => {
+      // Validate full name
+      const nameError = validateFullName();
+      if (nameError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: nameError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate contact number
+      const phoneError = validateContactNumber();
+      if (phoneError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: phoneError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate address
+      const addressError = validateAddress();
+      if (addressError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: addressError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
       
       // Validate password strength
       const passwordValidationErrors = validatePassword(formData.password);
@@ -504,6 +617,11 @@ export default {
         formDataToSend.append('firstName', formData.firstName.trim());
         formDataToSend.append('lastName', formData.lastName.trim());
         formDataToSend.append('phone', formData.phone.trim());
+        formDataToSend.append('address', JSON.stringify({
+          addressLine1: formData.addressLine1.trim(),
+          addressLine2: formData.addressLine2?.trim() || '',
+          city: cityName
+        }));
         formDataToSend.append('idDocument', idDocument.value);
         
         const response = await providerService.registerProvider(formDataToSend);
@@ -575,6 +693,9 @@ export default {
       loading,
       showVerification,
       showTermsModal,
+      cityName,
+      barangays,
+      currentStep,
       hasMinLength,
       hasUppercase,
       hasLowercase,
@@ -584,6 +705,8 @@ export default {
       confirmPasswordError,
       getFileSize,
       handleFileChange,
+      goToStep1,
+      goToStep2,
       handleRegister,
       handleVerificationSuccess,
       handleVerificationError
@@ -701,7 +824,8 @@ label {
   font-size: 1rem;
 }
 
-input {
+input,
+select {
   width: 100%;
   padding: 12px 12px 12px 40px;
   border: 1px solid #e2e8f0;
@@ -711,7 +835,8 @@ input {
   box-sizing: border-box;
 }
 
-input:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: #38b676;
   box-shadow: 0 0 0 3px rgba(56, 182, 118, 0.1);
@@ -874,6 +999,12 @@ input[type="file"] {
 
 .form-actions {
   margin-top: 32px;
+  display: flex;
+  gap: 15px;
+}
+
+.form-actions .primary-btn {
+  flex: 1;
 }
 
 .primary-btn {

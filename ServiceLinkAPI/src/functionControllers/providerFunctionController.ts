@@ -2084,15 +2084,32 @@ export const getServiceProviderReviews = async (providerId: string) => {
 export const addAvailabilitySlot = async (
   userId: string,
   availabilityData: {
-    dayOfWeek: number; // 0-6 (Sunday-Saturday)
+    date: string; // Format: "YYYY-MM-DD"
     startTime: string; // Format: "HH:MM" in 24-hour
     endTime: string; // Format: "HH:MM" in 24-hour
     isAvailable?: boolean;
   }
 ) => {
-  // Validate input
-  if (availabilityData.dayOfWeek < 0 || availabilityData.dayOfWeek > 6) {
-    throw new Error('Day of week must be between 0 (Sunday) and 6 (Saturday)');
+  // Validate date
+  if (!availabilityData.date) {
+    throw new Error('Date is required');
+  }
+
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/; // YYYY-MM-DD format
+  if (!dateRegex.test(availabilityData.date)) {
+    throw new Error('Date must be in YYYY-MM-DD format');
+  }
+
+  const selectedDate = new Date(availabilityData.date);
+  if (isNaN(selectedDate.getTime())) {
+    throw new Error('Invalid date');
+  }
+
+  // Ensure date is not in the past (allow same day)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (selectedDate < today) {
+    throw new Error('Cannot create availability for past dates');
   }
 
   const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/; // 24-hour format: HH:MM
@@ -2122,11 +2139,11 @@ export const addAvailabilitySlot = async (
     throw new Error('Service provider not found');
   }
 
-  // Check for overlapping availability slots
+  // Check for overlapping availability slots on the same date
   const existingSlots = await prisma.availability.findMany({
     where: {
       serviceProviderId: user.serviceProvider.id,
-      dayOfWeek: availabilityData.dayOfWeek,
+      date: selectedDate,
       isAvailable: true
     }
   });
@@ -2152,7 +2169,7 @@ export const addAvailabilitySlot = async (
   const availability = await prisma.availability.create({
     data: {
       serviceProviderId: user.serviceProvider.id,
-      dayOfWeek: availabilityData.dayOfWeek,
+      date: selectedDate,
       startTime: availabilityData.startTime,
       endTime: availabilityData.endTime,
       isAvailable: availabilityData.isAvailable !== false // Default to true unless explicitly set to false
@@ -2173,34 +2190,25 @@ export const getAvailability = async (userId: string) => {
     throw new Error('Service provider not found');
   }
 
-  // Get all availability slots
+  // Get all availability slots (date-based)
   const availabilitySlots = await prisma.availability.findMany({
     where: {
       serviceProviderId: user.serviceProvider.id
     },
     orderBy: [
-      { dayOfWeek: 'asc' },
+      { date: 'asc' },
       { startTime: 'asc' }
     ]
   });
 
-  // Group by day of week for easier client-side consumption
-  const availabilityByDay = [0, 1, 2, 3, 4, 5, 6].map(day => {
-    const daySlots = availabilitySlots.filter(slot => slot.dayOfWeek === day);
-    return {
-      dayOfWeek: day,
-      dayName: getDayName(day),
-      slots: daySlots
-    };
-  });
-
+  // Return slots directly (frontend will filter by date range)
   return {
     providerInfo: {
       id: user.serviceProvider.id,
       userId: user.id,
       name: `${user.firstName} ${user.lastName}`
     },
-    availabilityByDay
+    slots: availabilitySlots
   };
 };
 
@@ -2223,34 +2231,26 @@ export const getProviderAvailabilityByProviderId = async (providerId: string) =>
     throw new Error('Service provider not found');
   }
 
-  // Get all availability slots
+  // Get all availability slots (date-based)
   const availabilitySlots = await prisma.availability.findMany({
     where: {
-      serviceProviderId: providerId
+      serviceProviderId: providerId,
+      isAvailable: true
     },
     orderBy: [
-      { dayOfWeek: 'asc' },
+      { date: 'asc' },
       { startTime: 'asc' }
     ]
   });
 
-  // Group by day of week for easier client-side consumption
-  const availabilityByDay = [0, 1, 2, 3, 4, 5, 6].map(day => {
-    const daySlots = availabilitySlots.filter(slot => slot.dayOfWeek === day);
-    return {
-      dayOfWeek: day,
-      dayName: getDayName(day),
-      slots: daySlots
-    };
-  });
-
+  // Return slots directly (clients can filter by date range as needed)
   return {
     providerInfo: {
       id: serviceProvider.id,
       userId: serviceProvider.userId,
       name: `${serviceProvider.user.firstName} ${serviceProvider.user.lastName}`
     },
-    availabilityByDay
+    slots: availabilitySlots
   };
 };
 
@@ -2258,6 +2258,7 @@ export const updateAvailabilitySlot = async (
   userId: string,
   slotId: string,
   updateData: {
+    date?: string;
     startTime?: string;
     endTime?: string;
     isAvailable?: boolean;
@@ -2286,6 +2287,19 @@ export const updateAvailabilitySlot = async (
     throw new Error('You do not have permission to update this availability slot');
   }
 
+  // Validate date if provided
+  let updatedDate = slot.date;
+  if (updateData.date) {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(updateData.date)) {
+      throw new Error('Date must be in YYYY-MM-DD format');
+    }
+    updatedDate = new Date(updateData.date);
+    if (isNaN(updatedDate.getTime())) {
+      throw new Error('Invalid date');
+    }
+  }
+
   // Validate time formats if provided
   const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
   const startTime = updateData.startTime || slot.startTime;
@@ -2311,44 +2325,45 @@ export const updateAvailabilitySlot = async (
       throw new Error('End time must be after start time');
     }
 
-    // Check for overlapping availability slots (excluding this slot)
-    if (updateData.startTime || updateData.endTime) {
-      const existingSlots = await prisma.availability.findMany({
-        where: {
-          serviceProviderId: user.serviceProvider.id,
-          dayOfWeek: slot.dayOfWeek,
-          isAvailable: true,
-          id: { not: slotId }
-        }
-      });
+    // Check for overlapping availability slots on the same date (excluding this slot)
+    const checkDate = updateData.date ? new Date(updateData.date) : slot.date;
+    const existingSlots = await prisma.availability.findMany({
+      where: {
+        serviceProviderId: user.serviceProvider.id,
+        date: checkDate,
+        isAvailable: true,
+        id: { not: slotId }
+      }
+    });
 
-      for (const existingSlot of existingSlots) {
-        const [slotStartHour, slotStartMinute] = existingSlot.startTime.split(':').map(Number);
-        const [slotEndHour, slotEndMinute] = existingSlot.endTime.split(':').map(Number);
-        
-        const slotStartMinutes = slotStartHour * 60 + slotStartMinute;
-        const slotEndMinutes = slotEndHour * 60 + slotEndMinute;
+    for (const existingSlot of existingSlots) {
+      const [slotStartHour, slotStartMinute] = existingSlot.startTime.split(':').map(Number);
+      const [slotEndHour, slotEndMinute] = existingSlot.endTime.split(':').map(Number);
+      
+      const slotStartMinutes = slotStartHour * 60 + slotStartMinute;
+      const slotEndMinutes = slotEndHour * 60 + slotEndMinute;
 
-        // Check for overlap
-        if (
-          (startTimeMinutes >= slotStartMinutes && startTimeMinutes < slotEndMinutes) ||
-          (endTimeMinutes > slotStartMinutes && endTimeMinutes <= slotEndMinutes) ||
-          (startTimeMinutes <= slotStartMinutes && endTimeMinutes >= slotEndMinutes)
-        ) {
-          throw new Error(`This time slot would overlap with an existing availability slot (${existingSlot.startTime} - ${existingSlot.endTime})`);
-        }
+      // Check for overlap
+      if (
+        (startTimeMinutes >= slotStartMinutes && startTimeMinutes < slotEndMinutes) ||
+        (endTimeMinutes > slotStartMinutes && endTimeMinutes <= slotEndMinutes) ||
+        (startTimeMinutes <= slotStartMinutes && endTimeMinutes >= slotEndMinutes)
+      ) {
+        throw new Error(`This time slot would overlap with an existing availability slot (${existingSlot.startTime} - ${existingSlot.endTime})`);
       }
     }
   }
 
   // Update the slot
+  const updatePayload: any = {};
+  if (updateData.date !== undefined) updatePayload.date = updatedDate;
+  if (updateData.startTime !== undefined) updatePayload.startTime = updateData.startTime;
+  if (updateData.endTime !== undefined) updatePayload.endTime = updateData.endTime;
+  if (updateData.isAvailable !== undefined) updatePayload.isAvailable = updateData.isAvailable;
+
   const updatedSlot = await prisma.availability.update({
     where: { id: slotId },
-    data: {
-      startTime: updateData.startTime,
-      endTime: updateData.endTime,
-      isAvailable: updateData.isAvailable
-    }
+    data: updatePayload
   });
 
   return updatedSlot;

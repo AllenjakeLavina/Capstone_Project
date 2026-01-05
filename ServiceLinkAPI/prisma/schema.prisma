@@ -89,10 +89,12 @@ model ServiceProvider {
 
 // Client model - for individuals hiring service providers
 model Client {
-  id        String    @id @default(uuid())
-  userId    String    @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  addresses Address[]
+  id               String     @id @default(uuid())
+  userId           String     @unique
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addresses        Address[]
+  documents        Document[]
+  isClientVerified Boolean    @default(false) // Admin verification flag for clients
 
   // Service bookings they've requested
   serviceBookings ServiceBooking[] @relation("Client")
@@ -160,16 +162,18 @@ model PortfolioFile {
   uploadedAt  DateTime  @default(now())
 }
 
-// Documents for service providers (e.g., certifications, ID, etc.)
+// Documents for service providers and clients (e.g., certifications, ID, etc.)
 model Document {
-  id                String          @id @default(uuid())
-  serviceProviderId String
-  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  id                String           @id @default(uuid())
+  serviceProviderId String?
+  serviceProvider   ServiceProvider? @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  clientId          String?
+  client            Client?          @relation(fields: [clientId], references: [id], onDelete: Cascade)
   title             String
   type              DocumentType
   fileUrl           String
-  isVerified        Boolean         @default(false)
-  uploadedAt        DateTime        @default(now())
+  isVerified        Boolean          @default(false)
+  uploadedAt        DateTime         @default(now())
 }
 
 enum DocumentType {
@@ -508,10 +512,14 @@ model Availability {
   id                String          @id @default(uuid())
   serviceProviderId String
   serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
-  dayOfWeek         Int // 0-6 (Sunday-Saturday)
+  date              DateTime        @db.Date // Specific date for the availability slot
   startTime         String // Format: "HH:MM" in 24-hour
   endTime           String // Format: "HH:MM" in 24-hour
   isAvailable       Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  @@index([serviceProviderId, date])
 }
 
 // Provider unavailable slots - specific date + time ranges that are booked/unavailable

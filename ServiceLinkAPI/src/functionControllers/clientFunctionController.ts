@@ -113,6 +113,10 @@ export const registerClient = async (
     state?: string;
     postalCode?: string;
     country?: string;
+  },
+  idDocument?: {
+    title: string;
+    fileUrl: string;
   }
 ) => {
   try {
@@ -190,8 +194,7 @@ export const registerClient = async (
       }
     });
 
-    // If address is provided, save it
-    // Only save what the user entered, no default values
+    // If address is provided, save it (only what the user entered, no defaults)
     if (address && address.addressLine1 && newUser.client) {
       try {
         await prisma.address.create({
@@ -200,8 +203,6 @@ export const registerClient = async (
             type: 'HOME',
             addressLine1: address.addressLine1.trim(),
             addressLine2: address.addressLine2?.trim() || null,
-            // Only use provided values, no defaults
-            // If not provided, use empty strings (required fields in schema)
             city: address.city?.trim() || '',
             state: address.state?.trim() || '',
             postalCode: address.postalCode?.trim() || '',
@@ -210,8 +211,26 @@ export const registerClient = async (
           }
         });
       } catch (addrError) {
-        // Log error but don't fail registration if address save fails
         console.warn('Failed to save address during registration:', addrError);
+      }
+    }
+
+    // If ID document is provided, store it for the client
+    if (idDocument && newUser.client) {
+      try {
+        await prisma.document.create({
+          data: {
+            title: idDocument.title || 'Identity Document',
+            type: 'ID',
+            fileUrl: idDocument.fileUrl,
+            isVerified: false,
+            client: {
+              connect: { id: newUser.client.id }
+            }
+          }
+        });
+      } catch (docErr) {
+        console.warn('Failed to save client ID document during registration:', docErr);
       }
     }
 

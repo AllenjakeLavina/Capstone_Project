@@ -258,10 +258,15 @@
                   <div v-else class="availability-slots">
                     <div 
                       v-for="day in availabilityByDay" 
-                      :key="day.dayOfWeek" 
+                      :key="day.date || day.dayOfWeek" 
                       class="day-slot-group"
                     >
-                      <h4 class="day-name">{{ day.dayName }}</h4>
+                      <h4 class="day-name">
+                        {{ day.dayName }}
+                        <span v-if="day.date" class="date-label">
+                          ({{ new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }})
+                        </span>
+                      </h4>
                       <div class="time-slots-grid">
                         <button
                           v-for="slot in day.slots.filter(s => s.isAvailable !== false)"
@@ -269,7 +274,7 @@
                           type="button"
                           class="time-slot-btn"
                           :class="{ active: bookingForm.selectedSlot?.id === slot.id }"
-                          @click="bookingForm.selectedSlot = { ...slot, dayOfWeek: day.dayOfWeek, dayName: day.dayName }"
+                          @click="bookingForm.selectedSlot = { ...slot, dayOfWeek: day.dayOfWeek, dayName: day.dayName, date: day.date || slot.actualDate || slot.date }"
                         >
                           {{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}
                         </button>
@@ -497,11 +502,73 @@ export default {
         const response = await providerService.getProviderAvailability(providerId);
         if (response.success && response.data) {
           providerAvailability.value = response.data;
-          // Process availability by day - only show days with available slots
-          availabilityByDay.value = (response.data.availabilityByDay || []).filter(day => {
-            return day.slots && day.slots.length > 0 && 
-                   day.slots.some(slot => slot.isAvailable !== false);
+          
+          // Handle new date-based format
+          let slots = [];
+          if (response.data.slots && Array.isArray(response.data.slots)) {
+            // New format: direct slots array
+            slots = response.data.slots;
+          } else if (response.data.availabilityByDay && Array.isArray(response.data.availabilityByDay)) {
+            // Legacy format: grouped by day
+            slots = response.data.availabilityByDay.flatMap(day => 
+              (day.slots || []).map(slot => ({ ...slot, dayOfWeek: day.dayOfWeek }))
+            );
+          }
+          
+          // Filter to only future dates and available slots
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          
+          const futureSlots = slots.filter(slot => {
+            if (slot.isAvailable === false) return false;
+            if (slot.date) {
+              const slotDate = new Date(slot.date);
+              slotDate.setHours(0, 0, 0, 0);
+              return slotDate >= now;
+            }
+            // Legacy slots without date - keep them for backward compatibility
+            return true;
           });
+          
+          // Group slots by date
+          const slotsByDate = {};
+          futureSlots.forEach(slot => {
+            let dateKey;
+            if (slot.date) {
+              const slotDate = new Date(slot.date);
+              dateKey = slotDate.toISOString().split('T')[0];
+            } else {
+              // Legacy: calculate next occurrence of dayOfWeek
+              const nextDate = getNextDateForDay(slot.dayOfWeek);
+              dateKey = nextDate.toISOString().split('T')[0];
+            }
+            
+            if (!slotsByDate[dateKey]) {
+              slotsByDate[dateKey] = [];
+            }
+            slotsByDate[dateKey].push({ ...slot, actualDate: dateKey });
+          });
+          
+          // Convert to availabilityByDay format for display
+          availabilityByDay.value = Object.keys(slotsByDate)
+            .sort()
+            .map(dateKey => {
+              const date = new Date(dateKey);
+              const dayOfWeek = date.getDay();
+              const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              
+              return {
+                dayOfWeek,
+                dayName: dayNames[dayOfWeek],
+                date: dateKey,
+                slots: slotsByDate[dateKey].sort((a, b) => {
+                  if (a.startTime < b.startTime) return -1;
+                  if (a.startTime > b.startTime) return 1;
+                  return 0;
+                })
+              };
+            })
+            .filter(day => day.slots && day.slots.length > 0);
         } else {
           console.error('Failed to fetch availability:', response.message);
           providerAvailability.value = null;
@@ -605,8 +672,25 @@ export default {
         return;
       }
 
-      // Calculate the actual date for the selected day and time
-      const nextDate = getNextDateForDay(bookingForm.value.selectedSlot.dayOfWeek);
+      // Calculate the actual date for the selected slot
+      let nextDate;
+      if (bookingForm.value.selectedSlot.date || bookingForm.value.selectedSlot.actualDate) {
+        // Use the actual date from the slot (date-based availability)
+        const slotDate = bookingForm.value.selectedSlot.date || bookingForm.value.selectedSlot.actualDate;
+        nextDate = new Date(slotDate);
+      } else if (bookingForm.value.selectedSlot.dayOfWeek !== undefined) {
+        // Fallback: calculate from dayOfWeek (legacy support)
+        nextDate = getNextDateForDay(bookingForm.value.selectedSlot.dayOfWeek);
+      } else {
+        Swal.fire({
+          title: 'Invalid Time Slot',
+          text: 'Please select a valid time slot.',
+          icon: 'error',
+          confirmButtonColor: '#f44336'
+        });
+        return;
+      }
+      
       const [hours, minutes] = bookingForm.value.selectedSlot.startTime.split(':');
       nextDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
       
@@ -1697,6 +1781,17 @@ export default {
   margin-bottom: 10px;
   padding-bottom: 8px;
   border-bottom: 2px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #666;
+  font-style: italic;
 }
 
 .time-slots-grid {

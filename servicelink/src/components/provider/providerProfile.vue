@@ -336,6 +336,25 @@
             Set your weekly availability schedule. Clients will see when you're available to book services.
           </p>
 
+          <!-- Week Navigation -->
+          <div class="week-navigation">
+            <div class="week-navigation-header">
+              <button @click="goToPreviousWeek" class="week-nav-btn">
+                <i class="fas fa-chevron-left"></i> Previous Week
+              </button>
+              <div class="week-range-display">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ getCurrentWeekRange }}</span>
+              </div>
+              <button @click="goToNextWeek" class="week-nav-btn">
+                Next Week <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+            <button v-if="currentWeekOffset !== 0" @click="goToCurrentWeek" class="current-week-btn">
+              <i class="fas fa-home"></i> Back to Current Week
+            </button>
+          </div>
+
           <!-- Availability Schedule by Day -->
           <div class="availability-schedule">
             <div v-for="(day, index) in weekDays" :key="index" class="day-schedule">
@@ -758,12 +777,31 @@
           </button>
         </div>
         
-        <p class="availability-description">
-          Set your weekly availability schedule. Clients will see when you're available to book services.
-        </p>
+          <p class="availability-description">
+            Set your weekly availability schedule. Clients will see when you're available to book services.
+          </p>
 
-        <!-- Availability Schedule by Day -->
-        <div class="availability-schedule">
+          <!-- Week Navigation -->
+          <div class="week-navigation">
+            <div class="week-navigation-header">
+              <button @click="goToPreviousWeek" class="week-nav-btn">
+                <i class="fas fa-chevron-left"></i> Previous Week
+              </button>
+              <div class="week-range-display">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ getCurrentWeekRange }}</span>
+              </div>
+              <button @click="goToNextWeek" class="week-nav-btn">
+                Next Week <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+            <button v-if="currentWeekOffset !== 0" @click="goToCurrentWeek" class="current-week-btn">
+              <i class="fas fa-home"></i> Back to Current Week
+            </button>
+          </div>
+
+          <!-- Availability Schedule by Day -->
+          <div class="availability-schedule">
           <div v-for="(day, index) in weekDays" :key="index" class="day-schedule">
             <div class="day-header">
               <h3>{{ day.name }}</h3>
@@ -1120,14 +1158,17 @@
           <div class="modal-body">
             <form @submit.prevent="saveAvailabilitySlot" class="add-form">
               <div class="form-group">
-                <label>Day of Week*</label>
-                <select v-model="availabilityForm.dayOfWeek" required class="form-control">
-                  <option value="">Select a day</option>
-                  <option v-for="(day, index) in weekDays" :key="index" :value="index">
-                    {{ day.name }}
-                  </option>
-                </select>
+                <label>Date*</label>
+                <input type="date" v-model="availabilityForm.date" required class="form-control" :min="new Date().toISOString().split('T')[0]" />
+                <small class="form-hint">Select the date for this availability slot</small>
               </div>
+              
+              <!-- Week Range Display -->
+              <div v-if="selectedDateWeekRange" class="week-range-info">
+                <i class="fas fa-calendar-week"></i>
+                <span>Week of {{ selectedDateWeekRange }}</span>
+              </div>
+              
               <div class="form-group">
                 <label>Start Time*</label>
                 <input type="time" v-model="availabilityForm.startTime" required class="form-control" />
@@ -1336,15 +1377,53 @@ export default {
     });
 
     const availabilityForm = reactive({
-      dayOfWeek: '',
+      date: '',
       startTime: '',
       endTime: '',
       isAvailable: true
+    });
+    
+    // Computed property for week range based on selected date in modal
+    const selectedDateWeekRange = computed(() => {
+      if (!availabilityForm.date) return '';
+      
+      const selectedDate = new Date(availabilityForm.date);
+      if (isNaN(selectedDate.getTime())) return '';
+      
+      // Calculate week start (Sunday)
+      const weekStart = new Date(selectedDate);
+      weekStart.setDate(selectedDate.getDate() - selectedDate.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      
+      // Calculate week end (Saturday)
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      
+      const formatDate = (date) => {
+        return new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        }).format(date);
+      };
+      
+      // If same month and year, simplify format
+      if (weekStart.getMonth() === weekEnd.getMonth() && 
+          weekStart.getFullYear() === weekEnd.getFullYear()) {
+        const month = weekStart.toLocaleDateString('en-US', { month: 'long' });
+        const year = weekStart.getFullYear();
+        const startDay = weekStart.getDate();
+        const endDay = weekEnd.getDate();
+        return `${month} ${startDay} – ${endDay}, ${year}`;
+      }
+      
+      return `${formatDate(weekStart)} – ${formatDate(weekEnd)}`;
     });
 
     // Availability data
     const availabilitySlots = ref([]);
     const currentAvailabilitySlotId = ref(null);
+    const currentWeekOffset = ref(0); // Weeks from current week (0 = current week)
     
     // Week days configuration
     const weekDays = [
@@ -1391,6 +1470,43 @@ export default {
         return `${profile.value.firstName[0]}${profile.value.lastName[0]}`;
       }
       return '';
+    });
+
+    // Week navigation computed properties
+    const getCurrentWeekRange = computed(() => {
+      const now = new Date();
+      const currentWeekStart = new Date(now);
+      currentWeekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+      currentWeekStart.setHours(0, 0, 0, 0);
+      
+      // Apply week offset
+      currentWeekStart.setDate(currentWeekStart.getDate() + (currentWeekOffset.value * 7));
+      
+      const currentWeekEnd = new Date(currentWeekStart);
+      currentWeekEnd.setDate(currentWeekStart.getDate() + 6); // End of week (Saturday)
+      
+      const formatDate = (date) => {
+        return new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        }).format(date);
+      };
+      
+      const startDateStr = formatDate(currentWeekStart);
+      const endDateStr = formatDate(currentWeekEnd);
+      
+      // If same month and year, simplify format
+      if (currentWeekStart.getMonth() === currentWeekEnd.getMonth() && 
+          currentWeekStart.getFullYear() === currentWeekEnd.getFullYear()) {
+        const month = currentWeekStart.toLocaleDateString('en-US', { month: 'long' });
+        const year = currentWeekStart.getFullYear();
+        const startDay = currentWeekStart.getDate();
+        const endDay = currentWeekEnd.getDate();
+        return `${month} ${startDay} – ${endDay}, ${year}`;
+      }
+      
+      return `${startDateStr} – ${endDateStr}`;
     });
 
     // Modal state
@@ -1879,42 +1995,80 @@ export default {
       try {
         const response = await providerService.getAvailability();
         if (response.success) {
-          // Flatten the availability data structure
+          // Get all availability slots (date-based)
           availabilitySlots.value = [];
-          // Handle both possible response formats
           let availabilityData = response.data;
           
-          // If response has availabilityByDay property
-          if (availabilityData && availabilityData.availabilityByDay) {
-            availabilityData = availabilityData.availabilityByDay;
-          }
-          
-          // If it's an array of day objects
-          if (availabilityData && Array.isArray(availabilityData)) {
-            availabilityData.forEach(dayData => {
+          // Handle response format - could be array of slots or nested structure
+          if (Array.isArray(availabilityData)) {
+            // Direct array of slots
+            availabilitySlots.value = availabilityData;
+          } else if (availabilityData && availabilityData.slots) {
+            // Array of slots in data.slots
+            availabilitySlots.value = availabilityData.slots;
+          } else if (availabilityData && availabilityData.availabilityByDay) {
+            // Legacy format - flatten it (for backward compatibility)
+            availabilityData.availabilityByDay.forEach(dayData => {
               if (dayData.slots && Array.isArray(dayData.slots)) {
                 dayData.slots.forEach(slot => {
-                  availabilitySlots.value.push({
-                    ...slot,
-                    dayOfWeek: dayData.dayOfWeek
-                  });
+                  availabilitySlots.value.push(slot);
                 });
               }
             });
           }
+          
+          // Ensure all slots have date field
+          availabilitySlots.value = availabilitySlots.value.filter(slot => slot.date);
         }
       } catch (err) {
         console.error('Error fetching availability:', err);
       }
     };
 
+    // Get current week date range
+    const getCurrentWeekDateRange = computed(() => {
+      const now = new Date();
+      const currentWeekStart = new Date(now);
+      currentWeekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+      currentWeekStart.setHours(0, 0, 0, 0);
+      
+      // Apply week offset
+      currentWeekStart.setDate(currentWeekStart.getDate() + (currentWeekOffset.value * 7));
+      
+      const currentWeekEnd = new Date(currentWeekStart);
+      currentWeekEnd.setDate(currentWeekStart.getDate() + 6); // End of week (Saturday)
+      currentWeekEnd.setHours(23, 59, 59, 999);
+      
+      return {
+        start: currentWeekStart,
+        end: currentWeekEnd
+      };
+    });
+
     const getDaySlots = (dayIndex) => {
-      // Ensure proper comparison (handle both string and number types)
-      return availabilitySlots.value.filter(slot => 
-        slot.dayOfWeek === dayIndex || 
-        parseInt(slot.dayOfWeek) === dayIndex ||
-        slot.dayOfWeek === String(dayIndex)
-      );
+      // Filter slots that fall within the current week date range
+      const weekRange = getCurrentWeekDateRange.value;
+      
+      return availabilitySlots.value.filter(slot => {
+        if (!slot.date) return false;
+        
+        const slotDate = new Date(slot.date);
+        slotDate.setHours(0, 0, 0, 0);
+        
+        // Check if slot is within the current week range
+        if (slotDate < weekRange.start || slotDate > weekRange.end) {
+          return false;
+        }
+        
+        // Check if the slot's day of week matches the requested day
+        const slotDayOfWeek = slotDate.getDay();
+        return slotDayOfWeek === dayIndex;
+      }).sort((a, b) => {
+        // Sort by time
+        if (a.startTime < b.startTime) return -1;
+        if (a.startTime > b.startTime) return 1;
+        return 0;
+      });
     };
 
     const formatTime = (timeString) => {
@@ -1927,8 +2081,22 @@ export default {
       return `${hour12}:${minutes} ${ampm}`;
     };
 
+    // Week navigation functions
+    const goToPreviousWeek = () => {
+      currentWeekOffset.value--;
+    };
+
+    const goToNextWeek = () => {
+      currentWeekOffset.value++;
+    };
+
+    const goToCurrentWeek = () => {
+      currentWeekOffset.value = 0;
+    };
+
     const toggleAddAvailability = () => {
-      availabilityForm.dayOfWeek = '';
+      // Set default date to today
+      availabilityForm.date = new Date().toISOString().split('T')[0];
       availabilityForm.startTime = '';
       availabilityForm.endTime = '';
       availabilityForm.isAvailable = true;
@@ -1938,8 +2106,14 @@ export default {
 
     const editAvailabilitySlot = (slot) => {
       currentAvailabilitySlotId.value = slot.id;
-      // Ensure dayOfWeek is properly converted to string for the select input
-      availabilityForm.dayOfWeek = String(slot.dayOfWeek);
+      // Convert date to YYYY-MM-DD format for date input
+      if (slot.date) {
+        const slotDate = new Date(slot.date);
+        availabilityForm.date = slotDate.toISOString().split('T')[0];
+      } else {
+        // Fallback: if no date, use today (shouldn't happen with new schema)
+        availabilityForm.date = new Date().toISOString().split('T')[0];
+      }
       availabilityForm.startTime = slot.startTime;
       availabilityForm.endTime = slot.endTime;
       availabilityForm.isAvailable = slot.isAvailable !== false;
@@ -1950,7 +2124,7 @@ export default {
     const closeAvailabilityModal = () => {
       showAddAvailabilityModal.value = false;
       showEditAvailabilityModal.value = false;
-      availabilityForm.dayOfWeek = '';
+      availabilityForm.date = '';
       availabilityForm.startTime = '';
       availabilityForm.endTime = '';
       availabilityForm.isAvailable = true;
@@ -1961,6 +2135,18 @@ export default {
       try {
         isProcessing.value = true;
         error.value = null;
+
+        // Validate date input
+        if (!availabilityForm.date) {
+          Swal.fire({
+            title: 'Validation Error',
+            text: 'Please select a date',
+            icon: 'error',
+            confirmButtonColor: '#27ae60'
+          });
+          isProcessing.value = false;
+          return;
+        }
 
         // Validate time inputs
         if (!availabilityForm.startTime || !availabilityForm.endTime) {
@@ -1987,7 +2173,7 @@ export default {
         }
 
         const slotData = {
-          dayOfWeek: parseInt(availabilityForm.dayOfWeek),
+          date: availabilityForm.date,
           startTime: availabilityForm.startTime,
           endTime: availabilityForm.endTime,
           isAvailable: availabilityForm.isAvailable
@@ -1997,6 +2183,7 @@ export default {
         const isEdit = showEditAvailabilityModal.value && currentAvailabilitySlotId.value;
         
         if (isEdit) {
+          // For edit, also include date if it changed
           response = await providerService.updateAvailabilitySlot(currentAvailabilitySlotId.value, slotData);
         } else {
           response = await providerService.addAvailabilitySlot(slotData);
@@ -2007,12 +2194,14 @@ export default {
           closeAvailabilityModal();
           
           // Show success notification
-          const dayName = weekDays[slotData.dayOfWeek].name;
+          const slotDate = new Date(slotData.date);
+          const dayName = weekDays[slotDate.getDay()].name;
+          const dateStr = slotDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
           const timeRange = `${formatTime(slotData.startTime)} - ${formatTime(slotData.endTime)}`;
           
           Swal.fire({
             title: isEdit ? 'Time Slot Updated!' : 'Time Slot Added!',
-            html: `<p>${dayName}: ${timeRange}</p>`,
+            html: `<p>${dayName}, ${dateStr}: ${timeRange}</p>`,
             icon: 'success',
             timer: 2000,
             showConfirmButton: false,
@@ -2038,12 +2227,25 @@ export default {
     const deleteAvailabilitySlot = async (slotId) => {
       // Find the slot to get its details for the confirmation message
       const slot = availabilitySlots.value.find(s => s.id === slotId);
-      const dayName = slot ? weekDays[slot.dayOfWeek]?.name : 'this day';
-      const timeRange = slot ? `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}` : '';
+      let dayName = 'this day';
+      let dateStr = '';
+      let timeRange = '';
+      
+      if (slot) {
+        if (slot.date) {
+          const slotDate = new Date(slot.date);
+          dayName = weekDays[slotDate.getDay()].name;
+          dateStr = slotDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        } else if (slot.dayOfWeek !== undefined) {
+          // Legacy support
+          dayName = weekDays[slot.dayOfWeek]?.name || 'this day';
+        }
+        timeRange = `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`;
+      }
 
       const result = await Swal.fire({
         title: 'Delete Time Slot?',
-        html: `<p>Are you sure you want to delete the time slot for <strong>${dayName}</strong>${timeRange ? ` (${timeRange})` : ''}?</p><p class="swal-warning">This action cannot be undone.</p>`,
+        html: `<p>Are you sure you want to delete the time slot for <strong>${dayName}${dateStr ? `, ${dateStr}` : ''}</strong>${timeRange ? ` (${timeRange})` : ''}?</p><p class="swal-warning">This action cannot be undone.</p>`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
@@ -2226,7 +2428,13 @@ export default {
       getRatingPercentage,
       getRatingCount,
       activityStats,
-      getUserInitials
+      getUserInitials,
+      currentWeekOffset,
+      getCurrentWeekRange,
+      goToPreviousWeek,
+      goToNextWeek,
+      goToCurrentWeek,
+      selectedDateWeekRange
     };
   }
 };
@@ -3443,6 +3651,28 @@ h3 {
   font-size: 0.85rem;
 }
 
+.week-range-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8f4);
+  border-radius: 10px;
+  border: 1px solid #c8e6c9;
+  margin-bottom: 20px;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.week-range-info i {
+  color: #27ae60;
+  font-size: 1.1rem;
+}
+
+.week-range-info span {
+  font-size: 0.95rem;
+}
+
 /* Modal Styles */
 .file-modal {
   position: fixed;
@@ -4204,6 +4434,103 @@ textarea.form-control {
   line-height: 1.6;
 }
 
+.week-navigation {
+  margin-bottom: 2rem;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.week-navigation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.week-range-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8f4);
+  border-radius: 12px;
+  border: 1px solid #c8e6c9;
+  flex: 1;
+  min-width: 250px;
+  justify-content: center;
+}
+
+.week-range-display i {
+  color: #27ae60;
+  font-size: 1.2rem;
+}
+
+.week-range-display span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.week-nav-btn {
+  padding: 12px 20px;
+  background: white;
+  border: 2px solid #27ae60;
+  border-radius: 12px;
+  color: #27ae60;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.week-nav-btn:hover {
+  background: #27ae60;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+}
+
+.week-nav-btn i {
+  font-size: 0.9rem;
+}
+
+.current-week-btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.current-week-btn:hover {
+  background: #e9ecef;
+  border-color: #27ae60;
+  color: #27ae60;
+  transform: translateY(-1px);
+}
+
+.current-week-btn i {
+  font-size: 0.85rem;
+}
+
 .availability-schedule {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -4727,6 +5054,21 @@ textarea.form-control {
   .slot-actions {
     width: 100%;
     justify-content: flex-end;
+  }
+  
+  .week-navigation-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .week-nav-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .week-range-display {
+    width: 100%;
+    min-width: auto;
   }
 }
 

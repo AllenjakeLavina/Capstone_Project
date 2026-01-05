@@ -1283,7 +1283,7 @@ export const getProviderReviewsController = async (req: Request, res: Response) 
 export const addAvailabilitySlotController = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { dayOfWeek, startTime, endTime, isAvailable } = req.body;
+    const { date, startTime, endTime, isAvailable } = req.body;
     
     if (!userId) {
       res.status(401).json({
@@ -1294,16 +1294,16 @@ export const addAvailabilitySlotController = async (req: Request, res: Response)
     }
 
     // Validate required fields
-    if (dayOfWeek === undefined || !startTime || !endTime) {
+    if (!date || !startTime || !endTime) {
       res.status(400).json({
         success: false,
-        message: 'Day of week, start time, and end time are required'
+        message: 'Date, start time, and end time are required'
       });
       return;
     }
 
     const availabilitySlot = await addAvailabilitySlot(userId, {
-      dayOfWeek: parseInt(dayOfWeek),
+      date,
       startTime,
       endTime,
       isAvailable
@@ -1317,10 +1317,11 @@ export const addAvailabilitySlotController = async (req: Request, res: Response)
   } catch (error: any) {
     console.error('Error in addAvailabilitySlotController:', error);
     
-    if (error.message.includes('Day of week') || 
+    if (error.message.includes('Date') || 
         error.message.includes('format') || 
         error.message.includes('after start time') ||
-        error.message.includes('overlaps')) {
+        error.message.includes('overlaps') ||
+        error.message.includes('past dates')) {
       res.status(400).json({
         success: false,
         message: error.message
@@ -1377,7 +1378,7 @@ export const updateAvailabilitySlotController = async (req: Request, res: Respon
   try {
     const userId = req.user?.id;
     const { slotId } = req.params;
-    const { startTime, endTime, isAvailable } = req.body;
+    const { date, startTime, endTime, isAvailable } = req.body;
     
     if (!userId) {
       res.status(401).json({
@@ -1396,15 +1397,16 @@ export const updateAvailabilitySlotController = async (req: Request, res: Respon
     }
 
     // At least one field should be provided for update
-    if (startTime === undefined && endTime === undefined && isAvailable === undefined) {
+    if (date === undefined && startTime === undefined && endTime === undefined && isAvailable === undefined) {
       res.status(400).json({
         success: false,
-        message: 'At least one field (startTime, endTime, isAvailable) must be provided for update'
+        message: 'At least one field (date, startTime, endTime, isAvailable) must be provided for update'
       });
       return;
     }
 
     const updatedSlot = await updateAvailabilitySlot(userId, slotId, {
+      date,
       startTime,
       endTime,
       isAvailable
@@ -1422,7 +1424,9 @@ export const updateAvailabilitySlotController = async (req: Request, res: Respon
         error.message.includes('not found') ||
         error.message.includes('format') ||
         error.message.includes('after start time') ||
-        error.message.includes('overlap')) {
+        error.message.includes('overlap') ||
+        error.message.includes('Date') ||
+        error.message.includes('Invalid date')) {
       res.status(400).json({
         success: false,
         message: error.message

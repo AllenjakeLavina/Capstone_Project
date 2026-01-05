@@ -4,10 +4,26 @@ import { registerClient,  updateClientProfile,
      bookService, getClientBookings, getBookingDetails, cancelBooking, updateBooking, setDefaultAddress,
      processPayment, markPaymentCompleted, getClientContracts, getClientContractDetails, signContract,
      createReview, getReviewsReceived, getReviewsGiven } from '../functionControllers/clientFunctionController';
+import { getFileUrl } from '../middlewares/fileHandler';
 
 export const handleRegisterClient = async (req: Request, res: Response) => {
   try {
-    const { email, password, firstName, lastName, phone, address } = req.body;
+    const { email, password, firstName, lastName, phone } = req.body;
+
+    let address;
+    if (req.body.address) {
+      try {
+        address = typeof req.body.address === 'string' 
+          ? JSON.parse(req.body.address) 
+          : req.body.address;
+      } catch (parseError) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid address format'
+        });
+        return;
+      }
+    }
 
     // Validate input
     if (!email || !password || !firstName || !lastName) {
@@ -17,7 +33,16 @@ export const handleRegisterClient = async (req: Request, res: Response) => {
       }); return;
     }
 
-    const user = await registerClient(email, password, firstName, lastName, phone, address);
+    // Check if ID document was uploaded
+    let idDocument = undefined;
+    if (req.file) {
+      idDocument = {
+        title: 'Identity Document',
+        fileUrl: getFileUrl(req, req.file)
+      };
+    }
+
+    const user = await registerClient(email, password, firstName, lastName, phone, address, idDocument);
 
     res.status(201).json({
       success: true,

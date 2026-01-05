@@ -18,184 +18,228 @@
       </div>
 
       <form v-else @submit.prevent="handleRegister" key="registration-form">
-        <div class="form-row">
+        <!-- STEP 1: Personal Info + Address + ID Upload -->
+        <div v-if="currentStep === 1">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name <span class="required">*</span></label>
+              <div class="input-container">
+                <span class="input-icon">👤</span>
+                <input 
+                  type="text" 
+                  id="firstName" 
+                  v-model="formData.firstName" 
+                  required
+                  placeholder="Enter your first name"
+                  minlength="2"
+                />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="lastName">Last Name <span class="required">*</span></label>
+              <div class="input-container">
+                <span class="input-icon">👤</span>
+                <input 
+                  type="text" 
+                  id="lastName" 
+                  v-model="formData.lastName" 
+                  required
+                  placeholder="Enter your last name"
+                  minlength="2"
+                />
+              </div>
+            </div>
+          </div>
+          
           <div class="form-group">
-            <label for="firstName">First Name <span class="required">*</span></label>
+            <label for="email">Email <span class="required">*</span></label>
             <div class="input-container">
-              <span class="input-icon">👤</span>
+              <span class="input-icon">✉️</span>
               <input 
-                type="text" 
-                id="firstName" 
-                v-model="formData.firstName" 
+                type="email" 
+                id="email" 
+                v-model="formData.email" 
                 required
-                placeholder="Enter your first name"
-                minlength="2"
+                placeholder="Enter your email"
               />
             </div>
           </div>
           
           <div class="form-group">
-            <label for="lastName">Last Name <span class="required">*</span></label>
+            <label for="phone">Contact Number <span class="required">*</span></label>
             <div class="input-container">
-              <span class="input-icon">👤</span>
+              <span class="input-icon">📱</span>
+              <input 
+                type="tel" 
+                id="phone" 
+                v-model="formData.phone" 
+                required
+                placeholder="e.g., 09123456789 or +639123456789"
+              />
+            </div>
+            <small class="input-hint">Enter a valid Philippine phone number</small>
+          </div>
+
+          <div class="form-group">
+            <label for="addressLine1">Address <span class="required">*</span></label>
+            <div class="input-container">
+              <span class="input-icon">📍</span>
               <input 
                 type="text" 
-                id="lastName" 
-                v-model="formData.lastName" 
+                id="addressLine1" 
+                v-model="formData.addressLine1" 
                 required
-                placeholder="Enter your last name"
-                minlength="2"
+                placeholder="Street address, Building number "
+                minlength="5"
               />
             </div>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="email">Email <span class="required">*</span></label>
-          <div class="input-container">
-            <span class="input-icon">✉️</span>
-            <input 
-              type="email" 
-              id="email" 
-              v-model="formData.email" 
-              required
-              placeholder="Enter your email"
-            />
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="phone">Contact Number <span class="required">*</span></label>
-          <div class="input-container">
-            <span class="input-icon">📱</span>
-            <input 
-              type="tel" 
-              id="phone" 
-              v-model="formData.phone" 
-              required
-              placeholder="e.g., 09123456789 or +639123456789"
-            />
-          </div>
-          <small class="input-hint">Enter a valid Philippine phone number</small>
-        </div>
 
-        <div class="form-group">
-          <label for="addressLine1">Address <span class="required">*</span></label>
-          <div class="input-container">
-            <span class="input-icon">📍</span>
-            <input 
-              type="text" 
-              id="addressLine1" 
-              v-model="formData.addressLine1" 
-              required
-              placeholder="Street address, Building number "
-              minlength="5"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="addressLine2">Barangay</label>
-          <div class="input-container">
-            <span class="input-icon">📍</span>
-            <select
-              id="addressLine2"
-              v-model="formData.addressLine2"
-            >
-              <option disabled value="">Select Barangay</option>
-              <option
-                v-for="barangay in barangays"
-                :key="barangay"
-                :value="barangay"
+          <div class="form-group">
+            <label for="addressLine2">Barangay</label>
+            <div class="input-container">
+              <span class="input-icon">📍</span>
+              <select
+                id="addressLine2"
+                v-model="formData.addressLine2"
               >
-                {{ barangay }}
-              </option>
-            </select>
+                <option disabled value="">Select Barangay</option>
+                <option
+                  v-for="barangay in barangays"
+                  :key="barangay"
+                  :value="barangay"
+                >
+                  {{ barangay }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="city">City</label>
+            <div class="input-container">
+              <span class="input-icon">🏙️</span>
+              <input
+                type="text"
+                id="city"
+                :value="cityName"
+                readonly
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="idDocument">ID Document <span class="required">*</span></label>
+            <div class="file-upload" :class="{ 'file-uploaded': idDocument }">
+              <input 
+                type="file" 
+                id="idDocument" 
+                @change="handleFileChange"
+                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                required
+              />
+              <div class="file-upload-info">
+                <span class="file-icon">{{ idDocument ? '✅' : '📄' }}</span>
+                <span class="file-text">{{ idDocument ? idDocument.name : 'Upload ID document' }}</span>
+                <span v-if="idDocument" class="file-size">({{ getFileSize(idDocument.size) }})</span>
+              </div>
+            </div>
+            <small class="file-hint">Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max size: 10MB)</small>
+          </div>
+
+          <div class="form-actions">
+            <button 
+              type="button" 
+              class="primary-btn client-btn" 
+              :disabled="loading" 
+              @click="goToStep2"
+            >
+              Next
+            </button>
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="city">City</label>
-          <div class="input-container">
-            <span class="input-icon">🏙️</span>
-            <input
-              type="text"
-              id="city"
-              :value="cityName"
-              readonly
-            />
+        <!-- STEP 2: Security + Agreement -->
+        <div v-else>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-container">
+              <span class="input-icon">🔒</span>
+              <input 
+                type="password" 
+                id="password" 
+                v-model="formData.password" 
+                required
+                placeholder="Create a password"
+                :class="{ 'input-error': !isPasswordValid && formData.password.length > 0 }"
+              />
+            </div>
+            <div v-if="formData.password.length > 0" class="password-checklist">
+              <div class="password-requirement" :class="{ 'valid': hasMinLength, 'invalid': !hasMinLength }">
+                <span class="check-icon">{{ hasMinLength ? '✓' : '✗' }}</span>
+                <span>8 characters</span>
+              </div>
+              <div class="password-requirement" :class="{ 'valid': hasUppercase, 'invalid': !hasUppercase }">
+                <span class="check-icon">{{ hasUppercase ? '✓' : '✗' }}</span>
+                <span>1 uppercase</span>
+              </div>
+              <div class="password-requirement" :class="{ 'valid': hasLowercase, 'invalid': !hasLowercase }">
+                <span class="check-icon">{{ hasLowercase ? '✓' : '✗' }}</span>
+                <span>1 lowercase</span>
+              </div>
+              <div class="password-requirement" :class="{ 'valid': hasNumber, 'invalid': !hasNumber }">
+                <span class="check-icon">{{ hasNumber ? '✓' : '✗' }}</span>
+                <span>1 number</span>
+              </div>
+              <div class="password-requirement" :class="{ 'valid': hasSpecialChar, 'invalid': !hasSpecialChar }">
+                <span class="check-icon">{{ hasSpecialChar ? '✓' : '✗' }}</span>
+                <span>1 special character</span>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="password">Password</label>
-          <div class="input-container">
-            <span class="input-icon">🔒</span>
+          
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-container">
+              <span class="input-icon">🔒</span>
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                v-model="confirmPassword" 
+                required
+                placeholder="Confirm your password"
+                :class="{ 'input-error': confirmPasswordError && confirmPassword.length > 0 }"
+              />
+            </div>
+            <div v-if="confirmPasswordError && confirmPassword.length > 0" class="error-message">
+              {{ confirmPasswordError }}
+            </div>
+          </div>
+
+          <div class="form-group form-checkbox">
             <input 
-              type="password" 
-              id="password" 
-              v-model="formData.password" 
+              type="checkbox" 
+              id="terms" 
+              v-model="acceptTerms" 
               required
-              placeholder="Create a password"
-              :class="{ 'input-error': !isPasswordValid && formData.password.length > 0 }"
             />
+            <label for="terms">I agree to the <a href="#" @click.prevent="showTermsModal = true" class="terms-link">Terms and Conditions</a></label>
           </div>
-          <div v-if="formData.password.length > 0" class="password-checklist">
-            <div class="password-requirement" :class="{ 'valid': hasMinLength, 'invalid': !hasMinLength }">
-              <span class="check-icon">{{ hasMinLength ? '✓' : '✗' }}</span>
-              <span>8 characters</span>
-            </div>
-            <div class="password-requirement" :class="{ 'valid': hasUppercase, 'invalid': !hasUppercase }">
-              <span class="check-icon">{{ hasUppercase ? '✓' : '✗' }}</span>
-              <span>1 uppercase</span>
-            </div>
-            <div class="password-requirement" :class="{ 'valid': hasLowercase, 'invalid': !hasLowercase }">
-              <span class="check-icon">{{ hasLowercase ? '✓' : '✗' }}</span>
-              <span>1 lowercase</span>
-            </div>
-            <div class="password-requirement" :class="{ 'valid': hasNumber, 'invalid': !hasNumber }">
-              <span class="check-icon">{{ hasNumber ? '✓' : '✗' }}</span>
-              <span>1 number</span>
-            </div>
-            <div class="password-requirement" :class="{ 'valid': hasSpecialChar, 'invalid': !hasSpecialChar }">
-              <span class="check-icon">{{ hasSpecialChar ? '✓' : '✗' }}</span>
-              <span>1 special character</span>
-            </div>
+          
+          <div class="form-actions">
+            <button 
+              type="button" 
+              class="primary-btn" 
+              :disabled="loading" 
+              @click="goToStep1"
+            >
+              Back
+            </button>
+            <button type="submit" class="primary-btn client-btn" :disabled="loading || !acceptTerms">
+              {{ loading ? 'Registering...' : 'Register as Client' }}
+            </button>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
-          <div class="input-container">
-            <span class="input-icon">🔒</span>
-            <input 
-              type="password" 
-              id="confirmPassword" 
-              v-model="confirmPassword" 
-              required
-              placeholder="Confirm your password"
-              :class="{ 'input-error': confirmPasswordError && confirmPassword.length > 0 }"
-            />
-          </div>
-          <div v-if="confirmPasswordError && confirmPassword.length > 0" class="error-message">
-            {{ confirmPasswordError }}
-          </div>
-        </div>
-        
-        <div class="form-group form-checkbox">
-          <input 
-            type="checkbox" 
-            id="terms" 
-            v-model="acceptTerms" 
-            required
-          />
-          <label for="terms">I agree to the <a href="#" @click.prevent="showTermsModal = true" class="terms-link">Terms and Conditions</a></label>
-        </div>
-        
-        <div class="form-actions">
-          <button type="submit" class="primary-btn client-btn" :disabled="loading || !acceptTerms">
-            {{ loading ? 'Registering...' : 'Register as Client' }}
-          </button>
         </div>
       </form>
       
@@ -237,6 +281,7 @@ export default {
   },
   setup() {
     const router = useRouter();
+    const currentStep = ref(1);
     const formData = reactive({
       firstName: '',
       lastName: '',
@@ -246,6 +291,7 @@ export default {
       addressLine1: '',
       addressLine2: ''
     });
+    const idDocument = ref(null);
     const confirmPassword = ref('');
     const acceptTerms = ref(false);
     const loading = ref(false);
@@ -263,6 +309,7 @@ export default {
       'Barangay Gordon Heights',
       'Barangay Kalaklan',
       'Barangay Kalalake',
+      'Barangay Mabayuan',
       'Barangay New Cabalan',
       'Barangay New Ilalim',
       'Barangay New Kababae',
@@ -384,6 +431,111 @@ export default {
       return '';
     });
 
+    const validateIdDocument = () => {
+      if (!idDocument.value) {
+        return 'ID document is required for verification';
+      }
+      
+      const fileSize = idDocument.value.size / 1024 / 1024; // size in MB
+      if (fileSize > 10) {
+        return 'File size exceeds 10MB limit. Please upload a smaller file.';
+      }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      const fileExtension = idDocument.value.name.split('.').pop().toLowerCase();
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
+      
+      if (!allowedTypes.includes(idDocument.value.type) && !allowedExtensions.includes(fileExtension)) {
+        return 'Invalid file type. Please upload JPG, PNG, PDF, DOC, or DOCX files only.';
+      }
+      
+      return null;
+    };
+
+    const getFileSize = (bytes) => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    };
+
+    const handleFileChange = async (event) => {
+      idDocument.value = event.target.files[0];
+      
+      // Validate file when selected
+      if (idDocument.value) {
+        const fileError = validateIdDocument();
+        if (fileError) {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Invalid File',
+            text: fileError,
+            confirmButtonColor: '#106e40'
+          });
+          idDocument.value = null;
+          event.target.value = null;
+        }
+      }
+    };
+
+    const goToStep1 = () => {
+      currentStep.value = 1;
+    };
+
+    const goToStep2 = async () => {
+      // Validate full name
+      const nameError = validateFullName();
+      if (nameError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: nameError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate contact number
+      const phoneError = validateContactNumber();
+      if (phoneError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: phoneError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate address
+      const addressError = validateAddress();
+      if (addressError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: addressError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      // Validate ID document
+      const idError = validateIdDocument();
+      if (idError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: idError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
+      currentStep.value = 2;
+    };
+
     const handleRegister = async () => {
       // Validate full name
       const nameError = validateFullName();
@@ -444,22 +596,35 @@ export default {
         return;
       }
 
+      // Validate ID document
+      const idError = validateIdDocument();
+      if (idError) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: idError,
+          confirmButtonColor: '#106e40'
+        });
+        return;
+      }
+
       loading.value = true;
       
       try {
-        const response = await clientService.registerClient({
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          phone: formData.phone.trim(),
-          address: {
-            addressLine1: formData.addressLine1.trim(),
-            addressLine2: formData.addressLine2?.trim() || '',
-            city: cityName
-            // No default values - only save what user entered
-          }
-        });
+        const formDataToSend = new FormData();
+        formDataToSend.append('email', formData.email);
+        formDataToSend.append('password', formData.password);
+        formDataToSend.append('firstName', formData.firstName.trim());
+        formDataToSend.append('lastName', formData.lastName.trim());
+        formDataToSend.append('phone', formData.phone.trim());
+        formDataToSend.append('address', JSON.stringify({
+          addressLine1: formData.addressLine1.trim(),
+          addressLine2: formData.addressLine2?.trim() || '',
+          city: cityName
+        }));
+        formDataToSend.append('idDocument', idDocument.value);
+
+        const response = await clientService.registerClient(formDataToSend);
         
         if (response.success) {
           await Swal.fire({
@@ -518,6 +683,7 @@ export default {
 
     return {
       formData,
+      idDocument,
       confirmPassword,
       acceptTerms,
       loading,
@@ -525,6 +691,7 @@ export default {
       showTermsModal,
       cityName,
       barangays,
+      currentStep,
       hasMinLength,
       hasUppercase,
       hasLowercase,
@@ -532,6 +699,10 @@ export default {
       hasSpecialChar,
       isPasswordValid,
       confirmPasswordError,
+      getFileSize,
+      handleFileChange,
+      goToStep1,
+      goToStep2,
       handleRegister,
       handleVerificationSuccess,
       handleVerificationError
@@ -701,6 +872,71 @@ input[type="checkbox"] {
 .terms-link:hover {
   color: #106e40;
   text-decoration: underline;
+}
+
+.file-upload {
+  position: relative;
+  min-height: 50px;
+  padding: 12px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background-color: #fafafa;
+}
+
+.file-upload:hover {
+  border-color: #38b676;
+  background-color: rgba(56, 182, 118, 0.05);
+}
+
+.file-upload.file-uploaded {
+  border-color: #38b676;
+  border-style: solid;
+  background-color: #f0fff4;
+}
+
+.file-upload input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.file-upload-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #718096;
+  pointer-events: none;
+  z-index: 1;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-icon {
+  font-size: 1.2rem;
+  margin-right: 10px;
+}
+
+.file-text {
+  font-weight: 500;
+  color: #4a5568;
+  word-break: break-word;
+  text-align: center;
+}
+
+.file-size {
+  font-size: 0.85rem;
+  color: #718096;
+  font-style: italic;
 }
 
 .password-hint, .input-hint {

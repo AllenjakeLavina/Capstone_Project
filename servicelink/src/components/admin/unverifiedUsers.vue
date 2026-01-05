@@ -172,6 +172,30 @@
         <!-- Client-specific sections -->
         <template v-if="selectedUser.userType === 'CLIENT'">
           <div class="modal-section-card">
+            <h3><i class="fas fa-file-alt"></i> Verification Documents</h3>
+            <div v-if="selectedUser.documents?.length" class="modal-docs-grid">
+              <div v-for="doc in selectedUser.documents" :key="doc.id" class="modal-doc-item">
+                <template v-if="isImage(doc.fileUrl)">
+                  <img
+                    :src="getFileUrl(doc.fileUrl)"
+                    :alt="doc.title || 'Document'"
+                    class="modal-doc-img"
+                    @click="openFullscreenImg(getFileUrl(doc.fileUrl))"
+                    style="cursor:pointer;"
+                  />
+                  <div class="modal-doc-caption">{{ doc.title || doc.fileUrl }}</div>
+                </template>
+                <template v-else>
+                  <a :href="getFileUrl(doc.fileUrl)" target="_blank" class="modal-doc-link">
+                    {{ doc.title || doc.fileUrl }}
+                  </a>
+                </template>
+              </div>
+            </div>
+            <div v-else class="modal-no-data">No verification documents uploaded.</div>
+          </div>
+
+          <div class="modal-section-card">
             <h3><i class="fas fa-map-marker-alt"></i> Addresses</h3>
             <div v-if="selectedUser.addresses?.length">
               <div v-for="address in selectedUser.addresses" :key="address.id" class="modal-address-item">

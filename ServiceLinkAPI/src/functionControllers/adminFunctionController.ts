@@ -461,22 +461,14 @@ export const getUnverifiedProviders = async () => {
 };
 
 // Get all unverified clients
-// Note: This includes clients who have verified their email but haven't been admin-approved yet
-// We check for clients where isVerified is false OR where they haven't been explicitly admin-approved
-// Since we don't have a separate isClientVerified field, we'll use a different approach:
-// Clients with isVerified: false are considered unverified (includes both email-unverified and admin-unverified)
+// Uses Client.isClientVerified as the admin-approval flag.
+// Clients stay here until an admin explicitly verifies them, even if email is already verified.
 export const getUnverifiedClients = async () => {
   try {
-    // For now, we'll show clients where isVerified is false
-    // After admin approval, isVerified will be set to true
-    // This means clients need to verify email first, then admin approves
-    // But if we want clients to appear even after email verification, we need a different approach
-    // For simplicity, we'll show clients where isVerified is false
-    // The admin will approve them, which sets isVerified to true
     const clients = await prisma.client.findMany({
       where: {
+        isClientVerified: false,
         user: {
-          isVerified: false,
           isActive: true // Only include active users
         }
       },
@@ -552,13 +544,21 @@ export const verifyClientAccount = async (
       throw new Error('Client not found');
     }
 
-    // Verify the client by updating user's isVerified status
-    await prisma.user.update({
-      where: { id: client.userId },
-      data: {
-        isVerified: true
-      }
-    });
+    // Verify the client by updating flags
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: client.userId },
+        data: {
+          isVerified: true
+        }
+      }),
+      prisma.client.update({
+        where: { id: clientId },
+        data: {
+          isClientVerified: true
+        }
+      })
+    ]);
 
     // Create a notification for the client
     await prisma.notification.create({
@@ -652,8 +652,8 @@ export const getUnverifiedClientDetails = async (clientId: string) => {
     const client = await prisma.client.findFirst({
       where: {
         id: clientId,
+        isClientVerified: false,
         user: {
-          isVerified: false,
           isActive: true
         }
       },
@@ -669,7 +669,8 @@ export const getUnverifiedClientDetails = async (clientId: string) => {
             createdAt: true
           }
         },
-        addresses: true
+        addresses: true,
+        documents: true
       }
     });
 
@@ -686,6 +687,7 @@ export const getUnverifiedClientDetails = async (clientId: string) => {
       phone: client.user.phone,
       profilePicture: client.user.profilePicture,
       addresses: client.addresses,
+      documents: client.documents,
       createdAt: client.user.createdAt
     };
 
