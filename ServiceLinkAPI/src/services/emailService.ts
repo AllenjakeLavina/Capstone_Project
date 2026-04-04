@@ -1,32 +1,15 @@
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { Resend } from 'resend';
 
 dotenv.config();
 
-// Create transporter object
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_APP_PASSWORD
-  },
-  tls: {
-    rejectUnauthorized: false,
-    ciphers: 'SSLv3'
-  },
-  connectionTimeout: 60000,
-  greetingTimeout: 30000,
-  socketTimeout: 60000
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Send email with verification code
 export const sendVerificationEmail = async (email: string, code: string, firstName: string) => {
   try {
-    // Create email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    const { data, error } = await resend.emails.send({
+      from: 'ServiceLink <onboarding@resend.dev>',
       to: email,
       subject: 'Email Verification',
       html: `
@@ -41,11 +24,14 @@ export const sendVerificationEmail = async (email: string, code: string, firstNa
           <p>Best regards,<br>ServiceLink Team</p>
         </div>
       `
-    };
+    });
 
-    // Send email
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Verification email sent:', info.messageId);
+    if (error) {
+      console.error('Error sending verification email:', error);
+      return false;
+    }
+
+    console.log('Verification email sent:', data);
     return true;
   } catch (error) {
     console.error('Error sending verification email:', error);
@@ -56,9 +42,8 @@ export const sendVerificationEmail = async (email: string, code: string, firstNa
 // Send email for password reset
 export const sendPasswordResetEmail = async (email: string, code: string, firstName: string) => {
   try {
-    // Create email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    const { data, error } = await resend.emails.send({
+      from: 'ServiceLink <onboarding@resend.dev>',
       to: email,
       subject: 'Password Reset',
       html: `
@@ -73,11 +58,14 @@ export const sendPasswordResetEmail = async (email: string, code: string, firstN
           <p>Best regards,<br>ServiceLink Team</p>
         </div>
       `
-    };
+    });
 
-    // Send email
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', info.messageId);
+    if (error) {
+      console.error('Error sending password reset email:', error);
+      return false;
+    }
+
+    console.log('Password reset email sent:', data);
     return true;
   } catch (error) {
     console.error('Error sending password reset email:', error);
@@ -88,9 +76,8 @@ export const sendPasswordResetEmail = async (email: string, code: string, firstN
 // Send provider account verification confirmation
 export const sendProviderVerificationEmail = async (email: string, firstName: string) => {
   try {
-    // Create email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    const { data, error } = await resend.emails.send({
+      from: 'ServiceLink <onboarding@resend.dev>',
       to: email,
       subject: 'Account Verification Approved',
       html: `
@@ -108,14 +95,17 @@ export const sendProviderVerificationEmail = async (email: string, firstName: st
           <p>Best regards,<br>ServiceLink Team</p>
         </div>
       `
-    };
+    });
 
-    // Send email
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Provider verification email sent:', info.messageId);
+    if (error) {
+      console.error('Error sending provider verification email:', error);
+      return false;
+    }
+
+    console.log('Provider verification email sent:', data);
     return true;
   } catch (error) {
     console.error('Error sending provider verification email:', error);
     return false;
   }
-}; 
+};
