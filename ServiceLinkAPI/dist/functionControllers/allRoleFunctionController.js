@@ -1,0 +1,1363 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getCategoriesWithServices = exports.updateProfilePicture = exports.markAllNotificationsAsRead = exports.markNotificationAsRead = exports.getUnreadNotificationCount = exports.getUserNotifications = exports.sendMessage = exports.getConversationMessages = exports.getUserConversations = exports.createChatConversation = exports.getProviderDetails = exports.searchProviders = exports.getServiceDetails = exports.getAllServices = exports.verifyEmailCode = exports.resendVerificationCode = exports.resetPassword = exports.forgotPassword = exports.getUserById = exports.changePassword = exports.loginUser = void 0;
+const client_1 = require("@prisma/client");
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const nodemailer_1 = __importDefault(require("nodemailer"));
+const emailService_1 = require("../services/emailService");
+const prisma = new client_1.PrismaClient();
+const transporter = nodemailer_1.default.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD
+    },
+    tls: {
+        rejectUnauthorized: false
+    }
+});
+const loginUser = (email, password) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    try {
+        // Find user by email
+        const user = yield prisma.user.findUnique({
+            where: { email },
+            include: {
+                client: true,
+                serviceProvider: true
+            }
+        });
+        if (!user) {
+            throw new Error('Invalid credentials');
+        }
+        // Check password
+        const isPasswordValid = yield bcrypt_1.default.compare(password, user.password);
+        if (!isPasswordValid) {
+            throw new Error('Invalid credentials');
+        }
+        // Check if user is active
+        if (!user.isActive) {
+            throw new Error('Account is inactive. Please contact support.');
+        }
+        // Check if email is verified
+        if (!user.isVerified) {
+            throw new Error('Email not verified. Please verify your email before logging in.');
+        }
+        // Provider verification check - store status but don't prevent login
+        let providerVerificationStatus = null;
+        if (user.role === 'PROVIDER' && user.serviceProvider) {
+            providerVerificationStatus = user.serviceProvider.isProviderVerified ? 'verified' : 'pending';
+        }
+        // Generate JWT token
+        const token = jsonwebtoken_1.default.sign({
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            isVerified: user.isVerified,
+            clientId: (_a = user.client) === null || _a === void 0 ? void 0 : _a.id,
+            providerId: (_b = user.serviceProvider) === null || _b === void 0 ? void 0 : _b.id,
+            providerVerificationStatus // Include verification status in token
+        }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        // Return user information (excluding password) and token
+        const { password: _ } = user, userWithoutPassword = __rest(user, ["password"]);
+        return {
+            user: userWithoutPassword,
+            token,
+            providerVerificationStatus
+        };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.loginUser = loginUser;
+const changePassword = (userId, currentPassword, newPassword) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Find user
+        const user = yield prisma.user.findUnique({
+            where: { id: userId }
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        // Verify current password
+        const isPasswordValid = yield bcrypt_1.default.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            throw new Error('Current password is incorrect');
+        }
+        // Hash new password
+        const salt = yield bcrypt_1.default.genSalt(10);
+        const hashedPassword = yield bcrypt_1.default.hash(newPassword, salt);
+        // Update password
+        yield prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword }
+        });
+        return { success: true, message: 'Password changed successfully' };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.changePassword = changePassword;
+const getUserById = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                client: {
+                    include: {
+                        addresses: true
+                    }
+                },
+                serviceProvider: {
+                    include: {
+                        services: true,
+                        portfolio: true,
+                        workExperience: true,
+                        education: true,
+                        skills: true
+                    }
+                }
+            }
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        // Return user without password
+        const { password: _ } = user, userWithoutPassword = __rest(user, ["password"]);
+        return userWithoutPassword;
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.getUserById = getUserById;
+const forgotPassword = (email) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Find user by email
+        const user = yield prisma.user.findUnique({
+            where: { email }
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        // Generate a simple 6-digit verification code instead of a complex token
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const tokenExpiry = new Date();
+        tokenExpiry.setHours(tokenExpiry.getHours() + 1); // Code valid for 1 hour
+        // Store the actual 6-digit code in the database
+        yield prisma.resetPasswordToken.create({
+            data: {
+                userId: user.id,
+                token: resetCode, // Store the simple code directly
+                expiresAt: tokenExpiry
+            }
+        });
+        // Send reset email with the same code
+        const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Password Reset Request</h2>
+        <p>Hello ${user.firstName},</p>
+        <p>We received a request to reset your password. Use the code below to reset your password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <div style="background-color: #f4f4f4; padding: 15px; font-size: 24px; letter-spacing: 5px; font-weight: bold;">
+            ${resetCode}
+          </div>
+        </div>
+        <p>This code will expire in 1 hour.</p>
+        <p>If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
+        <p>Thanks,<br>The ServiceLink Team</p>
+      </div>
+    `;
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Reset Your Password',
+            html: emailContent
+        };
+        try {
+            yield transporter.sendMail(mailOptions);
+            return { success: true, message: 'Password reset instructions sent to your email' };
+        }
+        catch (error) {
+            console.error('Error sending reset email:', error);
+            throw new Error('Failed to send password reset email');
+        }
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.forgotPassword = forgotPassword;
+const resetPassword = (email, token, newPassword) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Find user by email with all their unexpired reset tokens
+        const user = yield prisma.user.findUnique({
+            where: { email },
+            include: {
+                resetPasswordTokens: {
+                    where: {
+                        isUsed: false,
+                        expiresAt: { gt: new Date() } // Only tokens that aren't expired
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
+                }
+            }
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        if (user.resetPasswordTokens.length === 0) {
+            throw new Error('No valid reset tokens found');
+        }
+        // Find a token where the first 6 characters match the provided token
+        const upperToken = token.toUpperCase();
+        const matchingToken = user.resetPasswordTokens.find(resetToken => resetToken.token.substring(0, 6).toUpperCase() === upperToken);
+        if (!matchingToken) {
+            throw new Error('Invalid or expired reset token');
+        }
+        // Hash new password
+        const salt = yield bcrypt_1.default.genSalt(10);
+        const hashedPassword = yield bcrypt_1.default.hash(newPassword, salt);
+        // Update password and mark token as used
+        yield prisma.$transaction([
+            prisma.user.update({
+                where: { id: user.id },
+                data: { password: hashedPassword }
+            }),
+            prisma.resetPasswordToken.update({
+                where: { id: matchingToken.id },
+                data: { isUsed: true }
+            })
+        ]);
+        return { success: true, message: 'Password reset successfully' };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.resetPassword = resetPassword;
+const resendVerificationCode = (email) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Find user by email
+        const user = yield prisma.user.findUnique({
+            where: { email },
+            include: {
+                verificationTokens: {
+                    where: {
+                        type: 'EMAIL',
+                        isUsed: false
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: 1
+                }
+            }
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        if (user.isVerified) {
+            throw new Error('User is already verified');
+        }
+        // Generate new verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const tokenExpiry = new Date();
+        tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Code valid for 24 hours
+        // Create new verification code
+        const newToken = yield prisma.verificationToken.create({
+            data: {
+                userId: user.id,
+                token: verificationCode,
+                type: 'EMAIL',
+                expiresAt: tokenExpiry
+            }
+        });
+        // Send verification email
+        const emailSent = yield (0, emailService_1.sendVerificationEmail)(email, verificationCode, user.firstName);
+        if (!emailSent) {
+            console.warn(`Failed to resend verification email to ${email}`);
+            throw new Error('Failed to send verification email');
+        }
+        return { success: true, message: 'Verification email resent successfully' };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.resendVerificationCode = resendVerificationCode;
+const verifyEmailCode = (email, code) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Find user by email
+        const user = yield prisma.user.findUnique({
+            where: { email },
+            include: {
+                verificationTokens: {
+                    where: {
+                        type: 'EMAIL',
+                        isUsed: false,
+                        token: code
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: 1
+                }
+            }
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        if (user.isVerified) {
+            throw new Error('User is already verified');
+        }
+        if (user.verificationTokens.length === 0) {
+            throw new Error('Invalid or expired verification code');
+        }
+        const token = user.verificationTokens[0];
+        // Check if token is expired
+        if (new Date() > token.expiresAt) {
+            throw new Error('Verification code has expired');
+        }
+        // Mark token as used
+        yield prisma.verificationToken.update({
+            where: { id: token.id },
+            data: { isUsed: true }
+        });
+        // Mark user as verified
+        yield prisma.user.update({
+            where: { id: user.id },
+            data: { isVerified: true }
+        });
+        return { success: true, message: 'Email verified successfully' };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.verifyEmailCode = verifyEmailCode;
+const getAllServices = (filters, pagination) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Set default pagination values
+        const page = (pagination === null || pagination === void 0 ? void 0 : pagination.page) || 1;
+        const limit = (pagination === null || pagination === void 0 ? void 0 : pagination.limit) || 10;
+        const skip = (page - 1) * limit;
+        // Build where conditions based on filters
+        const where = {
+            isActive: true,
+            isApproved: true // Only show approved services to clients
+        };
+        // Filter by category if provided
+        if (filters === null || filters === void 0 ? void 0 : filters.categoryId) {
+            where.categoryId = filters.categoryId;
+        }
+        // Filter by price range if provided
+        if ((filters === null || filters === void 0 ? void 0 : filters.minPrice) !== undefined || (filters === null || filters === void 0 ? void 0 : filters.maxPrice) !== undefined) {
+            where.pricing = {};
+            if (filters.minPrice !== undefined) {
+                where.pricing.gte = filters.minPrice;
+            }
+            if (filters.maxPrice !== undefined) {
+                where.pricing.lte = filters.maxPrice;
+            }
+        }
+        // Search in title or description
+        if (filters === null || filters === void 0 ? void 0 : filters.searchTerm) {
+            where.AND.push({
+                OR: [
+                    { title: { contains: filters.searchTerm } },
+                    { description: { contains: filters.searchTerm } }
+                ]
+            });
+        }
+        // Only include services where provider is verified
+        where.serviceProvider = {
+            isProviderVerified: true
+        };
+        // Filter by skills if provided
+        let skillFilter = undefined;
+        if ((filters === null || filters === void 0 ? void 0 : filters.skillIds) && filters.skillIds.length > 0) {
+            skillFilter = {
+                some: {
+                    id: {
+                        in: filters.skillIds
+                    }
+                }
+            };
+        }
+        // Get services with provider details, category and ratings
+        const services = yield prisma.service.findMany({
+            where,
+            include: {
+                category: true,
+                skills: true,
+                serviceProvider: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                                profilePicture: true,
+                                receivedReviews: {
+                                    select: {
+                                        id: true,
+                                        rating: true,
+                                        comment: true,
+                                        createdAt: true,
+                                        giver: {
+                                            select: {
+                                                id: true,
+                                                firstName: true,
+                                                lastName: true,
+                                                profilePicture: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            },
+            skip,
+            take: limit
+        });
+        // Get total count for pagination
+        const total = yield prisma.service.count({ where });
+        // Process services to calculate average rating and format response
+        const processedServices = services.map(service => {
+            const reviews = service.serviceProvider.user.receivedReviews;
+            const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+            const averageRating = reviews.length > 0 ? totalRating / reviews.length : null;
+            const reviewCount = reviews.length;
+            // Process image URLs (stored as JSON string)
+            let imageUrls = [];
+            if (service.imageUrls) {
+                try {
+                    imageUrls = JSON.parse(service.imageUrls);
+                }
+                catch (error) {
+                    console.warn(`Error parsing image URLs for service ${service.id}:`, error);
+                }
+            }
+            return {
+                id: service.id,
+                title: service.title,
+                description: service.description,
+                pricing: service.pricing,
+                pricingType: service.pricingType,
+                imageUrls,
+                category: service.category,
+                skills: service.skills,
+                provider: {
+                    id: service.serviceProvider.id,
+                    userId: service.serviceProvider.userId,
+                    name: `${service.serviceProvider.user.firstName} ${service.serviceProvider.user.lastName}`,
+                    profilePicture: service.serviceProvider.user.profilePicture,
+                    rating: averageRating,
+                    reviewCount
+                },
+                createdAt: service.createdAt,
+                updatedAt: service.updatedAt
+            };
+        });
+        return {
+            services: processedServices,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.getAllServices = getAllServices;
+const getServiceDetails = (serviceId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Fetch service - only approved services are visible to clients
+        const service = yield prisma.service.findFirst({
+            where: {
+                id: serviceId,
+                isActive: true,
+                isApproved: true
+            },
+            include: {
+                category: true,
+                skills: true,
+                serviceProvider: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                                profilePicture: true,
+                                receivedReviews: {
+                                    select: {
+                                        id: true,
+                                        rating: true,
+                                        comment: true,
+                                        createdAt: true,
+                                        giver: {
+                                            select: {
+                                                id: true,
+                                                firstName: true,
+                                                lastName: true,
+                                                profilePicture: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        portfolio: {
+                            take: 5,
+                            orderBy: {
+                                createdAt: 'desc'
+                            },
+                            include: {
+                                files: true
+                            }
+                        },
+                        workExperience: true,
+                        education: true
+                    }
+                }
+            }
+        });
+        if (!service) {
+            throw new Error('Service not found');
+        }
+        // Check if service is approved (allow null for legacy services or true)
+        if (service.isApproved === false) {
+            throw new Error('This service is pending approval and is not yet available');
+        }
+        // Check if provider is verified
+        if (!service.serviceProvider.isProviderVerified) {
+            throw new Error('This service is not available because the provider is not verified');
+        }
+        // Calculate average rating from reviews
+        const reviews = service.serviceProvider.user.receivedReviews;
+        const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+        const averageRating = reviews.length > 0 ? totalRating / reviews.length : null;
+        const reviewCount = reviews.length;
+        // Process image URLs (stored as JSON string)
+        let imageUrls = [];
+        if (service.imageUrls) {
+            try {
+                imageUrls = JSON.parse(service.imageUrls);
+            }
+            catch (error) {
+                console.warn(`Error parsing image URLs for service ${service.id}:`, error);
+            }
+        }
+        // Process portfolio with files
+        const portfolio = service.serviceProvider.portfolio.map((item) => {
+            var _a;
+            return {
+                id: item.id,
+                title: item.title,
+                description: item.description,
+                projectUrl: item.projectUrl,
+                createdAt: item.createdAt,
+                files: ((_a = item.files) === null || _a === void 0 ? void 0 : _a.map((file) => ({
+                    id: file.id,
+                    fileUrl: file.fileUrl,
+                    fileName: file.fileName,
+                    fileType: file.fileType
+                }))) || []
+            };
+        });
+        return {
+            id: service.id,
+            title: service.title,
+            description: service.description,
+            pricing: service.pricing,
+            pricingType: service.pricingType,
+            imageUrls,
+            category: service.category,
+            skills: service.skills,
+            provider: {
+                id: service.serviceProvider.id,
+                userId: service.serviceProvider.userId,
+                name: `${service.serviceProvider.user.firstName} ${service.serviceProvider.user.lastName}`,
+                profilePicture: service.serviceProvider.user.profilePicture,
+                bio: service.serviceProvider.bio,
+                portfolio,
+                workExperience: service.serviceProvider.workExperience,
+                education: service.serviceProvider.education,
+                rating: averageRating,
+                reviewCount,
+                reviews
+            },
+            createdAt: service.createdAt,
+            updatedAt: service.updatedAt
+        };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.getServiceDetails = getServiceDetails;
+const searchProviders = (query, pagination) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Set default pagination values
+        const page = (pagination === null || pagination === void 0 ? void 0 : pagination.page) || 1;
+        const limit = (pagination === null || pagination === void 0 ? void 0 : pagination.limit) || 10;
+        const skip = (page - 1) * limit;
+        // Build where conditions
+        const where = {
+            isProviderVerified: true,
+            user: {
+                isActive: true,
+                isVerified: true
+            }
+        };
+        // Search by name
+        if (query === null || query === void 0 ? void 0 : query.searchTerm) {
+            where.user.OR = [
+                { firstName: { contains: query.searchTerm } },
+                { lastName: { contains: query.searchTerm } }
+            ];
+        }
+        // Filter by skills
+        if ((query === null || query === void 0 ? void 0 : query.skillIds) && query.skillIds.length > 0) {
+            where.skills = {
+                some: {
+                    id: {
+                        in: query.skillIds
+                    }
+                }
+            };
+        }
+        // Filter by category (via services)
+        if (query === null || query === void 0 ? void 0 : query.categoryId) {
+            where.services = {
+                some: {
+                    categoryId: query.categoryId
+                }
+            };
+        }
+        // Get providers
+        const providers = yield prisma.serviceProvider.findMany({
+            where,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        profilePicture: true,
+                        receivedReviews: {
+                            select: {
+                                id: true,
+                                rating: true
+                            }
+                        }
+                    }
+                },
+                skills: true,
+                services: {
+                    include: {
+                        category: true
+                    }
+                }
+            },
+            skip,
+            take: limit
+        });
+        // Get total count for pagination
+        const total = yield prisma.serviceProvider.count({ where });
+        // Process providers to include ratings
+        const processedProviders = providers.map(provider => {
+            const reviews = provider.user.receivedReviews;
+            const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+            const averageRating = reviews.length > 0 ? totalRating / reviews.length : null;
+            const reviewCount = reviews.length;
+            return {
+                id: provider.id,
+                userId: provider.userId,
+                name: `${provider.user.firstName} ${provider.user.lastName}`,
+                profilePicture: provider.user.profilePicture,
+                headline: provider.headline,
+                bio: provider.bio,
+                // hourlyRate removed
+                skills: provider.skills,
+                services: provider.services.map(service => ({
+                    id: service.id,
+                    title: service.title,
+                    categoryName: service.category.name
+                })),
+                rating: averageRating,
+                reviewCount
+            };
+        });
+        return {
+            providers: processedProviders,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.searchProviders = searchProviders;
+const getProviderDetails = (providerId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const provider = yield prisma.serviceProvider.findUnique({
+            where: {
+                id: providerId,
+                isProviderVerified: true
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        profilePicture: true,
+                        phone: true,
+                        email: true,
+                        receivedReviews: {
+                            select: {
+                                id: true,
+                                rating: true,
+                                comment: true,
+                                createdAt: true,
+                                giver: {
+                                    select: {
+                                        id: true,
+                                        firstName: true,
+                                        lastName: true,
+                                        profilePicture: true
+                                    }
+                                }
+                            },
+                            orderBy: {
+                                createdAt: 'desc'
+                            }
+                        }
+                    }
+                },
+                skills: true,
+                portfolio: {
+                    take: 5,
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    include: {
+                        files: true
+                    }
+                },
+                workExperience: {
+                    orderBy: {
+                        startDate: 'desc'
+                    }
+                },
+                education: {
+                    orderBy: {
+                        startDate: 'desc'
+                    }
+                },
+                services: {
+                    where: {
+                        isActive: true
+                    },
+                    include: {
+                        category: true,
+                        skills: true
+                    }
+                }
+            }
+        });
+        if (!provider) {
+            throw new Error('Provider not found or not verified');
+        }
+        // Calculate average rating from reviews
+        const reviews = provider.user.receivedReviews;
+        const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+        const averageRating = reviews.length > 0 ? totalRating / reviews.length : null;
+        const reviewCount = reviews.length;
+        // Process portfolio with files
+        const portfolio = provider.portfolio.map(item => {
+            var _a;
+            return {
+                id: item.id,
+                title: item.title,
+                description: item.description,
+                projectUrl: item.projectUrl,
+                createdAt: item.createdAt,
+                files: ((_a = item.files) === null || _a === void 0 ? void 0 : _a.map(file => ({
+                    id: file.id,
+                    fileUrl: file.fileUrl,
+                    fileName: file.fileName,
+                    fileType: file.fileType
+                }))) || []
+            };
+        });
+        // Process service image URLs
+        const services = provider.services.map(service => {
+            let imageUrls = [];
+            if (service.imageUrls) {
+                try {
+                    imageUrls = JSON.parse(service.imageUrls);
+                }
+                catch (error) {
+                    console.warn(`Error parsing image URLs for service ${service.id}:`, error);
+                }
+            }
+            return Object.assign(Object.assign({}, service), { imageUrls });
+        });
+        return {
+            id: provider.id,
+            userId: provider.userId,
+            firstName: provider.user.firstName,
+            lastName: provider.user.lastName,
+            fullName: `${provider.user.firstName} ${provider.user.lastName}`,
+            profilePicture: provider.user.profilePicture,
+            phone: provider.user.phone,
+            email: provider.user.email,
+            headline: provider.headline,
+            bio: provider.bio,
+            // hourlyRate removed
+            skills: provider.skills,
+            portfolio,
+            workExperience: provider.workExperience,
+            education: provider.education,
+            services,
+            rating: averageRating,
+            reviewCount,
+            reviews: provider.user.receivedReviews
+        };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.getProviderDetails = getProviderDetails;
+const createChatConversation = (user1Id, user2Id, serviceBookingId) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        // Check if a conversation already exists between these users
+        const existingConversation = yield prisma.$queryRaw `
+      SELECT id FROM Conversation 
+      WHERE (user1Id = ${user1Id} AND user2Id = ${user2Id})
+      OR (user1Id = ${user2Id} AND user2Id = ${user1Id})
+      LIMIT 1
+    `;
+        if (existingConversation && existingConversation[0]) {
+            const conversationId = existingConversation[0].id;
+            // If conversation already exists, update it with the new booking if provided
+            if (serviceBookingId) {
+                yield prisma.$executeRaw `
+          UPDATE Conversation 
+          SET serviceBookingId = ${serviceBookingId}
+          WHERE id = ${conversationId}
+        `;
+            }
+            return { id: conversationId };
+        }
+        // Create a new conversation
+        const result = yield prisma.$executeRaw `
+      INSERT INTO Conversation (id, user1Id, user2Id, serviceBookingId, createdAt, updatedAt)
+      VALUES (UUID(), ${user1Id}, ${user2Id}, ${serviceBookingId || null}, NOW(), NOW())
+    `;
+        // Get the created conversation
+        const newConversation = yield prisma.$queryRaw `
+      SELECT id FROM Conversation 
+      WHERE user1Id = ${user1Id} AND user2Id = ${user2Id}
+      ORDER BY createdAt DESC
+      LIMIT 1
+    `;
+        return { id: (_a = newConversation[0]) === null || _a === void 0 ? void 0 : _a.id };
+    }
+    catch (error) {
+        console.error('Error creating conversation:', error);
+        throw error;
+    }
+});
+exports.createChatConversation = createChatConversation;
+const getUserConversations = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Get all conversations where the user is either user1 or user2
+        const conversations = yield prisma.$queryRaw `
+      SELECT 
+        c.id, c.serviceBookingId, c.createdAt, c.updatedAt,
+        u1.id as user1Id, u1.firstName as user1FirstName, u1.lastName as user1LastName, u1.profilePicture as user1ProfilePic,
+        u2.id as user2Id, u2.firstName as user2FirstName, u2.lastName as user2LastName, u2.profilePicture as user2ProfilePic,
+        (SELECT content FROM Message WHERE conversationId = c.id ORDER BY createdAt DESC LIMIT 1) as lastMessage,
+        (SELECT imageUrl FROM Message WHERE conversationId = c.id ORDER BY createdAt DESC LIMIT 1) as lastMessageImageUrl,
+        (SELECT createdAt FROM Message WHERE conversationId = c.id ORDER BY createdAt DESC LIMIT 1) as lastMessageTime,
+        (SELECT COUNT(*) FROM Message WHERE conversationId = c.id AND isRead = false AND senderId != ${userId}) as unreadCount,
+        sb.title as bookingTitle, sb.status as bookingStatus
+      FROM Conversation c
+      JOIN User u1 ON c.user1Id = u1.id
+      JOIN User u2 ON c.user2Id = u2.id
+      LEFT JOIN ServiceBooking sb ON c.serviceBookingId = sb.id
+      WHERE c.user1Id = ${userId} OR c.user2Id = ${userId}
+      ORDER BY lastMessageTime DESC
+    `;
+        // Process the conversations to include user details
+        const processedConversations = conversations.map(conv => {
+            const otherUser = conv.user1Id === userId ?
+                {
+                    id: conv.user2Id,
+                    firstName: conv.user2FirstName,
+                    lastName: conv.user2LastName,
+                    profilePicture: conv.user2ProfilePic
+                } :
+                {
+                    id: conv.user1Id,
+                    firstName: conv.user1FirstName,
+                    lastName: conv.user1LastName,
+                    profilePicture: conv.user1ProfilePic
+                };
+            // Determine if conversation is active based on booking status
+            const isActive = !conv.serviceBookingId || conv.bookingStatus !== 'COMPLETED';
+            return {
+                id: conv.id,
+                otherUser,
+                lastMessage: conv.lastMessage,
+                lastMessageImageUrl: conv.lastMessageImageUrl,
+                lastMessageTime: conv.lastMessageTime,
+                unreadCount: Number(conv.unreadCount),
+                booking: conv.serviceBookingId ? {
+                    id: conv.serviceBookingId,
+                    title: conv.bookingTitle,
+                    status: conv.bookingStatus
+                } : null,
+                isActive: isActive,
+                createdAt: conv.createdAt,
+                updatedAt: conv.updatedAt
+            };
+        });
+        return processedConversations;
+    }
+    catch (error) {
+        console.error('Error getting user conversations:', error);
+        throw error;
+    }
+});
+exports.getUserConversations = getUserConversations;
+const getConversationMessages = (conversationId, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Verify the user is part of this conversation
+        const conversation = yield prisma.$queryRaw `
+      SELECT c.id, c.serviceBookingId, sb.status as bookingStatus 
+      FROM Conversation c
+      LEFT JOIN ServiceBooking sb ON c.serviceBookingId = sb.id
+      WHERE c.id = ${conversationId} 
+      AND (c.user1Id = ${userId} OR c.user2Id = ${userId})
+    `;
+        const conv = conversation[0];
+        if (!conv) {
+            throw new Error('Conversation not found or access denied');
+        }
+        // Add booking status to the response
+        const isBookingCompleted = conv.bookingStatus === 'COMPLETED';
+        // Get messages for this conversation
+        const messages = yield prisma.$queryRaw `
+      SELECT 
+        m.id, m.content, m.imageUrl, m.createdAt, m.isRead,
+        m.senderId, u.firstName as senderFirstName, u.lastName as senderLastName, 
+        u.profilePicture as senderProfilePic
+      FROM Message m
+      JOIN User u ON m.senderId = u.id
+      WHERE m.conversationId = ${conversationId}
+      ORDER BY m.createdAt ASC
+    `;
+        // Mark messages as read if they were sent to this user
+        yield prisma.$executeRaw `
+      UPDATE Message 
+      SET isRead = true 
+      WHERE conversationId = ${conversationId} 
+      AND receiverId = ${userId}
+      AND isRead = false
+    `;
+        // Add system message if booking is completed
+        let processedMessages = messages.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            imageUrl: msg.imageUrl,
+            createdAt: msg.createdAt,
+            isRead: Boolean(msg.isRead),
+            sender: {
+                id: msg.senderId,
+                firstName: msg.senderFirstName,
+                lastName: msg.senderLastName,
+                profilePicture: msg.senderProfilePic
+            }
+        }));
+        // Return messages with booking status
+        return {
+            messages: processedMessages,
+            conversationStatus: {
+                isActive: !isBookingCompleted,
+                serviceBookingId: conv.serviceBookingId,
+                bookingStatus: conv.bookingStatus
+            }
+        };
+    }
+    catch (error) {
+        console.error('Error getting conversation messages:', error);
+        throw error;
+    }
+});
+exports.getConversationMessages = getConversationMessages;
+const sendMessage = (conversationId, senderId, content, imageUrl) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Verify the conversation exists and user is part of it, and check booking status
+        const conversation = yield prisma.$queryRaw `
+      SELECT c.user1Id, c.user2Id, c.serviceBookingId, sb.status as bookingStatus
+      FROM Conversation c
+      LEFT JOIN ServiceBooking sb ON c.serviceBookingId = sb.id
+      WHERE c.id = ${conversationId} 
+      AND (c.user1Id = ${senderId} OR c.user2Id = ${senderId})
+    `;
+        const conv = conversation[0];
+        if (!conv) {
+            throw new Error('Conversation not found or access denied');
+        }
+        // Check if the booking is completed - if so, prevent sending messages
+        if (conv.serviceBookingId && conv.bookingStatus === 'COMPLETED') {
+            throw new Error('This conversation is closed because the service booking has been completed');
+        }
+        // Determine the receiver (the other user in the conversation)
+        const receiverId = conv.user1Id === senderId ? conv.user2Id : conv.user1Id;
+        // Insert the message with optional image URL
+        yield prisma.$executeRaw `
+      INSERT INTO Message (id, conversationId, senderId, receiverId, content, imageUrl, createdAt, isRead)
+      VALUES (UUID(), ${conversationId}, ${senderId}, ${receiverId}, ${content}, ${imageUrl || null}, NOW(), false)
+    `;
+        // Get the inserted message with sender details
+        const newMessage = yield prisma.$queryRaw `
+      SELECT 
+        m.id, m.content, m.imageUrl, m.createdAt, m.isRead,
+        m.senderId, u.firstName as senderFirstName, u.lastName as senderLastName, 
+        u.profilePicture as senderProfilePic
+      FROM Message m
+      JOIN User u ON m.senderId = u.id
+      WHERE m.conversationId = ${conversationId}
+      AND m.senderId = ${senderId}
+      ORDER BY m.createdAt DESC
+      LIMIT 1
+    `;
+        const msg = newMessage[0];
+        return {
+            id: msg.id,
+            content: msg.content,
+            imageUrl: msg.imageUrl,
+            createdAt: msg.createdAt,
+            isRead: Boolean(msg.isRead),
+            sender: {
+                id: msg.senderId,
+                firstName: msg.senderFirstName,
+                lastName: msg.senderLastName,
+                profilePicture: msg.senderProfilePic
+            }
+        };
+    }
+    catch (error) {
+        console.error('Error sending message:', error);
+        throw error;
+    }
+});
+exports.sendMessage = sendMessage;
+const getUserNotifications = (userId_1, ...args_1) => __awaiter(void 0, [userId_1, ...args_1], void 0, function* (userId, page = 1, limit = 10) {
+    try {
+        console.log(`Getting notifications for user ID: ${userId}, page: ${page}, limit: ${limit}`);
+        const offset = (page - 1) * limit;
+        // First, let's check if the user exists
+        const user = yield prisma.user.findUnique({
+            where: { id: userId }
+        });
+        if (!user) {
+            console.error(`User with ID ${userId} not found`);
+            throw new Error('User not found');
+        }
+        // Get notifications for this user with pagination
+        const notifications = yield prisma.notification.findMany({
+            where: {
+                receiverId: userId
+            },
+            orderBy: {
+                createdAt: 'desc'
+            },
+            skip: offset,
+            take: limit + 1 // Take one extra to check if there are more
+        });
+        console.log(`Found ${notifications.length} notifications before hasMore check`);
+        // Check if there are more notifications
+        const hasMore = notifications.length > limit;
+        const notificationsToReturn = hasMore ? notifications.slice(0, limit) : notifications;
+        console.log(`Returning ${notificationsToReturn.length} notifications, hasMore: ${hasMore}`);
+        // Get total count
+        const totalCount = yield prisma.notification.count({
+            where: {
+                receiverId: userId
+            }
+        });
+        console.log(`Total notification count for user: ${totalCount}`);
+        return {
+            notifications: notificationsToReturn,
+            hasMore,
+            totalCount,
+            page,
+            limit
+        };
+    }
+    catch (error) {
+        console.error('Error getting notifications:', error);
+        throw error;
+    }
+});
+exports.getUserNotifications = getUserNotifications;
+const getUnreadNotificationCount = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        console.log(`Counting unread notifications for user ID: ${userId}`);
+        // First, let's check if the user exists
+        const user = yield prisma.user.findUnique({
+            where: { id: userId }
+        });
+        if (!user) {
+            console.warn(`User with ID ${userId} not found, returning 0 notifications`);
+            return 0; // Return 0 instead of throwing an error
+        }
+        // Let's check the total number of notifications in the system for debugging
+        const totalNotifications = yield prisma.notification.count();
+        console.log(`Total notifications in system: ${totalNotifications}`);
+        // Let's check all notifications for this user
+        const userNotifications = yield prisma.notification.count({
+            where: {
+                receiverId: userId
+            }
+        });
+        console.log(`Total notifications for user: ${userNotifications}`);
+        // Now get the unread count with explicit filtering
+        const count = yield prisma.notification.count({
+            where: {
+                receiverId: userId,
+                isRead: false
+            }
+        });
+        console.log(`Unread notifications for user: ${count}`);
+        return count;
+    }
+    catch (error) {
+        console.error('Error counting unread notifications:', error);
+        throw error;
+    }
+});
+exports.getUnreadNotificationCount = getUnreadNotificationCount;
+const markNotificationAsRead = (userId, notificationId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Verify the notification belongs to this user
+        const notification = yield prisma.notification.findFirst({
+            where: {
+                id: notificationId,
+                receiverId: userId
+            }
+        });
+        if (!notification) {
+            throw new Error('Notification not found or does not belong to this user');
+        }
+        // Mark notification as read
+        const updatedNotification = yield prisma.notification.update({
+            where: {
+                id: notificationId
+            },
+            data: {
+                isRead: true
+            }
+        });
+        return updatedNotification;
+    }
+    catch (error) {
+        console.error('Error marking notification as read:', error);
+        throw error;
+    }
+});
+exports.markNotificationAsRead = markNotificationAsRead;
+const markAllNotificationsAsRead = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Mark all notifications for this user as read
+        const result = yield prisma.notification.updateMany({
+            where: {
+                receiverId: userId,
+                isRead: false
+            },
+            data: {
+                isRead: true
+            }
+        });
+        return {
+            count: result.count
+        };
+    }
+    catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        throw error;
+    }
+});
+exports.markAllNotificationsAsRead = markAllNotificationsAsRead;
+const updateProfilePicture = (userId, profilePictureUrl) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield prisma.user.findUnique({
+            where: { id: userId }
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        // Update user's profile picture
+        yield prisma.user.update({
+            where: { id: userId },
+            data: { profilePicture: profilePictureUrl }
+        });
+        return { success: true, message: 'Profile picture updated successfully' };
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.updateProfilePicture = updateProfilePicture;
+const getCategoriesWithServices = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Get all categories
+        const categories = yield prisma.category.findMany({
+            include: {
+                services: {
+                    where: {
+                        isActive: true,
+                        isApproved: true, // Only show approved services to clients
+                        serviceProvider: {
+                            isProviderVerified: true
+                        }
+                    },
+                    include: {
+                        category: true,
+                        skills: true,
+                        serviceProvider: {
+                            include: {
+                                user: {
+                                    select: {
+                                        id: true,
+                                        firstName: true,
+                                        lastName: true,
+                                        profilePicture: true,
+                                        receivedReviews: {
+                                            select: {
+                                                rating: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    take: 5 // Limit to 5 services per category for the overview
+                }
+            },
+            orderBy: {
+                name: 'asc'
+            }
+        });
+        // Process the categories and their services
+        const processedCategories = categories.map(category => {
+            // Process services for each category
+            const processedServices = category.services.map(service => {
+                // Calculate average rating
+                const reviews = service.serviceProvider.user.receivedReviews;
+                const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+                const averageRating = reviews.length > 0 ? totalRating / reviews.length : null;
+                const reviewCount = reviews.length;
+                // Parse image URLs
+                let imageUrls = [];
+                if (service.imageUrls) {
+                    try {
+                        imageUrls = JSON.parse(service.imageUrls);
+                    }
+                    catch (error) {
+                        console.warn(`Error parsing image URLs for service ${service.id}:`, error);
+                    }
+                }
+                return {
+                    id: service.id,
+                    title: service.title,
+                    description: service.description,
+                    pricing: service.pricing,
+                    pricingType: service.pricingType,
+                    imageUrls,
+                    skills: service.skills,
+                    provider: {
+                        id: service.serviceProvider.id,
+                        name: `${service.serviceProvider.user.firstName} ${service.serviceProvider.user.lastName}`,
+                        profilePicture: service.serviceProvider.user.profilePicture,
+                        rating: averageRating,
+                        reviewCount
+                    }
+                };
+            });
+            // Filter out categories with no approved services
+            // Only return categories that have at least one approved service
+            if (processedServices.length === 0) {
+                return null;
+            }
+            // Ensure the imageUrl is included in the returned category
+            return {
+                id: category.id,
+                name: category.name,
+                description: category.description,
+                imageUrl: category.imageUrl || null, // Ensure even null is returned explicitly
+                serviceCount: processedServices.length, // Use processed services count (only approved)
+                services: processedServices
+            };
+        });
+        // Filter out null categories (those with no approved services)
+        return processedCategories.filter(category => category !== null);
+    }
+    catch (error) {
+        throw error;
+    }
+});
+exports.getCategoriesWithServices = getCategoriesWithServices;
