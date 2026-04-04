@@ -10,17 +10,17 @@ export const sendVerificationEmail = async (email: string, code: string, firstNa
   try {
     const { data, error } = await resend.emails.send({
       from: 'ServiceLink <onboarding@resend.dev>',
-      to: email,
-      subject: 'Email Verification',
+      to: '202210416@gordoncollege.edu.ph',
+      subject: `Email Verification Code for ${email}`,  
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
           <h2 style="color: #333;">Welcome, ${firstName}!</h2>
-          <p>Thank you for registering with our service. To complete your registration, please use the verification code below:</p>
+          <p><strong>Registration email:</strong> ${email}</p>
+          <p>Verification code:</p>
           <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0; border-radius: 5px;">
             ${code}
           </div>
           <p>This code will expire in 24 hours.</p>
-          <p>If you did not request this verification, please ignore this email.</p>
           <p>Best regards,<br>ServiceLink Team</p>
         </div>
       `
