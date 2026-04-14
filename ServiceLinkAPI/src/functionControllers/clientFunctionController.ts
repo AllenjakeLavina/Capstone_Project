@@ -176,7 +176,8 @@ export const registerClient = async (
         lastName,
         phone,
         role: 'CLIENT',
-        isVerified: false,
+        isVerified: true, // const emailSent = await sendVerificationEmail(email, verificationCode, firstName);
+                          // if (!emailSent) { console.warn(...) }
         client: {
           create: {}
         },

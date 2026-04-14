@@ -633,7 +633,7 @@ export default {
             text: 'Please verify your email. Your provider account will be reviewed by an admin for verification.',
             confirmButtonColor: '#38b676'
           });
-          showVerification.value = true;
+          router.push('/');
         } else {
           await Swal.fire({
             icon: 'error',

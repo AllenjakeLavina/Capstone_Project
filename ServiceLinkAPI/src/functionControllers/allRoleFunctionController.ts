@@ -44,9 +44,9 @@ export const loginUser = async (email: string, password: string) => {
     }
     
     // Check if email is verified
-    if (!user.isVerified) {
-      throw new Error('Email not verified. Please verify your email before logging in.');
-    }
+    //if (!user.isVerified) {
+    //throw new Error('Email not verified. Please verify your email before logging in.');
+    //}
     
     // Provider verification check - store status but don't prevent login
     let providerVerificationStatus = null;

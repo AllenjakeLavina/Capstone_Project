@@ -628,12 +628,12 @@ export default {
         
         if (response.success) {
           await Swal.fire({
-            icon: 'success',
-            title: 'Registration Successful!',
-            text: 'Please verify your email to complete registration.',
-            confirmButtonColor: '#8cc63f'
-          });
-          showVerification.value = true;
+          icon: 'success',
+          title: 'Registration Successful!',
+          text: 'Your account has been created. Please login to continue.',
+          confirmButtonColor: '#8cc63f'
+        });
+        router.push('/');  // ← DIREKTANG LOGIN
         } else {
           await Swal.fire({
             icon: 'error',

@@ -75,7 +75,8 @@ export const registerProvider = async (
         lastName,
         phone,
         role: 'PROVIDER',
-        isVerified: false,
+        isVerified: true, // const emailSent = await sendVerificationEmail(email, verificationCode, firstName);
+                          // if (!emailSent) { console.warn(...) }
         serviceProvider: {
           create: {} // Will use default values, including isProviderVerified: false
         },
