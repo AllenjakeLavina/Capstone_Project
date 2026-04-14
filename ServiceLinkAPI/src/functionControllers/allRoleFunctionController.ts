@@ -406,8 +406,9 @@ export const getAllServices = async (
 
     // Build where conditions based on filters
     const where: any = {
-      isActive: true,
-      isApproved: true // Only show approved services to clients
+    isActive: true,
+    isApproved: true,
+    AND: []
     };
 
     // Filter by category if provided
@@ -442,16 +443,15 @@ export const getAllServices = async (
     };
 
     // Filter by skills if provided
-    let skillFilter = undefined;
     if (filters?.skillIds && filters.skillIds.length > 0) {
-      skillFilter = {
-        some: {
-          id: {
-            in: filters.skillIds
-          }
+      where.skills = {
+      some: {
+        id: {
+          in: filters.skillIds
         }
-      };
-    }
+      }
+    };
+  }
 
     // Get services with provider details, category and ratings
     const services = await prisma.service.findMany({
@@ -953,44 +953,39 @@ export const createChatConversation = async (
   serviceBookingId?: string
 ) => {
   try {
-    // Check if a conversation already exists between these users
-    const existingConversation = await prisma.$queryRaw`
-      SELECT id FROM Conversation 
-      WHERE (user1Id = ${user1Id} AND user2Id = ${user2Id})
-      OR (user1Id = ${user2Id} AND user2Id = ${user1Id})
-      LIMIT 1
-    `;
-
-    if (existingConversation && (existingConversation as any[])[0]) {
-      const conversationId = (existingConversation as any[])[0].id;
-      
-      // If conversation already exists, update it with the new booking if provided
+    // Check if a conversation already exists between these users (either direction)
+    const existingConversation = await prisma.conversation.findFirst({
+      where: {
+        OR: [
+          { user1Id: user1Id, user2Id: user2Id },
+          { user1Id: user2Id, user2Id: user1Id }
+        ]
+      },
+      select: { id: true }
+    });
+ 
+    if (existingConversation) {
+      // If conversation exists and a new bookingId is provided, update it
       if (serviceBookingId) {
-        await prisma.$executeRaw`
-          UPDATE Conversation 
-          SET serviceBookingId = ${serviceBookingId}
-          WHERE id = ${conversationId}
-        `;
+        await prisma.conversation.update({
+          where: { id: existingConversation.id },
+          data: { serviceBookingId }
+        });
       }
-      
-      return { id: conversationId };
+      return { id: existingConversation.id };
     }
-
+ 
     // Create a new conversation
-    const result = await prisma.$executeRaw`
-      INSERT INTO Conversation (id, user1Id, user2Id, serviceBookingId, createdAt, updatedAt)
-      VALUES (UUID(), ${user1Id}, ${user2Id}, ${serviceBookingId || null}, NOW(), NOW())
-    `;
-    
-    // Get the created conversation
-    const newConversation = await prisma.$queryRaw`
-      SELECT id FROM Conversation 
-      WHERE user1Id = ${user1Id} AND user2Id = ${user2Id}
-      ORDER BY createdAt DESC
-      LIMIT 1
-    `;
-    
-    return { id: (newConversation as any[])[0]?.id };
+    const newConversation = await prisma.conversation.create({
+      data: {
+        user1Id,
+        user2Id,
+        serviceBookingId: serviceBookingId || null
+      },
+      select: { id: true }
+    });
+ 
+    return { id: newConversation.id };
   } catch (error) {
     console.error('Error creating conversation:', error);
     throw error;
@@ -999,131 +994,174 @@ export const createChatConversation = async (
 
 export const getUserConversations = async (userId: string) => {
   try {
-    // Get all conversations where the user is either user1 or user2
-    const conversations = await prisma.$queryRaw`
-      SELECT 
-        c.id, c.serviceBookingId, c.createdAt, c.updatedAt,
-        u1.id as user1Id, u1.firstName as user1FirstName, u1.lastName as user1LastName, u1.profilePicture as user1ProfilePic,
-        u2.id as user2Id, u2.firstName as user2FirstName, u2.lastName as user2LastName, u2.profilePicture as user2ProfilePic,
-        (SELECT content FROM Message WHERE conversationId = c.id ORDER BY createdAt DESC LIMIT 1) as lastMessage,
-        (SELECT imageUrl FROM Message WHERE conversationId = c.id ORDER BY createdAt DESC LIMIT 1) as lastMessageImageUrl,
-        (SELECT createdAt FROM Message WHERE conversationId = c.id ORDER BY createdAt DESC LIMIT 1) as lastMessageTime,
-        (SELECT COUNT(*) FROM Message WHERE conversationId = c.id AND isRead = false AND senderId != ${userId}) as unreadCount,
-        sb.title as bookingTitle, sb.status as bookingStatus
-      FROM Conversation c
-      JOIN User u1 ON c.user1Id = u1.id
-      JOIN User u2 ON c.user2Id = u2.id
-      LEFT JOIN ServiceBooking sb ON c.serviceBookingId = sb.id
-      WHERE c.user1Id = ${userId} OR c.user2Id = ${userId}
-      ORDER BY lastMessageTime DESC
-    `;
-
-    // Process the conversations to include user details
-    const processedConversations = (conversations as any[]).map(conv => {
-      const otherUser = conv.user1Id === userId ? 
-        {
-          id: conv.user2Id,
-          firstName: conv.user2FirstName,
-          lastName: conv.user2LastName,
-          profilePicture: conv.user2ProfilePic
-        } : 
-        {
-          id: conv.user1Id,
-          firstName: conv.user1FirstName,
-          lastName: conv.user1LastName,
-          profilePicture: conv.user1ProfilePic
-        };
-
-      // Determine if conversation is active based on booking status
-      const isActive = !conv.serviceBookingId || conv.bookingStatus !== 'COMPLETED';
-
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        OR: [
+          { user1Id: userId },
+          { user2Id: userId }
+        ]
+      },
+      include: {
+        user1: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profilePicture: true
+          }
+        },
+        user2: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profilePicture: true
+          }
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            content: true,
+            imageUrl: true,
+            createdAt: true
+          }
+        },
+        serviceBooking: {
+          select: {
+            id: true,
+            title: true,
+            status: true
+          }
+        }
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      }
+    });
+ 
+    // Get unread counts separately per conversation
+    const unreadCounts = await Promise.all(
+      conversations.map(conv =>
+        prisma.message.count({
+          where: {
+            conversationId: conv.id,
+            receiverId: userId,
+            isRead: false
+          }
+        })
+      )
+    );
+ 
+    return conversations.map((conv, index) => {
+      const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1;
+      const lastMsg = conv.messages[0] ?? null;
+      const isActive =
+        !conv.serviceBookingId || conv.serviceBooking?.status !== 'COMPLETED';
+ 
       return {
         id: conv.id,
         otherUser,
-        lastMessage: conv.lastMessage,
-        lastMessageImageUrl: conv.lastMessageImageUrl,
-        lastMessageTime: conv.lastMessageTime,
-        unreadCount: Number(conv.unreadCount),
-        booking: conv.serviceBookingId ? {
-          id: conv.serviceBookingId,
-          title: conv.bookingTitle,
-          status: conv.bookingStatus
-        } : null,
-        isActive: isActive,
+        lastMessage: lastMsg?.content ?? null,
+        lastMessageImageUrl: lastMsg?.imageUrl ?? null,
+        lastMessageTime: lastMsg?.createdAt ?? null,
+        unreadCount: unreadCounts[index],
+        booking: conv.serviceBookingId
+          ? {
+              id: conv.serviceBookingId,
+              title: conv.serviceBooking?.title ?? null,
+              status: conv.serviceBooking?.status ?? null
+            }
+          : null,
+        isActive,
         createdAt: conv.createdAt,
         updatedAt: conv.updatedAt
       };
     });
-
-    return processedConversations;
   } catch (error) {
     console.error('Error getting user conversations:', error);
     throw error;
   }
 };
 
-export const getConversationMessages = async (conversationId: string, userId: string) => {
+export const getConversationMessages = async (
+  conversationId: string,
+  userId: string
+) => {
   try {
-    // Verify the user is part of this conversation
-    const conversation = await prisma.$queryRaw`
-      SELECT c.id, c.serviceBookingId, sb.status as bookingStatus 
-      FROM Conversation c
-      LEFT JOIN ServiceBooking sb ON c.serviceBookingId = sb.id
-      WHERE c.id = ${conversationId} 
-      AND (c.user1Id = ${userId} OR c.user2Id = ${userId})
-    `;
-
-    const conv = (conversation as any[])[0];
-    if (!conv) {
+    // Verify user is part of this conversation
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        OR: [{ user1Id: userId }, { user2Id: userId }]
+      },
+      select: {
+        id: true,
+        serviceBookingId: true,
+        serviceBooking: {
+          select: { status: true }
+        }
+      }
+    });
+ 
+    if (!conversation) {
       throw new Error('Conversation not found or access denied');
     }
-    
-    // Add booking status to the response
-    const isBookingCompleted = conv.bookingStatus === 'COMPLETED';
-
-    // Get messages for this conversation
-    const messages = await prisma.$queryRaw`
-      SELECT 
-        m.id, m.content, m.imageUrl, m.createdAt, m.isRead,
-        m.senderId, u.firstName as senderFirstName, u.lastName as senderLastName, 
-        u.profilePicture as senderProfilePic
-      FROM Message m
-      JOIN User u ON m.senderId = u.id
-      WHERE m.conversationId = ${conversationId}
-      ORDER BY m.createdAt ASC
-    `;
-
-    // Mark messages as read if they were sent to this user
-    await prisma.$executeRaw`
-      UPDATE Message 
-      SET isRead = true 
-      WHERE conversationId = ${conversationId} 
-      AND receiverId = ${userId}
-      AND isRead = false
-    `;
-
-    // Add system message if booking is completed
-    let processedMessages = (messages as any[]).map(msg => ({
+ 
+    const isBookingCompleted =
+      conversation.serviceBooking?.status === 'COMPLETED';
+ 
+    // Get all messages for this conversation
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        content: true,
+        imageUrl: true,
+        createdAt: true,
+        isRead: true,
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profilePicture: true
+          }
+        }
+      }
+    });
+ 
+    // Mark unread messages as read
+    await prisma.message.updateMany({
+      where: {
+        conversationId,
+        receiverId: userId,
+        isRead: false
+      },
+      data: { isRead: true }
+    });
+ 
+    const processedMessages = messages.map(msg => ({
       id: msg.id,
       content: msg.content,
       imageUrl: msg.imageUrl,
       createdAt: msg.createdAt,
-      isRead: Boolean(msg.isRead),
+      isRead: msg.isRead,
       sender: {
-        id: msg.senderId,
-        firstName: msg.senderFirstName,
-        lastName: msg.senderLastName,
-        profilePicture: msg.senderProfilePic
+        id: msg.sender.id,
+        firstName: msg.sender.firstName,
+        lastName: msg.sender.lastName,
+        profilePicture: msg.sender.profilePicture
       }
     }));
-    
-    // Return messages with booking status
+ 
     return {
       messages: processedMessages,
       conversationStatus: {
         isActive: !isBookingCompleted,
-        serviceBookingId: conv.serviceBookingId,
-        bookingStatus: conv.bookingStatus
+        serviceBookingId: conversation.serviceBookingId,
+        bookingStatus: conversation.serviceBooking?.status ?? null
       }
     };
   } catch (error) {
@@ -1133,66 +1171,86 @@ export const getConversationMessages = async (conversationId: string, userId: st
 };
 
 export const sendMessage = async (
-  conversationId: string, 
-  senderId: string, 
+  conversationId: string,
+  senderId: string,
   content: string,
   imageUrl?: string
 ) => {
   try {
-    // Verify the conversation exists and user is part of it, and check booking status
-    const conversation = await prisma.$queryRaw`
-      SELECT c.user1Id, c.user2Id, c.serviceBookingId, sb.status as bookingStatus
-      FROM Conversation c
-      LEFT JOIN ServiceBooking sb ON c.serviceBookingId = sb.id
-      WHERE c.id = ${conversationId} 
-      AND (c.user1Id = ${senderId} OR c.user2Id = ${senderId})
-    `;
-
-    const conv = (conversation as any[])[0];
-    if (!conv) {
+    // Verify conversation exists and sender is part of it
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        OR: [{ user1Id: senderId }, { user2Id: senderId }]
+      },
+      select: {
+        user1Id: true,
+        user2Id: true,
+        serviceBookingId: true,
+        serviceBooking: {
+          select: { status: true }
+        }
+      }
+    });
+ 
+    if (!conversation) {
       throw new Error('Conversation not found or access denied');
     }
-
-    // Check if the booking is completed - if so, prevent sending messages
-    if (conv.serviceBookingId && conv.bookingStatus === 'COMPLETED') {
-      throw new Error('This conversation is closed because the service booking has been completed');
+ 
+    // Block sending if booking is completed
+    if (
+      conversation.serviceBookingId &&
+      conversation.serviceBooking?.status === 'COMPLETED'
+    ) {
+      throw new Error(
+        'This conversation is closed because the service booking has been completed'
+      );
     }
-
-    // Determine the receiver (the other user in the conversation)
-    const receiverId = conv.user1Id === senderId ? conv.user2Id : conv.user1Id;
-
-    // Insert the message with optional image URL
-    await prisma.$executeRaw`
-      INSERT INTO Message (id, conversationId, senderId, receiverId, content, imageUrl, createdAt, isRead)
-      VALUES (UUID(), ${conversationId}, ${senderId}, ${receiverId}, ${content}, ${imageUrl || null}, NOW(), false)
-    `;
-
-    // Get the inserted message with sender details
-    const newMessage = await prisma.$queryRaw`
-      SELECT 
-        m.id, m.content, m.imageUrl, m.createdAt, m.isRead,
-        m.senderId, u.firstName as senderFirstName, u.lastName as senderLastName, 
-        u.profilePicture as senderProfilePic
-      FROM Message m
-      JOIN User u ON m.senderId = u.id
-      WHERE m.conversationId = ${conversationId}
-      AND m.senderId = ${senderId}
-      ORDER BY m.createdAt DESC
-      LIMIT 1
-    `;
-
-    const msg = (newMessage as any[])[0];
+ 
+    // Determine receiver
+    const receiverId =
+      conversation.user1Id === senderId
+        ? conversation.user2Id
+        : conversation.user1Id;
+ 
+    // Create the message
+    const newMessage = await prisma.message.create({
+      data: {
+        conversationId,
+        senderId,
+        receiverId,
+        content,
+        imageUrl: imageUrl || null,
+        isRead: false
+      },
+      select: {
+        id: true,
+        content: true,
+        imageUrl: true,
+        createdAt: true,
+        isRead: true,
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profilePicture: true
+          }
+        }
+      }
+    });
+ 
     return {
-      id: msg.id,
-      content: msg.content,
-      imageUrl: msg.imageUrl,
-      createdAt: msg.createdAt,
-      isRead: Boolean(msg.isRead),
+      id: newMessage.id,
+      content: newMessage.content,
+      imageUrl: newMessage.imageUrl,
+      createdAt: newMessage.createdAt,
+      isRead: newMessage.isRead,
       sender: {
-        id: msg.senderId,
-        firstName: msg.senderFirstName,
-        lastName: msg.senderLastName,
-        profilePicture: msg.senderProfilePic
+        id: newMessage.sender.id,
+        firstName: newMessage.sender.firstName,
+        lastName: newMessage.sender.lastName,
+        profilePicture: newMessage.sender.profilePicture
       }
     };
   } catch (error) {
