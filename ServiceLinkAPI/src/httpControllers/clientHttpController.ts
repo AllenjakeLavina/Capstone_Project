@@ -788,7 +788,7 @@ export const createReviewController = async (req: Request, res: Response) => {
     // Process uploaded images
     let imageUrls: string[] = [];
     if (req.files && Array.isArray(req.files)) {
-      imageUrls = (req.files as Express.Multer.File[]).map(file => `/uploads/${file.filename}`);
+      imageUrls = (req.files as Express.Multer.File[]).map(file => (file as any).path);
     }
 
     const review = await createReview(userId, bookingId, { 

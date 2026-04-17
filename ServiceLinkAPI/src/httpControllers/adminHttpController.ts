@@ -581,7 +581,7 @@ export const handleEditCategory = async (req: Request, res: Response) => {
   try {
     const { categoryId } = req.params;
     const { name, description } = req.body;
-    const imageUrl = req.file ? req.file.path : undefined;
+    const imageUrl = req.file ? (req.file as any).path : undefined;
 
     // Validate required fields
     if (!name) {

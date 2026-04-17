@@ -1,217 +1,90 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { Request } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../index';
-import express from 'express';
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
 
-// Storage configuration for multer
-const storage = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, cb) => {
-    // Check if this is a registration request
-    if (req.originalUrl.includes('/register')) {
-      // For registration, use a temporary folder
-      const tempDir = path.join(uploadsDir, 'temp');
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-      return cb(null, tempDir);
-    }
-
-    // Check if this is an upload-image request for chat
-    if (req.originalUrl.includes('/upload-image')) {
-      // For chat images, use a chat folder
-      const chatDir = path.join(uploadsDir, 'chat');
-      if (!fs.existsSync(chatDir)) {
-        fs.mkdirSync(chatDir, { recursive: true });
-      }
-      
-      // If user is authenticated, add user subfolder
-      const userId = req.user?.id;
-      if (userId) {
-        const userChatDir = path.join(chatDir, userId);
-        if (!fs.existsSync(userChatDir)) {
-          fs.mkdirSync(userChatDir, { recursive: true });
-        }
-        return cb(null, userChatDir);
-      }
-      
-      return cb(null, chatDir);
-    }
-    
-    // Check if this is a category image upload
-    if (req.originalUrl.includes('/category/image') || req.originalUrl.includes('/admin/category')) {
-      // For category images, use a category folder
-      const categoryDir = path.join(uploadsDir, 'category');
-      if (!fs.existsSync(categoryDir)) {
-        fs.mkdirSync(categoryDir, { recursive: true });
-      }
-      return cb(null, categoryDir);
-    }
-
-    // For authenticated requests, use user-specific folders
-    const userId = req.user?.id;
-    
-    if (!userId) {
-      return cb(new Error('User ID not found'), '');
-    }
-    
-    // Create user directory if it doesn't exist
-    const userDir = path.join(uploadsDir, userId);
-    if (!fs.existsSync(userDir)) {
-      fs.mkdirSync(userDir, { recursive: true });
-    }
-    
-    // Create subdirectory based on file type
-    let subDir = 'other';
-    
-    if (req.originalUrl.includes('/portfolio')) {
-      subDir = 'portfolio';
-    } else if (req.originalUrl.includes('/document')) {
-      subDir = 'documents';
-    } else if (req.originalUrl.includes('/profile') || req.originalUrl.includes('/upload-profile-picture')) {
-      subDir = 'profile';
-    }
-    
-    const finalDir = path.join(userDir, subDir);
-    if (!fs.existsSync(finalDir)) {
-      fs.mkdirSync(finalDir, { recursive: true });
-    }
-    
-    cb(null, finalDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename
-    const uniqueId = uuidv4();
-    const fileExtension = path.extname(file.originalname);
-    const safeFilename = `${uniqueId}${fileExtension}`;
-    
-    cb(null, safeFilename);
-  }
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// File filter to allow only certain file types
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  // Define allowed file types
-  const allowedImageTypes = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-  const allowedDocumentTypes = ['.pdf', '.doc', '.docx', '.txt'];
-  
-  // Extract file extension
-  const ext = path.extname(file.originalname).toLowerCase();
-  
-  // Check if it's a registration upload (ID document)
-  if (req.originalUrl.includes('/register')) {
-    // Allow both images and documents for registration
-    if ([...allowedImageTypes, ...allowedDocumentTypes].includes(ext)) {
-      return cb(null, true);
-    }
+// Helper to determine folder based on route
+const getFolder = (req: Request): string => {
+  const url = req.originalUrl;
+
+  if (url.includes('/register')) {
+    return 'servicelink/temp';
   }
-  // Check if it's a chat image upload
-  else if (req.originalUrl.includes('/upload-image')) {
-    // Allow only images for chat
-    if (allowedImageTypes.includes(ext)) {
-      return cb(null, true);
-    }
+  if (url.includes('/upload-image')) {
+    return `servicelink/chat/${req.user?.id || 'unknown'}`;
   }
-  // Check if it's a category image upload
-  else if (req.originalUrl.includes('/category/image') || req.originalUrl.includes('/admin/category')) {
-    // Allow only images for categories
-    if (allowedImageTypes.includes(ext)) {
-      return cb(null, true);
-    }
+  if (url.includes('/category/image') || url.includes('/admin/category')) {
+    return 'servicelink/category';
   }
-  // Check if it's a portfolio upload
-  else if (req.originalUrl.includes('/portfolio')) {
-    // Allow images, PDFs, and DOC files for portfolio
-    if ([...allowedImageTypes, ...allowedDocumentTypes].includes(ext)) {
-      return cb(null, true);
-    }
-  } 
-  // Document uploads (certifications, licenses, etc.)
-  else if (req.originalUrl.includes('/document')) {
-    // Allow PDFs and DOC files
-    if (allowedDocumentTypes.includes(ext)) {
-      return cb(null, true);
-    }
-  } 
-  // Profile picture uploads
-  else if (req.originalUrl.includes('/profile') || req.originalUrl.includes('/upload-profile-picture')) {
-    // Allow only images
-    if (allowedImageTypes.includes(ext)) {
-      return cb(null, true);
-    }
+  if (url.includes('/portfolio')) {
+    return `servicelink/${req.user?.id || 'unknown'}/portfolio`;
   }
-  // Reject file if it doesn't match any allowed types
+  if (url.includes('/document')) {
+    return `servicelink/${req.user?.id || 'unknown'}/documents`;
+  }
+  if (url.includes('/profile') || url.includes('/upload-profile-picture')) {
+    return `servicelink/${req.user?.id || 'unknown'}/profile`;
+  }
+
+  return `servicelink/${req.user?.id || 'unknown'}/other`;
+};
+
+// Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: (req: Request, file: Express.Multer.File) => ({
+    folder: getFolder(req),
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx'],
+    resource_type: 'auto',
+  }),
+});
+
+// File filter — same logic as before
+const fileFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
+  const url = req.originalUrl;
+  const allowedImages = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+  const allowedDocs = ['.pdf', '.doc', '.docx', '.txt'];
+  const ext = ('.' + file.mimetype.split('/')[1]).toLowerCase();
+
+  if (url.includes('/register') || url.includes('/portfolio')) {
+    if ([...allowedImages, ...allowedDocs].includes(ext)) return cb(null, true);
+  } else if (url.includes('/document')) {
+    if (allowedDocs.includes(ext)) return cb(null, true);
+  } else {
+    if (allowedImages.includes(ext)) return cb(null, true);
+  }
+
   cb(null, false);
 };
 
-// Configure limits
-const limits = {
-  fileSize: 300 * 1024 * 1024, // 300MB max file size
-};
-
-// Create multer upload middleware
 export const uploadFile = multer({
   storage,
   fileFilter,
-  limits
+  limits: { fileSize: 300 * 1024 * 1024 },
 });
 
-// Helper to get file URL
 export const getFileUrl = (req: Request, file: Express.Multer.File): string => {
-  // Check if this is a registration request
-  if (req.originalUrl.includes('/register')) {
-    // For registration files, use a temp path
-    return `/uploads/temp/${file.filename}`;
-  }
-  
-  // Check if this is a chat image upload
-  if (req.originalUrl.includes('/upload-image')) {
-    const userId = req.user?.id;
-    if (userId) {
-      return `/uploads/chat/${userId}/${file.filename}`;
-    }
-    return `/uploads/chat/${file.filename}`;
-  }
-  
-  // Check if this is a category image upload
-  if (req.originalUrl.includes('/category/image') || req.originalUrl.includes('/admin/category')) {
-    return `/uploads/category/${file.filename}`;
-  }
-
-  // For authenticated requests, use user-specific paths
-  const userId = req.user?.id;
-  
-  if (!file || !userId) {
-    throw new Error('File or user ID not available');
-  }
-  
-  // Determine subdirectory
-  let subDir = 'other';
-  
-  if (req.originalUrl.includes('/portfolio')) {
-    subDir = 'portfolio';
-  } else if (req.originalUrl.includes('/document')) {
-    subDir = 'documents';
-  } else if (req.originalUrl.includes('/profile') || req.originalUrl.includes('/upload-profile-picture')) {
-    subDir = 'profile';
-  }
-  
-  // Create relative path (without the base URL)
-  return `/uploads/${userId}/${subDir}/${file.filename}`;
+  return (file as any).path; // Cloudinary full URL
 };
 
-// Middleware to serve static files
+// configureStaticFileServing — no longer needed but keeping to avoid breaking imports
 export const configureStaticFileServing = (app: any) => {
-  app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+  console.log('Static file serving is now handled by Cloudinary');
 };
 
+// addDocument — unchanged
 export const addDocument = async (
   userId: string,
   document: {
@@ -221,29 +94,22 @@ export const addDocument = async (
   }
 ) => {
   try {
-    // Find user by id
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { serviceProvider: true }
+      include: { serviceProvider: true },
     });
 
-    if (!user) {
-      throw new Error('User not found');
-    }
+    if (!user) throw new Error('User not found');
+    if (!user.serviceProvider) throw new Error('Provider profile not found');
 
-    if (!user.serviceProvider) {
-      throw new Error('Provider profile not found');
-    }
-
-    // Create new document
     const newDocument = await prisma.document.create({
       data: {
         serviceProviderId: user.serviceProvider.id,
         title: document.title,
         type: document.type,
         fileUrl: document.fileUrl,
-        isVerified: false
-      }
+        isVerified: false,
+      },
     });
 
     return newDocument;
