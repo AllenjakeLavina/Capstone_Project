@@ -526,7 +526,7 @@ export const handleCreateCategory = async (req: Request, res: Response) => {
     let imageUrl;
     if (req.file) {
       console.log('File uploaded:', req.file);
-      imageUrl = `/uploads/category/${req.file.filename}`;
+      imageUrl = (req.file as any).path;
     }
 
     console.log('Creating category with image URL:', imageUrl);
