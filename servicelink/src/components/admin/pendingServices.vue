@@ -41,95 +41,47 @@
           <i class="fas fa-check-circle"></i>
           <p>{{ filterStatus === 'pending' ? 'No services pending approval' : filterStatus === 'approved' ? 'No approved services' : 'No services found' }}</p>
         </div>
-        <div v-else class="services-grid">
-          <div v-for="service in filteredServices" :key="service.id" class="service-card" :class="{ 'approved': service.isApproved }">
-            <div class="service-header">
-              <div class="title-section">
-                <h3 class="service-title">{{ service.title }}</h3>
-                <span class="status-badge" :class="service.isApproved ? 'approved-badge' : 'pending-badge'">
-                  <i :class="service.isApproved ? 'fas fa-check-circle' : 'fas fa-clock'"></i>
-                  {{ service.isApproved ? 'Approved' : 'Pending' }}
-                </span>
-              </div>
-              <span class="service-category">{{ service.category?.name || 'Uncategorized' }}</span>
-            </div>
-            
-            <div class="service-images" v-if="service.imageUrls && service.imageUrls.length > 0">
-              <img 
-                v-for="(img, idx) in service.imageUrls.slice(0, 3)" 
-                :key="idx" 
-                :src="getFileUrl(img)" 
-                :alt="service.title"
-                class="service-image"
-              />
-            </div>
-            <div v-else class="no-image">
-              <i class="fas fa-image"></i>
-              <span>No images</span>
-            </div>
-            
-            <div class="service-details">
-              <p class="service-description">{{ truncateText(service.description, 150) }}</p>
-              
-              <div class="service-info">
-                <div class="info-item">
-                  <i class="fas fa-tag"></i>
-                  <span>Rate: ₱{{ service.pricing }} / {{ service.pricingType?.toLowerCase() || 'fixed' }}</span>
-                </div>
-                <div class="info-item">
-                  <i class="fas fa-user"></i>
-                  <span>{{ service.provider?.name || 'Unknown Provider' }}</span>
-                </div>
-                <div class="info-item">
-                  <i class="fas fa-calendar"></i>
-                  <span>{{ formatDate(service.createdAt) }}</span>
-                </div>
-              </div>
-              
-              <div class="service-skills" v-if="service.skills && service.skills.length > 0">
-                <span 
-                  v-for="skill in service.skills" 
-                  :key="skill.id" 
-                  class="skill-tag"
-                >
-                  {{ skill.name }}
-                </span>
-              </div>
-            </div>
-            
-            <div class="service-actions">
-              <button 
-                v-if="!service.isApproved"
-                class="approve-btn" 
-                @click="approveService(service.id)"
-                :disabled="processing === service.id"
-              >
-                <i class="fas fa-check"></i>
-                {{ processing === service.id ? 'Approving...' : 'Approve' }}
-              </button>
-              <button 
-                v-if="!service.isApproved"
-                class="reject-btn" 
-                @click="openRejectModal(service)"
-                :disabled="processing === service.id"
-              >
-                <i class="fas fa-times"></i>
-                Decline
-              </button>
-              <button 
-                class="view-details-btn" 
-                @click="viewServiceDetails(service)"
-              >
-                <i class="fas fa-eye"></i>
-                View Details
-              </button>
-              <span v-if="service.isApproved" class="approved-label">
-                <i class="fas fa-check-circle"></i>
-                Approved
-              </span>
-            </div>
-          </div>
-        </div>
+        <div v-else class="services-table-wrapper">
+  <table class="services-table">
+    <thead>
+      <tr>
+        <th>Service Title</th>
+        <th>Category</th>
+        <th>Provider</th>
+        <th>Rate</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="service in filteredServices" :key="service.id" :class="{ 'approved-row': service.isApproved }">
+        <td class="td-title">{{ service.title }}</td>
+        <td>
+          <span class="service-category">{{ service.category?.name || 'Uncategorized' }}</span>
+        </td>
+        <td>{{ service.provider?.name || 'Unknown' }}</td>
+        <td>₱{{ service.pricing }} / {{ service.pricingType?.toLowerCase() || 'fixed' }}</td>
+        <td>{{ formatDate(service.createdAt) }}</td>
+        <td>
+          <span class="status-badge" :class="service.isApproved ? 'approved-badge' : 'pending-badge'">
+            <i :class="service.isApproved ? 'fas fa-check-circle' : 'fas fa-clock'"></i>
+            {{ service.isApproved ? 'Approved' : 'Pending' }}
+          </span>
+        </td>
+        <td class="td-actions">
+          <button 
+            class="view-details-btn" 
+            @click="viewServiceDetails(service)"
+          >
+            <i class="fas fa-eye"></i>
+            View
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
       </div>
     </div>
 
@@ -219,6 +171,23 @@
         </div>
         <div class="modal-footer">
           <button class="btn-close" @click="closeDetailsModal">Close</button>
+          <button 
+            v-if="selectedService && !selectedService.isApproved"
+            class="btn-decline"
+            @click="openRejectModal(selectedService); closeDetailsModal()"
+          >
+            <i class="fas fa-times"></i>
+            Decline
+          </button>
+          <button 
+            v-if="selectedService && !selectedService.isApproved"
+            class="btn-approve"
+            @click="approveService(selectedService.id); closeDetailsModal()"
+            :disabled="processing === selectedService?.id"
+          >
+            <i class="fas fa-check"></i>
+            {{ processing === selectedService?.id ? 'Approving...' : 'Approve' }}
+          </button>
         </div>
       </div>
     </div>
@@ -475,7 +444,7 @@ export default {
   padding: 20px 30px;
   border: none;
   min-height: calc(100dvh - 80px);
-  min-height: calc(100vh - 80px); /* Fallback for older browsers */
+  min-height: calc(100vh - 80px);
 }
 
 .pending-services {
@@ -608,202 +577,188 @@ export default {
   margin: 0;
 }
 
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-@media (max-width: 768px) {
-  .services-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (min-width: 1200px) {
-  .services-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.service-card {
-  border: 1px solid #ececec;
+/* ── TABLE STYLES ── */
+.services-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
   border-radius: 12px;
-  overflow: hidden;
-  background: white;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 6px rgba(44, 62, 80, 0.06);
-  display: flex;
-  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.07);
 }
 
-.service-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.1);
+.services-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
 }
 
-.service-card.approved {
+.services-table thead tr {
+  background: linear-gradient(135deg, #f0fdf6 0%, #e6f9ef 100%);
+  border-bottom: 2px solid #c6f0d8;
+}
+
+.services-table th {
+  padding: 14px 18px;
+  text-align: left;
+  font-weight: 700;
+  color: #00C853;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  white-space: nowrap;
+}
+
+.services-table tbody tr {
+  border-bottom: 1px solid #f0f4f8;
+  transition: background 0.2s ease;
+}
+
+.services-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.services-table tbody tr:hover {
+  background: #f0fdf6;
+}
+
+.services-table tbody tr.approved-row {
   border-left: 4px solid #00C853;
 }
 
-.service-header {
-  padding: 14px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #ececec;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 10px;
+.services-table td {
+  padding: 14px 18px;
+  color: #4a5568;
+  vertical-align: middle;
 }
 
-.title-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 100%;
-  gap: 12px;
+.td-title {
+  font-weight: 700;
+  color: #2d3748;
+  min-width: 160px;
+  font-size: 14px;
 }
 
-.status-badge {
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 10px;
-  font-weight: 600;
+.td-actions {
   display: flex;
+  gap: 8px;
   align-items: center;
-  gap: 4px;
+  flex-wrap: nowrap;
+  min-width: 180px;
+}
+
+/* ── STATUS BADGES ── */
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .pending-badge {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
-  color: #856404;
-  box-shadow: 0 2px 4px rgba(133, 100, 4, 0.1);
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  color: #e65100;
+  border: 1px solid #ffe082;
 }
 
 .approved-badge {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  color: #155724;
-  box-shadow: 0 2px 4px rgba(21, 87, 36, 0.1);
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
 }
 
-.service-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-  flex: 1;
-  line-height: 1.3;
-}
-
+/* ── CATEGORY BADGE ── */
 .service-category {
   background: linear-gradient(135deg, #00C853 0%, #009688 100%);
   color: white;
   padding: 4px 10px;
-  border-radius: 16px;
+  border-radius: 20px;
   font-size: 10px;
-  font-weight: 600;
-  align-self: flex-start;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  box-shadow: 0 2px 4px rgba(0, 200, 83, 0.2);
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 200, 83, 0.25);
 }
 
-.service-images {
-  display: flex;
-  gap: 4px;
-  padding: 10px;
-  background: #f8f9fa;
-  max-height: 120px;
-  overflow: hidden;
-}
-
-.service-image {
-  flex: 1;
-  object-fit: cover;
-  height: 100px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.no-image {
-  padding: 30px 15px;
-  text-align: center;
-  color: #999;
-  background: #f8f9fa;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100px;
-}
-
-.no-image i {
-  font-size: 28px;
-  display: block;
-  margin-bottom: 8px;
-  opacity: 0.4;
-}
-
-.no-image span {
+/* ── ACTION BUTTONS ── */
+.approve-btn,
+.reject-btn,
+.view-details-btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
   font-size: 12px;
-  font-weight: 500;
-  color: #999;
-}
-
-.service-details {
-  padding: 14px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.service-description {
-  color: #666;
-  font-size: 13px;
-  line-height: 1.5;
-  margin-bottom: 12px;
-  flex: 1;
-}
-
-.service-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #ececec;
-}
-
-.info-item {
-  display: flex;
+  font-weight: 600;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #4a5568;
-  font-weight: 500;
+  gap: 5px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.info-item i {
-  color: #00C853;
-  width: 16px;
-  text-align: center;
-  font-size: 13px;
+.approve-btn {
+  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
+  color: white;
 }
 
-.service-skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+.approve-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 200, 83, 0.35);
 }
 
+.reject-btn {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: white;
+}
+
+.reject-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(244, 67, 54, 0.35);
+}
+
+.view-details-btn {
+  background: linear-gradient(135deg, #2196F3 0%, #1565c0 100%);
+  color: white;
+}
+
+.view-details-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.35);
+}
+
+.approve-btn:disabled,
+.reject-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none;
+}
+
+.approved-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #1b5e20;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 7px;
+  border: 1px solid #a5d6a7;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ── SKILL TAG ── */
 .skill-tag {
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   color: #1976d2;
@@ -814,88 +769,7 @@ export default {
   border: 1px solid rgba(25, 118, 210, 0.1);
 }
 
-.service-actions {
-  padding: 12px 14px;
-  border-top: 1px solid #ececec;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  background: #fafafa;
-}
-
-.service-actions button {
-  flex: 1;
-  min-width: 90px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.approve-btn {
-  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
-  color: white;
-}
-
-.approve-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 200, 83, 0.3);
-}
-
-.reject-btn {
-  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-  color: white;
-}
-
-.reject-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
-}
-
-.view-details-btn {
-  background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
-  color: white;
-}
-
-.view-details-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
-}
-
-.service-actions button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.approved-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #00C853;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 8px 12px;
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  border-radius: 6px;
-  flex: 1;
-  justify-content: center;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border: 1px solid rgba(0, 200, 83, 0.2);
-}
-
-/* Modal Styles */
+/* ── MODAL STYLES ── */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -915,7 +789,7 @@ export default {
   width: 90%;
   max-width: 500px;
   max-height: 90dvh;
-  max-height: 90vh; /* Fallback for older browsers */
+  max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
   border: 1px solid #ececec;
@@ -1002,6 +876,7 @@ export default {
   resize: vertical;
   transition: all 0.3s ease;
   background: #fafafa;
+  box-sizing: border-box;
 }
 
 .form-control:focus {
@@ -1124,6 +999,50 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+.btn-approve {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
+  color: white;
+}
+
+.btn-approve:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 200, 83, 0.3);
+}
+
+.btn-approve:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-decline {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: white;
+}
+
+.btn-decline:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
 }
 </style>
 

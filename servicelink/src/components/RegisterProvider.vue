@@ -75,10 +75,11 @@
                 id="phone" 
                 v-model="formData.phone" 
                 required
-                placeholder="e.g., 09123456789 or +639123456789"
+                placeholder="e.g., 09123456789"
+                maxlength="11"
               />
             </div>
-            <small class="input-hint">Enter a valid Philippine phone number</small>
+            <small class="input-hint">Enter 11-digit number starting with 09</small>
           </div>
 
           <div class="form-group">
@@ -276,7 +277,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 import { providerService, authService } from '../services/apiService';
@@ -374,10 +375,10 @@ export default {
       
       // Philippine phone number format: +63XXXXXXXXXX or 09XXXXXXXXX or 0XXXXXXXXX
       // Also accept international formats
-      const phoneRegex = /^(\+63|63|0)?[9]\d{9}$|^(\+?\d{10,15})$/;
-      
+      const phoneRegex = /^09\d{9}$/;
+
       if (!phoneRegex.test(cleanPhone)) {
-        return 'Please enter a valid contact number (e.g., 09123456789 or +639123456789)';
+        return 'Please enter a valid contact number starting with 09 (e.g., 09123456789)';
       }
       
       return null;
@@ -675,6 +676,10 @@ export default {
       }
     };
 
+    watch(showTermsModal, (isOpen) => {
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    });
+
     const handleVerificationError = async (errorMessage) => {
       await Swal.fire({
         icon: 'error',
@@ -718,15 +723,16 @@ export default {
 <style scoped>
 .auth-container {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 100dvh;
   min-height: 100vh; /* Fallback for older browsers */
   background: linear-gradient(135deg, #106e40 0%, #38b676 100%);
   padding: 20px;
   position: relative;
-  overflow-x: hidden;
+  overflow-x: visible;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .auth-container::before {
@@ -738,13 +744,14 @@ export default {
   background-repeat: no-repeat;
   background-size: cover;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .auth-container::after {
   content: "";
   position: absolute;
-  left: -100px;
-  bottom: -100px;
+  left: 0;
+  bottom: 0;
   width: 350px;
   height: 350px;
   background: radial-gradient(circle at 60% 40%, #38b67655 0%, transparent 80%);

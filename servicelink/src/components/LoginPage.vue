@@ -418,12 +418,12 @@ export default {
   align-items: center;
   justify-content: center;
   min-height: 100dvh;
-  min-height: 100vh; /* Fallback for older browsers */
+  min-height: 100vh;
   background-color: #f5f5f5;
   padding: 20px;
   position: relative;
-  overflow-x: hidden;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .login-container::before {
@@ -440,8 +440,8 @@ export default {
 .login-container::after {
   content: "";
   position: absolute;
-  left: -100px;
-  bottom: -100px;
+  left: 0;
+  bottom: 0;
   width: 350px;
   height: 350px;
   background: radial-gradient(circle at 60% 40%, #38b67655 0%, transparent 80%);
