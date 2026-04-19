@@ -273,9 +273,11 @@ export default {
     const fetchProviders = async () => {
       try {
         loading.value = true;
-        const response = await providerService.searchProviders({}, { limit: 6 });
+        const response = await providerService.searchProviders({}, { limit: 5, sortBy: 'rating', sortOrder: 'desc' });
         if (response.success) {
-          providers.value = response.data.providers;
+          providers.value = response.data.providers
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          .slice(0, 5);
         } else {
           error.value = response.message || 'Failed to load providers';
         }
@@ -806,12 +808,15 @@ export default {
 }
 
 .providers-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
 }
 
 .provider-card {
+  width: calc(20% - 16px);
+  min-width: 200px;
   background: white;
   border-radius: 16px;
   overflow: hidden;
@@ -827,7 +832,7 @@ export default {
 
 .provider-image {
   width: 100%;
-  height: 250px;
+  height: 160px;
   overflow: hidden;
   position: relative;
 }
