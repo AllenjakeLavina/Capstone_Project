@@ -698,7 +698,8 @@ export const handleToggleProviderStatus = async (req: Request, res: Response) =>
 
 export const handleGetDashboardStats = async (req: Request, res: Response) => {
   try {
-    const stats = await getDashboardStats();
+    const period = (req.query.period as 'week' | 'month' | 'year') || 'week';
+    const stats = await getDashboardStats(period);
 
     res.status(200).json({
       success: true,

@@ -55,7 +55,18 @@
     <div class="charts-section">
       <!-- Line Chart - Bookings over 7 days -->
       <div class="chart-container">
-        <h3>Bookings Over Past 7 Days</h3>
+        <div class="chart-header">
+          <h3>
+            {{ selectedPeriod === 'week' ? 'Bookings Over Past 7 Days' 
+            : selectedPeriod === 'month' ? 'Bookings Over Past 30 Days' 
+            : 'Bookings Over Past Year' }}
+          </h3>
+          <select v-model="selectedPeriod" @change="changePeriod(selectedPeriod)" class="period-select">
+            <option value="week">Weekly</option>
+            <option value="month">Monthly</option>
+            <option value="year">Yearly</option>
+          </select>
+        </div>
         <div class="chart-wrapper">
           <canvas ref="lineChart"></canvas>
         </div>
@@ -292,21 +303,21 @@ export default {
       sortBy: 'date',
       sortOrder: 'desc'
     });
+
+    // ✅ BAGO
+    const selectedPeriod = ref('week');
+
     let lineChartInstance = null;
     let pieChartInstance = null;
 
     const updateTimeAndDate = () => {
       const now = new Date();
-      
-      // Format time (HH:MM:SS AM/PM)
       currentTime.value = now.toLocaleTimeString('en-US', {
         hour12: true,
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit'
       });
-      
-      // Format date (Day, Month DD, YYYY)
       currentDate.value = now.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -319,33 +330,41 @@ export default {
       try {
         loading.value = true;
         
-        // Load dashboard stats
-        const statsResponse = await adminService.getDashboardStats();
+        // ✅ BAGO: i-pass ang selectedPeriod
+        const statsResponse = await adminService.getDashboardStats(selectedPeriod.value);
         if (statsResponse.success) {
           stats.value = statsResponse.data;
         }
         
-        // Load recent bookings
         const bookingsResponse = await adminService.getRecentBookings(10);
         if (bookingsResponse.success) {
           recentBookings.value = bookingsResponse.data;
         }
 
-        // Load provider ratings
         const ratingsResponse = await adminService.getProviderRatings();
         if (ratingsResponse.success) {
           providerRatings.value = ratingsResponse.data;
           providerRatingsStats.value = ratingsResponse.data.statistics;
-          topProviders.value = ratingsResponse.data.providers.slice(0, 10); // Show top 10 providers
+          topProviders.value = ratingsResponse.data.providers.slice(0, 10);
         }
         
-        // Wait for DOM to update, then create charts
         await nextTick();
         createCharts();
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
         loading.value = false;
+      }
+    };
+
+    // ✅ BAGO: changePeriod method
+    const changePeriod = async (period) => {
+      selectedPeriod.value = period;
+      const statsResponse = await adminService.getDashboardStats(period);
+      if (statsResponse.success) {
+        stats.value = statsResponse.data;
+        await nextTick();
+        createLineChart();
       }
     };
 
@@ -358,13 +377,12 @@ export default {
       const canvas = lineChart.value;
       if (!canvas || !stats.value.bookingsLast7Days) return;
       
-      // Destroy existing chart if it exists
       if (lineChartInstance) {
         lineChartInstance.destroy();
       }
       
       const data = stats.value.bookingsLast7Days;
-      
+
       lineChartInstance = new Chart(canvas, {
         type: 'line',
         data: {
@@ -373,31 +391,77 @@ export default {
             label: 'Bookings',
             data: data.map(item => item.count),
             borderColor: '#00C853',
-            backgroundColor: 'rgba(0, 200, 83, 0.1)',
-            borderWidth: 3,
+            backgroundColor: 'rgba(0, 200, 83, 0.05)',
+            borderWidth: 2,
             fill: true,
             tension: 0.4,
             pointBackgroundColor: '#00C853',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointRadius: 6
+            pointBorderColor: '#00C853',
+            pointBorderWidth: 0,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#00C853',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 2,
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: {
-              display: false
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#fff',
+              titleColor: '#333',
+              bodyColor: '#00C853',
+              borderColor: '#e0e0e0',
+              borderWidth: 1,
+              padding: 10,
+              displayColors: false,
+              callbacks: {
+                title: (items) => items[0].label,
+                label: (item) => `Bookings: ${item.raw}`
+              }
             }
           },
           scales: {
+            x: {
+              grid: {
+                color: 'rgba(0,0,0,0.04)',
+                drawTicks: false,
+              },
+              border: { display: false },
+              ticks: {
+                color: '#aaa',
+                font: { size: 11 },
+                maxRotation: 0,
+                autoSkip: true,
+                // ✅ Key fix: limit kung ilan lang ang lalabas
+                maxTicksLimit: selectedPeriod.value === 'month' ? 8 : 
+                              selectedPeriod.value === 'year' ? 12 : 7,
+              }
+            },
             y: {
               beginAtZero: true,
+              grid: {
+                color: 'rgba(0,0,0,0.04)',
+                drawTicks: false,
+              },
+              border: { 
+                display: false,
+                dash: [4, 4]
+              },
               ticks: {
-                stepSize: 1
+                color: '#aaa',
+                font: { size: 11 },
+                stepSize: 1,
+                padding: 8
               }
             }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
           }
         }
       });
@@ -407,7 +471,6 @@ export default {
       const canvas = pieChart.value;
       if (!canvas || !stats.value.statusDistribution) return;
       
-      // Destroy existing chart if it exists
       if (pieChartInstance) {
         pieChartInstance.destroy();
       }
@@ -556,16 +619,9 @@ export default {
     };
 
     onMounted(() => {
-      // Initialize time and date
       updateTimeAndDate();
-      
-      // Set up interval to update time every second
       timeInterval.value = setInterval(updateTimeAndDate, 1000);
-      
-      // Load dashboard data
       loadDashboardData();
-      
-      // Load transactions
       fetchTransactions();
     });
 
@@ -585,6 +641,8 @@ export default {
       loadingTransactions,
       transactionError,
       transactionFilters,
+      selectedPeriod,
+      changePeriod,
       getClientName,
       getProviderName,
       getStatusClass,
@@ -599,7 +657,6 @@ export default {
     };
   },
   beforeUnmount() {
-    // Clean up interval on component unmount
     if (this.timeInterval) {
       clearInterval(this.timeInterval);
     }
@@ -1281,5 +1338,35 @@ tr:hover {
   text-align: center;
   padding: 40px;
   color: #666;
+}
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.period-select {
+  padding: 6px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.period-select:focus,
+.period-select:hover {
+  border-color: #00C853;
 }
 </style>

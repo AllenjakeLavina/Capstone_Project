@@ -1024,39 +1024,47 @@ export const toggleProviderStatus = async (providerId: string, isActive: boolean
 };
 
 // Dashboard Statistics Functions
-export const getDashboardStats = async () => {
+export const getDashboardStats = async (period: 'week' | 'month' | 'year' = 'week') => {
   try {
-    // Get total counts
+    // Get total counts (unchanged)
     const totalBookings = await prisma.serviceBooking.count();
     const totalClients = await prisma.client.count();
     const totalProviders = await prisma.serviceProvider.count();
     
-    // Calculate total revenue from completed bookings
+    // Calculate total revenue from completed bookings (unchanged)
     const completedBookings = await prisma.serviceBooking.findMany({
       where: {
         status: 'COMPLETED',
-        totalAmount: {
-          not: null
-        }
+        totalAmount: { not: null }
       },
-      select: {
-        totalAmount: true
-      }
+      select: { totalAmount: true }
     });
     
     const totalRevenue = completedBookings.reduce((sum, booking) => {
       return sum + Number(booking.totalAmount || 0);
     }, 0);
 
-    // Get bookings over the past 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const bookingsLast7Days = await prisma.serviceBooking.findMany({
+    // Dynamic period logic
+    let daysBack = 7;
+    let groupFormat: 'day' | 'month' = 'day';
+
+    if (period === 'week') {
+      daysBack = 7;
+      groupFormat = 'day';
+    } else if (period === 'month') {
+      daysBack = 30;
+      groupFormat = 'day';
+    } else if (period === 'year') {
+      daysBack = 365;
+      groupFormat = 'month';
+    }
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysBack);
+
+    const bookingsInPeriod = await prisma.serviceBooking.findMany({
       where: {
-        createdAt: {
-          gte: sevenDaysAgo
-        }
+        createdAt: { gte: startDate }
       },
       select: {
         createdAt: true,
@@ -1064,28 +1072,43 @@ export const getDashboardStats = async () => {
       }
     });
 
-    // Group bookings by date for the line chart
+    // Group by day (week/month) or by month (year)
     const bookingsByDate: { [key: string]: number } = {};
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateKey = date.toISOString().split('T')[0];
-      bookingsByDate[dateKey] = 0;
+
+    if (groupFormat === 'day') {
+      for (let i = 0; i < daysBack; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateKey = date.toISOString().split('T')[0];
+        bookingsByDate[dateKey] = 0;
+      }
+      bookingsInPeriod.forEach(booking => {
+        const dateKey = booking.createdAt.toISOString().split('T')[0];
+        if (bookingsByDate[dateKey] !== undefined) {
+          bookingsByDate[dateKey]++;
+        }
+      });
+    } else {
+      // Monthly grouping for year view
+      for (let i = 0; i < 12; i++) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        bookingsByDate[monthKey] = 0;
+      }
+      bookingsInPeriod.forEach(booking => {
+        const d = booking.createdAt;
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (bookingsByDate[monthKey] !== undefined) {
+          bookingsByDate[monthKey]++;
+        }
+      });
     }
 
-    bookingsLast7Days.forEach(booking => {
-      const dateKey = booking.createdAt.toISOString().split('T')[0];
-      if (bookingsByDate[dateKey] !== undefined) {
-        bookingsByDate[dateKey]++;
-      }
-    });
-
-    // Get booking status distribution
+    // Get booking status distribution (unchanged)
     const bookingStatusCounts = await prisma.serviceBooking.groupBy({
       by: ['status'],
-      _count: {
-        status: true
-      }
+      _count: { status: true }
     });
 
     const statusDistribution = bookingStatusCounts.map(item => ({
@@ -1100,10 +1123,9 @@ export const getDashboardStats = async () => {
         totalProviders,
         totalRevenue: parseFloat(totalRevenue.toFixed(2))
       },
-      bookingsLast7Days: Object.entries(bookingsByDate).reverse().map(([date, count]) => ({
-        date,
-        count
-      })),
+      bookingsLast7Days: Object.entries(bookingsByDate)
+        .reverse()
+        .map(([date, count]) => ({ date, count })),
       statusDistribution
     };
   } catch (error) {

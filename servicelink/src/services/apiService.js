@@ -1227,17 +1227,17 @@ export const uploadProfilePicture = async (file) => {
 
 // Admin related functions
 export const adminService = {
-  getDashboardStats: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
-      return await handleApiResponse(response);
-    } catch (error) {
-      return handleApiError(error);
-    }
-  },
+  getDashboardStats: async (period = 'week') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats?period=${period}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    return await handleApiResponse(response);
+  } catch (error) {
+    return handleApiError(error);
+  }
+},
 
   getRecentBookings: async (limit = 10) => {
     try {
