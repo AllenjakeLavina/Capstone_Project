@@ -350,9 +350,24 @@
                 Next Week <i class="fas fa-chevron-right"></i>
               </button>
             </div>
-            <button v-if="currentWeekOffset !== 0" @click="goToCurrentWeek" class="current-week-btn">
-              <i class="fas fa-home"></i> Back to Current Week
-            </button>
+            <div class="week-nav-actions">
+              <button 
+                v-if="currentWeekOffset !== 0" 
+                @click="goToCurrentWeek" 
+                class="current-week-btn"
+              >
+                <i class="fas fa-home"></i> <span class="btn-text-full">Back to Current Week</span><span class="btn-text-short">Current Week</span>
+              </button>
+              <button 
+                @click="copyPreviousWeek" 
+                class="copy-week-btn"
+                :disabled="isProcessing"
+              >
+                <i class="fas fa-home"></i>
+                  <span class="btn-text-full">Back to Current Week</span>
+                  <span class="btn-text-short">Copy Week</span>
+              </button>
+            </div>
           </div>
 
           <!-- Availability Schedule by Day -->
@@ -795,9 +810,22 @@
                 Next Week <i class="fas fa-chevron-right"></i>
               </button>
             </div>
-            <button v-if="currentWeekOffset !== 0" @click="goToCurrentWeek" class="current-week-btn">
-              <i class="fas fa-home"></i> Back to Current Week
-            </button>
+            <div class="week-nav-actions">
+              <button 
+                v-if="currentWeekOffset !== 0" 
+                @click="goToCurrentWeek" 
+                class="current-week-btn"
+              >
+                <i class="fas fa-home"></i> Back to Current Week
+              </button>
+              <button 
+                @click="copyPreviousWeek" 
+                class="copy-week-btn"
+                :disabled="isProcessing"
+              >
+                <i class="fas fa-copy"></i> Copy Last Week's Schedule
+              </button>
+            </div>
           </div>
 
           <!-- Availability Schedule by Day -->
@@ -1184,6 +1212,34 @@
                 </label>
                 <small class="form-hint">Uncheck if this time slot is temporarily unavailable</small>
               </div>
+
+              <!-- Repeat Weekly — only show when adding, not editing -->
+              <div v-if="showAddAvailabilityModal" class="form-group repeat-weekly-group">
+                <div class="repeat-toggle">
+                  <label class="repeat-label">
+                    <input type="checkbox" v-model="availabilityForm.repeatWeekly" />
+                    <span class="repeat-label-text">
+                      <i class="fas fa-redo"></i> Repeat Weekly
+                    </span>
+                  </label>
+                  <small class="form-hint">Automatically create this slot for multiple weeks</small>
+                </div>
+                <div v-if="availabilityForm.repeatWeekly" class="repeat-weeks-selector">
+                  <label>Number of weeks:</label>
+                  <div class="weeks-buttons">
+                    <button 
+                      v-for="n in [2, 4, 8, 12]" 
+                      :key="n"
+                      type="button"
+                      :class="['week-opt-btn', { active: availabilityForm.repeatWeeks === n }]"
+                      @click="availabilityForm.repeatWeeks = n"
+                    >{{ n }}w</button>
+                  </div>
+                  <small class="repeat-preview">
+                    Will create slots on <strong>{{ getRepeatPreviewDays() }}</strong> for {{ availabilityForm.repeatWeeks }} weeks
+                  </small>
+                </div>
+              </div>
               <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" @click="closeAvailabilityModal">Cancel</button>
                 <button type="submit" class="btn btn-primary" :disabled="isProcessing">
@@ -1380,45 +1436,56 @@ export default {
       date: '',
       startTime: '',
       endTime: '',
-      isAvailable: true
+      isAvailable: true,
+      repeatWeekly: false,
+      repeatWeeks: 4
     });
     
     // Computed property for week range based on selected date in modal
-    const selectedDateWeekRange = computed(() => {
-      if (!availabilityForm.date) return '';
-      
-      const selectedDate = new Date(availabilityForm.date);
-      if (isNaN(selectedDate.getTime())) return '';
-      
-      // Calculate week start (Sunday)
-      const weekStart = new Date(selectedDate);
-      weekStart.setDate(selectedDate.getDate() - selectedDate.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      
-      // Calculate week end (Saturday)
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      
-      const formatDate = (date) => {
-        return new Intl.DateTimeFormat('en-US', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric'
-        }).format(date);
-      };
-      
-      // If same month and year, simplify format
-      if (weekStart.getMonth() === weekEnd.getMonth() && 
-          weekStart.getFullYear() === weekEnd.getFullYear()) {
-        const month = weekStart.toLocaleDateString('en-US', { month: 'long' });
-        const year = weekStart.getFullYear();
-        const startDay = weekStart.getDate();
-        const endDay = weekEnd.getDate();
-        return `${month} ${startDay} – ${endDay}, ${year}`;
-      }
-      
-      return `${formatDate(weekStart)} – ${formatDate(weekEnd)}`;
-    });
+  const selectedDateWeekRange = computed(() => {
+    if (!availabilityForm.date) return '';
+    
+    const selectedDate = new Date(availabilityForm.date);
+    if (isNaN(selectedDate.getTime())) return '';
+    
+    // Calculate week start (Sunday)
+    const weekStart = new Date(selectedDate);
+    weekStart.setDate(selectedDate.getDate() - selectedDate.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    
+    // Calculate week end (Saturday)
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    const formatDate = (date) => {
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      }).format(date);
+    };
+    
+    // If same month and year, simplify format
+    if (
+      weekStart.getMonth() === weekEnd.getMonth() &&
+      weekStart.getFullYear() === weekEnd.getFullYear()
+    ) {
+      const month = weekStart.toLocaleDateString('en-US', { month: 'long' });
+      const year = weekStart.getFullYear();
+      const startDay = weekStart.getDate();
+      const endDay = weekEnd.getDate();
+      return `${month} ${startDay} – ${endDay}, ${year}`;
+    }
+    
+    return `${formatDate(weekStart)} – ${formatDate(weekEnd)}`;
+  });
+
+  // ADD THIS HERE
+  const getRepeatPreviewDays = () => {
+    if (!availabilityForm.date) return '-';
+    const d = new Date(availabilityForm.date);
+    return weekDays[d.getDay()].name + "'s";
+  };
 
     // Availability data
     const availabilitySlots = ref([]);
@@ -2094,12 +2161,106 @@ export default {
       currentWeekOffset.value = 0;
     };
 
+    const copyPreviousWeek = async () => {
+      // Get the previous week's date range
+      const prevWeekOffset = currentWeekOffset.value - 1;
+      const now = new Date();
+      const prevWeekStart = new Date(now);
+      prevWeekStart.setDate(now.getDate() - now.getDay() + (prevWeekOffset * 7));
+      prevWeekStart.setHours(0, 0, 0, 0);
+
+      // Get all slots from previous week
+      const prevWeekSlots = availabilitySlots.value.filter(slot => {
+        if (!slot.date) return false;
+        const slotDate = new Date(slot.date);
+        slotDate.setHours(0, 0, 0, 0);
+        const prevWeekEnd = new Date(prevWeekStart);
+        prevWeekEnd.setDate(prevWeekStart.getDate() + 6);
+        prevWeekEnd.setHours(23, 59, 59, 999);
+        return slotDate >= prevWeekStart && slotDate <= prevWeekEnd;
+      });
+
+      if (prevWeekSlots.length === 0) {
+        Swal.fire({
+          title: 'No Slots Found',
+          text: 'The previous week has no time slots to copy.',
+          icon: 'info',
+          confirmButtonColor: '#27ae60'
+        });
+        return;
+      }
+
+      const result = await Swal.fire({
+        title: 'Copy Previous Week?',
+        html: `<p>This will copy <strong>${prevWeekSlots.length} time slot${prevWeekSlots.length > 1 ? 's' : ''}</strong> from last week to the current week.</p>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#27ae60',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, copy them!',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (!result.isConfirmed) return;
+
+      isProcessing.value = true;
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const slot of prevWeekSlots) {
+        try {
+          // Calculate the corresponding date in the current week
+          const slotDate = new Date(slot.date);
+          const dayOfWeek = slotDate.getDay();
+          const currentWeekStart = new Date(now);
+          currentWeekStart.setDate(now.getDate() - now.getDay() + (currentWeekOffset.value * 7));
+          currentWeekStart.setHours(0, 0, 0, 0);
+          const newDate = new Date(currentWeekStart);
+          newDate.setDate(currentWeekStart.getDate() + dayOfWeek);
+
+          // Skip if date is in the past
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (newDate < today) {
+            errorCount++;
+            continue;
+          }
+
+          const dateStr = newDate.toISOString().split('T')[0];
+          const response = await providerService.addAvailabilitySlot({
+            date: dateStr,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isAvailable: slot.isAvailable
+          });
+          if (response.success) successCount++;
+          else errorCount++;
+        } catch (err) {
+          errorCount++;
+        }
+      }
+
+      await fetchAvailability();
+      isProcessing.value = false;
+
+      Swal.fire({
+        title: successCount > 0 ? 'Slots Copied!' : 'Copy Failed',
+        html: `<p>${successCount} slot${successCount !== 1 ? 's' : ''} copied successfully${errorCount > 0 ? `, ${errorCount} skipped (past dates or conflicts)` : ''}.</p>`,
+        icon: successCount > 0 ? 'success' : 'error',
+        timer: 3000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    };
+
     const toggleAddAvailability = () => {
-      // Set default date to today
       availabilityForm.date = new Date().toISOString().split('T')[0];
       availabilityForm.startTime = '';
       availabilityForm.endTime = '';
       availabilityForm.isAvailable = true;
+      availabilityForm.repeatWeekly = false;
+      availabilityForm.repeatWeeks = 4;
       currentAvailabilitySlotId.value = null;
       showAddAvailabilityModal.value = true;
     };
@@ -2179,38 +2340,63 @@ export default {
           isAvailable: availabilityForm.isAvailable
         };
 
-        let response;
         const isEdit = showEditAvailabilityModal.value && currentAvailabilitySlotId.value;
-        
+        const shouldRepeat = !isEdit && availabilityForm.repeatWeekly;
+        const weeksToCreate = shouldRepeat ? availabilityForm.repeatWeeks : 1;
+
+        let response;
+        let successCount = 0;
+        let errorMessages = [];
+
         if (isEdit) {
-          // For edit, also include date if it changed
           response = await providerService.updateAvailabilitySlot(currentAvailabilitySlotId.value, slotData);
+          if (response.success) successCount = 1;
+          else throw new Error(response.message || 'Failed to update availability slot');
         } else {
-          response = await providerService.addAvailabilitySlot(slotData);
+          // Loop to create slots for each week
+          const baseDate = new Date(slotData.date);
+          for (let i = 0; i < weeksToCreate; i++) {
+            const loopDate = new Date(baseDate);
+            loopDate.setDate(baseDate.getDate() + (i * 7));
+            const dateStr = loopDate.toISOString().split('T')[0];
+            try {
+              const r = await providerService.addAvailabilitySlot({
+                ...slotData,
+                date: dateStr
+              });
+              if (r.success) successCount++;
+              else errorMessages.push(`Week ${i + 1}: ${r.message}`);
+            } catch (err) {
+              errorMessages.push(`Week ${i + 1}: ${err.message}`);
+            }
+          }
+          if (successCount === 0) throw new Error(errorMessages[0] || 'Failed to add availability slot');
         }
 
-        if (response.success) {
-          await fetchAvailability();
-          closeAvailabilityModal();
-          
-          // Show success notification
-          const slotDate = new Date(slotData.date);
-          const dayName = weekDays[slotDate.getDay()].name;
-          const dateStr = slotDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-          const timeRange = `${formatTime(slotData.startTime)} - ${formatTime(slotData.endTime)}`;
-          
-          Swal.fire({
-            title: isEdit ? 'Time Slot Updated!' : 'Time Slot Added!',
-            html: `<p>${dayName}, ${dateStr}: ${timeRange}</p>`,
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false,
-            position: 'top-end',
-            toast: true
-          });
-        } else {
-          throw new Error(response.message || `Failed to ${isEdit ? 'update' : 'add'} availability slot`);
-        }
+        await fetchAvailability();
+        closeAvailabilityModal();
+
+        const slotDate = new Date(slotData.date);
+        const dayName = weekDays[slotDate.getDay()].name;
+        const dateStr = slotDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeRange = `${formatTime(slotData.startTime)} - ${formatTime(slotData.endTime)}`;
+
+        const titleMsg = isEdit ? 'Time Slot Updated!' : 
+          (shouldRepeat ? `${successCount} Slots Added!` : 'Time Slot Added!');
+        const bodyMsg = isEdit ? `${dayName}, ${dateStr}: ${timeRange}` :
+          (shouldRepeat 
+            ? `${dayName} ${timeRange} added for ${successCount} week${successCount !== 1 ? 's' : ''}${errorMessages.length > 0 ? ` (${errorMessages.length} skipped)` : ''}`
+            : `${dayName}, ${dateStr}: ${timeRange}`);
+
+        Swal.fire({
+          title: titleMsg,
+          html: `<p>${bodyMsg}</p>`,
+          icon: 'success',
+          timer: 3000,
+          showConfirmButton: false,
+          position: 'top-end',
+          toast: true
+        });
       } catch (err) {
         Swal.fire({
           title: 'Error',
@@ -2434,7 +2620,9 @@ export default {
       goToPreviousWeek,
       goToNextWeek,
       goToCurrentWeek,
-      selectedDateWeekRange
+      copyPreviousWeek,
+      selectedDateWeekRange,
+      getRepeatPreviewDays,
     };
   }
 };
@@ -5040,6 +5228,15 @@ textarea.form-control {
   }
 }
 
+/* Outside any media query - default show/hide */
+.copy-btn-text-short {
+  display: none;
+}
+
+.btn-text-short {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .availability-schedule {
     grid-template-columns: 1fr;
@@ -5055,22 +5252,97 @@ textarea.form-control {
     width: 100%;
     justify-content: flex-end;
   }
-  
-  .week-navigation-header {
-    flex-direction: column;
-    gap: 15px;
+
+  .week-navigation {
+    padding: 12px;
   }
-  
+
+  .week-navigation-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
   .week-nav-btn {
-    width: 100%;
+    flex-shrink: 0;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    width: auto;
     justify-content: center;
   }
-  
+
   .week-range-display {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 4px;
+    justify-content: center;
+  }
+
+  .week-range-display span {
+    font-size: 0.72rem;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .week-range-display i {
+    display: none;
+  }
+
+  .week-nav-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 8px;
+    flex-wrap: nowrap;
     width: 100%;
-    min-width: auto;
+  }
+
+  .current-week-btn {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    flex: 1;
+    margin-top: 0;
+    white-space: nowrap;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .copy-week-btn {
+    padding: 8px 10px;
+    font-size: 0.72rem;
+    flex: 1;
+    gap: 4px;
+  }
+
+  .copy-week-btn i {
+    font-size: 0.7rem;
+  }
+
+  /* Show short text, hide full text on mobile */
+  .copy-btn-text-full {
+    display: none;
+  }
+
+  .copy-btn-text-short {
+    display: inline;
+  }
+
+  .btn-text-full {
+    display: none;
+  }
+
+  .btn-text-short {
+    display: inline;
   }
 }
+
 
 /* SweetAlert2 custom styles */
 :deep(.swal-warning) {
@@ -5078,5 +5350,169 @@ textarea.form-control {
   font-size: 0.9rem;
   margin-top: 10px;
   font-weight: 500;
+}
+/* Repeat Weekly Feature */
+.repeat-weekly-group {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 5px;
+}
+
+.repeat-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.repeat-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #166534;
+  margin-bottom: 0;
+}
+
+.repeat-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #27ae60;
+  cursor: pointer;
+}
+
+.repeat-label-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+.repeat-label-text i {
+  color: #27ae60;
+}
+
+.repeat-weeks-selector {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #bbf7d0;
+}
+
+.repeat-weeks-selector label {
+  display: block;
+  font-weight: 600;
+  color: #166534;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.weeks-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.week-opt-btn {
+  padding: 8px 18px;
+  border: 2px solid #27ae60;
+  border-radius: 10px;
+  background: white;
+  color: #27ae60;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.week-opt-btn:hover {
+  background: #f0fdf4;
+  transform: translateY(-1px);
+}
+
+.week-opt-btn.active {
+  background: #27ae60;
+  color: white;
+  box-shadow: 0 4px 10px rgba(39, 174, 96, 0.25);
+}
+
+.repeat-preview {
+  display: block;
+  margin-top: 6px;
+  color: #166534;
+  font-size: 0.85rem;
+  background: #dcfce7;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* Copy Week Button */
+.week-nav-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.copy-week-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8f4);
+  border: 2px solid #27ae60;
+  border-radius: 10px;
+  color: #27ae60;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  width: auto;
+  flex: none;
+}
+
+.copy-week-btn:hover:not(:disabled) {
+  background: #27ae60;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.25);
+}
+
+.copy-week-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.current-week-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  width: auto;
+  flex: none;
+  margin-top: 0;
+}
+
+.current-week-btn:hover {
+  background: #e9ecef;
+  border-color: #27ae60;
+  color: #27ae60;
+  transform: translateY(-1px);
 }
 </style>
