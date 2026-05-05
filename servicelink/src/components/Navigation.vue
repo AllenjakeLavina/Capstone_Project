@@ -414,6 +414,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { notificationService, clientService, providerService } from '../services/apiService';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'Navigation',
@@ -736,11 +737,27 @@ export default {
     };
     
     // Log out the user
-    const handleLogout = () => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userRole');
-      showUserMenu.value = false;
-      router.push('/login');
+    const handleLogout = async () => {
+      const result = await Swal.fire({
+        title: 'Log out?',
+        text: `Are you sure you want to log out of your ${roleName.value} account?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, log out',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#e53935',
+        cancelButtonColor: '#9e9e9e',
+        reverseButtons: true,
+      });
+
+      if (result.isConfirmed) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        showUserMenu.value = false;
+        document.body.style.overflow = '';
+        document.body.classList.remove('has-mobile-dropdown');
+        router.push('/login');
+      }
     };
     
     // Get user data from local storage
