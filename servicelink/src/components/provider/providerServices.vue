@@ -629,6 +629,7 @@ export default {
   padding-bottom: 20px;
   margin-bottom: 0;
   padding-bottom: 0;
+  overflow: hidden;
 }
 
 .provider-services-container::before {

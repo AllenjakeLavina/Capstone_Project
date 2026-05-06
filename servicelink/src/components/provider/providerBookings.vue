@@ -1204,7 +1204,7 @@ export default {
   content: "";
   position: absolute;
   left: -50px;
-  bottom: -50px;
+  bottom: 0px;
   width: 200px;
   height: 200px;
   background: radial-gradient(circle at 60% 40%, #38b67655 0%, transparent 80%);
@@ -1281,6 +1281,7 @@ export default {
   padding-right: 10px;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  overflow: hidden;
 }
 
 .filter-container {

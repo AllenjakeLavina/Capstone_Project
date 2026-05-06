@@ -1147,6 +1147,7 @@ export default {
   position: relative;
   box-sizing: border-box;
   padding-bottom: 20px;
+  overflow: hidden;
 }
 
 .client-bookings::before {
@@ -1167,7 +1168,7 @@ export default {
   content: "";
   position: absolute;
   left: -50px;
-  bottom: -50px;
+  bottom: 0px;
   width: 200px;
   height: 200px;
   background: radial-gradient(circle at 60% 40%, #38b67655 0%, transparent 80%);
@@ -1607,6 +1608,9 @@ export default {
   padding: 40px 30px;
   border-radius: 15px;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
 }
 
 @keyframes fadeIn {

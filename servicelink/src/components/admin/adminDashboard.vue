@@ -476,6 +476,15 @@ export default {
       }
       
       const data = stats.value.statusDistribution;
+
+      const statusColors = {
+        'COMPLETED': '#00C853',
+        'PENDING': '#FF9800',
+        'CANCELLED': '#F44336',
+        'IN_PROGRESS': '#2196F3',
+        'CONFIRMED': '#9C27B0',
+        'DISPUTED': '#607D8B'
+      };
       
       pieChartInstance = new Chart(canvas, {
         type: 'pie',
@@ -483,14 +492,7 @@ export default {
           labels: data.map(item => item.status),
           datasets: [{
             data: data.map(item => item.count),
-            backgroundColor: [
-              '#00C853',
-              '#FF9800',
-              '#F44336',
-              '#2196F3',
-              '#9C27B0',
-              '#607D8B'
-            ],
+            backgroundColor: data.map(item => statusColors[item.status] || '#607D8B'),
             borderWidth: 2,
             borderColor: '#fff'
           }]

@@ -1080,6 +1080,7 @@ export default {
   position: relative;
   box-sizing: border-box;
   padding-bottom: 20px;
+  overflow: hidden;
 }
 
 .client-services::before {
@@ -1100,7 +1101,7 @@ export default {
   content: "";
   position: absolute;
   left: -50px;
-  bottom: -50px;
+  bottom: 0px;
   width: 200px;
   height: 200px;
   background: radial-gradient(circle at 60% 40%, #38b67655 0%, transparent 80%);
