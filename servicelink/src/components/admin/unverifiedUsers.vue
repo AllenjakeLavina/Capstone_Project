@@ -24,7 +24,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="user in users" :key="user.id">
+            <tr v-for="user in paginatedUsers" :key="user.id">
               <td>
                 <span :class="user.userType === 'PROVIDER' ? 'type-badge provider-badge' : 'type-badge client-badge'">
                   {{ user.userType === 'PROVIDER' ? 'Provider' : 'Client' }}
@@ -49,6 +49,32 @@
             </tr>
           </tbody>
         </table>
+      <!-- Pagination -->
+        <div v-if="totalPages > 1" class="pagination-wrapper">
+          <div class="pagination-info">
+            Showing {{ (currentPage - 1) * pageSize + 1 }}–{{ Math.min(currentPage * pageSize, users.length) }} of {{ users.length }} users
+          </div>
+          <div class="pagination-controls">
+            <button class="page-btn" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
+              &laquo; Prev
+            </button>
+            <template v-for="page in visiblePages" :key="page">
+              <span v-if="page === '...'" class="page-ellipsis">...</span>
+              <button
+                v-else
+                class="page-btn"
+                :class="{ 'page-btn-active': page === currentPage }"
+                @click="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+            </template>
+            <button class="page-btn" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
+              Next &raquo;
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -265,6 +291,40 @@ const loading = ref(true);
 const error = ref('');
 const actionLoading = ref('');
 
+const currentPage = ref(1);
+const pageSize = ref(2);
+
+const totalPages = computed(() => Math.ceil(users.value.length / pageSize.value));
+
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return users.value.slice(start, start + pageSize.value);
+});
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+const visiblePages = computed(() => {
+  const pages = [];
+  const total = totalPages.value;
+  const current = currentPage.value;
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (current > 3) pages.push('...');
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+  }
+  return pages;
+});
+
 const showModal = ref(false);
 const selectedUser = ref(null);
 const profileLoading = ref(false);
@@ -396,6 +456,9 @@ const verifyUser = async (id, userType) => {
     const data = await res.json();
     if (data.success) {
       users.value = users.value.filter(u => u.id !== id);
+      if (paginatedUsers.value.length === 0 && currentPage.value > 1) {
+        currentPage.value -= 1;
+      }
       closeModal();
       
       Swal.fire({
@@ -1226,6 +1289,75 @@ body.fullscreen-img-open {
   font-size: 1rem;
   color: #999;
   margin-top: 10px;
+}
+
+/* Pagination */
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding: 12px 4px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pagination-info {
+  color: #718096;
+  font-size: 0.95rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #ebf8ff;
+  border-color: #4299e1;
+  color: #2b6cb0;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-btn-active {
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.page-ellipsis {
+  color: #a0aec0;
+  padding: 0 4px;
+  font-size: 1rem;
+  user-select: none;
+}
+
+@media (max-width: 600px) {
+  .pagination-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>
 

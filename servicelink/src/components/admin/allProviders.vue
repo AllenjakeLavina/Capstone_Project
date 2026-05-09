@@ -24,7 +24,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="provider in providers" :key="provider.id">
+          <tr v-for="provider in paginatedProviders" :key="provider.id">
             <td>{{ provider.user.firstName }} {{ provider.user.lastName }}</td>
             <td>{{ provider.user.email }}</td>
             <td>{{ provider.user.phone || 'Not provided' }}</td>
@@ -56,6 +56,31 @@
           </tr>
         </tbody>
       </table>
+    <!-- Pagination -->
+      <div v-if="totalPages > 1" class="pagination-wrapper">
+        <div class="pagination-info">
+          Showing {{ (currentPage - 1) * pageSize + 1 }}–{{ Math.min(currentPage * pageSize, providers.length) }} of {{ providers.length }} providers
+        </div>
+        <div class="pagination-controls">
+          <button class="page-btn" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
+            &laquo; Prev
+          </button>
+          <template v-for="page in visiblePages" :key="page">
+            <span v-if="page === '...'" class="page-ellipsis">...</span>
+            <button
+              v-else
+              class="page-btn"
+              :class="{ 'page-btn-active': page === currentPage }"
+              @click="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          </template>
+          <button class="page-btn" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages">
+            Next &raquo;
+          </button>
+        </div>
+      </div>
     </div>
   </div>
   <!-- Provider Profile Modal -->
@@ -153,7 +178,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { getFileUrl } from '../../services/apiService';
 import Swal from 'sweetalert2';
 
@@ -168,6 +193,40 @@ const selectedProviderProfile = ref(null);
 const profileLoading = ref(false);
 const profileError = ref('');
 const actionLoading = ref('');
+
+const currentPage = ref(1);
+const pageSize = ref(10);
+
+const totalPages = computed(() => Math.ceil(providers.value.length / pageSize.value));
+
+const paginatedProviders = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return providers.value.slice(start, start + pageSize.value);
+});
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+const visiblePages = computed(() => {
+  const pages = [];
+  const total = totalPages.value;
+  const current = currentPage.value;
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (current > 3) pages.push('...');
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+  }
+  return pages;
+});
 
 // Fullscreen image viewer for portfolio
 const fullscreenImg = ref(null);
@@ -202,6 +261,7 @@ const fetchProviders = async () => {
 
 // Refresh providers list
 const refreshProviders = () => {
+  currentPage.value = 1;
   fetchProviders();
 };
 
@@ -896,5 +956,74 @@ onMounted(fetchProviders);
   background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
   box-shadow: 0 4px 16px rgba(39,174,96,0.13);
   transform: translateY(-1px) scale(1.02);
+}
+
+/* Pagination */
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding: 12px 4px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pagination-info {
+  color: #718096;
+  font-size: 0.95rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #ebf8ff;
+  border-color: #4299e1;
+  color: #2b6cb0;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-btn-active {
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.page-ellipsis {
+  color: #a0aec0;
+  padding: 0 4px;
+  font-size: 1rem;
+  user-select: none;
+}
+
+@media (max-width: 600px) {
+  .pagination-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>
