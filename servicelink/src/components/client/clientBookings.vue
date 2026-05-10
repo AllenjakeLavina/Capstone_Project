@@ -358,12 +358,14 @@
       </Teleport>
 
       <!-- Add Address Modal -->
-      <add-address-modal
-        v-if="showAddAddressModal"
-        :showModal="showAddAddressModal"
-        @close="closeAddAddressModal"
-        @addressAdded="handleAddressAdded"
-      />
+      <Teleport to="body">
+        <add-address-modal
+          v-if="showAddAddressModal"
+          :showModal="showAddAddressModal"
+          @close="closeAddAddressModal"
+          @addressAdded="handleAddressAdded"
+        />
+      </Teleport>
     </div>
   </div>
 </template>

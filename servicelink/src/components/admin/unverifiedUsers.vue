@@ -292,7 +292,7 @@ const error = ref('');
 const actionLoading = ref('');
 
 const currentPage = ref(1);
-const pageSize = ref(2);
+const pageSize = ref(10);
 
 const totalPages = computed(() => Math.ceil(users.value.length / pageSize.value));
 
