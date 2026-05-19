@@ -1326,6 +1326,30 @@ export const adminService = {
     } catch (error) {
       return handleApiError(error);
     }
+  },
+
+  getWebsiteViews: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/views`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  incrementWebsiteViews: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/views/increment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return await handleApiResponse(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
   }
 };
 

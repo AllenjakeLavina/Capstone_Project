@@ -49,6 +49,16 @@
           <p>Total Revenue</p>
         </div>
       </div>
+
+      <div class="card">
+        <div class="card-icon">
+          <i class="fas fa-eye"></i>
+        </div>
+        <div class="card-content">
+          <h3>{{ websiteViews.toLocaleString() }}</h3>
+          <p>Website Views</p>
+        </div>
+      </div>
     </div>
 
     <!-- Charts Section -->
@@ -305,6 +315,7 @@ export default {
     });
 
     // ✅ BAGO
+    const websiteViews = ref(0);
     const selectedPeriod = ref('week');
 
     let lineChartInstance = null;
@@ -538,6 +549,17 @@ export default {
       return new Date(dateString).toLocaleDateString();
     };
 
+    const fetchWebsiteViews = async () => {
+      try {
+        const response = await adminService.getWebsiteViews();
+        if (response.success) {
+          websiteViews.value = response.data.count;
+        }
+      } catch (error) {
+        console.error('Error fetching website views:', error);
+      }
+    };
+
     const fetchTransactions = async () => {
       try {
         loadingTransactions.value = true;
@@ -625,6 +647,7 @@ export default {
       timeInterval.value = setInterval(updateTimeAndDate, 1000);
       loadDashboardData();
       fetchTransactions();
+      fetchWebsiteViews();
     });
 
     return {
@@ -655,7 +678,9 @@ export default {
       getTransactionClientName,
       getTransactionProviderName,
       formatTransactionDate,
-      formatTransactionStatus
+      formatTransactionStatus,
+      websiteViews,       
+      fetchWebsiteViews 
     };
   },
   beforeUnmount() {

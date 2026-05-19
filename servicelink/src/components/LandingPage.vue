@@ -195,7 +195,7 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue';
-import apiService, { providerService } from '../services/apiService';
+import apiService, { providerService, adminService } from '../services/apiService';
 import { useRouter } from 'vue-router';
 import logoImage from '../assets/logo.png';
 
@@ -291,8 +291,9 @@ export default {
 
     onMounted(() => {
       fetchProviders();
+      adminService.incrementWebsiteViews().catch(() => {});
     });
-
+    
     return {
       providers,
       loading,

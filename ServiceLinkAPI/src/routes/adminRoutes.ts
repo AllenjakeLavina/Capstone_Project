@@ -28,7 +28,9 @@ import {
   handleApproveService,
   handleRejectService,
   handleGetAllTransactions,
-  handleGetActivityLogs
+  handleGetActivityLogs,
+  handleIncrementWebsiteViews,
+  handleGetWebsiteViews 
 } from '../httpControllers/adminHttpController';
 import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware';
 import { uploadFile } from '../middlewares/fileHandler';
@@ -126,5 +128,7 @@ router.post('/services/reject', authenticateToken, authorizeRoles('ADMIN'), hand
   REMOVE OR PROTECT THESE ROUTES BEFORE PRODUCTION DEPLOYMENT
   These routes are only for development and initial setup.
 */
+router.post('/views/increment', handleIncrementWebsiteViews);
+router.get('/views', authenticateToken, authorizeRoles('ADMIN'), handleGetWebsiteViews);
 
 export { router as adminRoutes };

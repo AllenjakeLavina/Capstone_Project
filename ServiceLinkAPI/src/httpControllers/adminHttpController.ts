@@ -28,7 +28,9 @@ import {
   approveService,
   rejectService,
   getAllTransactions,
-  getActivityLogs
+  getActivityLogs,
+  incrementWebsiteViews,
+  getWebsiteViews 
 } from '../functionControllers/adminFunctionController';
 
 export const handleSetPassword = async (req: Request, res: Response) => {
@@ -933,5 +935,22 @@ export const handleRejectService = async (req: Request, res: Response) => {
       success: false,
       message: errorMessage
     });
+  }
+};
+export const handleIncrementWebsiteViews = async (req: Request, res: Response) => {
+  try {
+    const result = await incrementWebsiteViews();
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to increment views' });
+  }
+};
+
+export const handleGetWebsiteViews = async (req: Request, res: Response) => {
+  try {
+    const result = await getWebsiteViews();
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to get views' });
   }
 };

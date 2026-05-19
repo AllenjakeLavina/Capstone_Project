@@ -1687,3 +1687,32 @@ export const rejectService = async (serviceId: string, adminId: string, reason: 
     throw error;
   }
 };
+// Website Views Counter
+import fs from 'fs';
+import path from 'path';
+
+const VIEWS_FILE = path.join(__dirname, '../../views_count.json');
+
+const getViewsCount = (): number => {
+  try {
+    if (!fs.existsSync(VIEWS_FILE)) {
+      fs.writeFileSync(VIEWS_FILE, JSON.stringify({ count: 0 }));
+      return 0;
+    }
+    const data = JSON.parse(fs.readFileSync(VIEWS_FILE, 'utf-8'));
+    return data.count || 0;
+  } catch {
+    return 0;
+  }
+};
+
+export const incrementWebsiteViews = async () => {
+  const current = getViewsCount();
+  const newCount = current + 1;
+  fs.writeFileSync(VIEWS_FILE, JSON.stringify({ count: newCount }));
+  return { count: newCount };
+};
+
+export const getWebsiteViews = async () => {
+  return { count: getViewsCount() };
+};
