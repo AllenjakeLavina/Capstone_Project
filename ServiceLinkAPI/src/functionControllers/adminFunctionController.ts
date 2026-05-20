@@ -1687,32 +1687,19 @@ export const rejectService = async (serviceId: string, adminId: string, reason: 
     throw error;
   }
 };
-// Website Views Counter
-import fs from 'fs';
-import path from 'path';
-
-const VIEWS_FILE = path.join(__dirname, '../../views_count.json');
-
-const getViewsCount = (): number => {
-  try {
-    if (!fs.existsSync(VIEWS_FILE)) {
-      fs.writeFileSync(VIEWS_FILE, JSON.stringify({ count: 0 }));
-      return 0;
-    }
-    const data = JSON.parse(fs.readFileSync(VIEWS_FILE, 'utf-8'));
-    return data.count || 0;
-  } catch {
-    return 0;
-  }
-};
-
+// Website Views Counter - stored in DB (persistent across deploys)
 export const incrementWebsiteViews = async () => {
-  const current = getViewsCount();
-  const newCount = current + 1;
-  fs.writeFileSync(VIEWS_FILE, JSON.stringify({ count: newCount }));
-  return { count: newCount };
+  const metric = await prisma.siteMetric.upsert({
+    where: { key: 'website_views' },
+    update: { value: { increment: 1 } },
+    create: { key: 'website_views', value: 1 }
+  });
+  return { count: metric.value };
 };
 
 export const getWebsiteViews = async () => {
-  return { count: getViewsCount() };
+  const metric = await prisma.siteMetric.findUnique({
+    where: { key: 'website_views' }
+  });
+  return { count: metric?.value || 0 };
 };

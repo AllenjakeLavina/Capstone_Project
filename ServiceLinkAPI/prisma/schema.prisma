@@ -582,3 +582,11 @@ model ActivityLog {
 }
 
 // Add relation to User model
+
+// Site Metrics - for tracking website views persistently
+model SiteMetric {
+  id        String   @id @default(uuid())
+  key       String   @unique  // e.g., "website_views"
+  value     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
