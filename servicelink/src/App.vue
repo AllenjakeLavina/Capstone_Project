@@ -1,9 +1,11 @@
 <template>
   <div id="app">
-    <Navigation />
+    <Navigation v-if="showNavigation" />
+
     <div :class="{ 'content-with-nav': showNavigation }">
       <router-view />
     </div>
+
     <PWAUpdateNotification />
     <PWAInstallPrompt />
   </div>
@@ -13,8 +15,8 @@
 import Navigation from './components/Navigation.vue';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import PWAUpdateNotification from './components/shared/PWAUpdateNotification.vue'
-import PWAInstallPrompt from './components/shared/PWAInstallPrompt.vue'
+import PWAUpdateNotification from './components/shared/PWAUpdateNotification.vue';
+import PWAInstallPrompt from './components/shared/PWAInstallPrompt.vue';
 
 export default {
   name: 'App',
@@ -25,18 +27,27 @@ export default {
   },
   setup() {
     const route = useRoute();
-    
+
     // Check if navigation should be shown
     const showNavigation = computed(() => {
-      const hiddenRoutes = ['/', '/login', '/register', '/register/client', '/register/provider', '/verify-email'];
+      const hiddenRoutes = [
+        '/',
+        '/landing', // ✅ added this
+        '/login',
+        '/register',
+        '/register/client',
+        '/register/provider',
+        '/verify-email'
+      ];
+
       return !hiddenRoutes.includes(route.path);
     });
-    
+
     return {
       showNavigation
     };
   }
-}
+};
 </script>
 
 <style>
@@ -48,7 +59,7 @@ export default {
   margin: 0;
   padding: 0;
   min-height: 100dvh;
-  min-height: 100vh; /* Fallback for older browsers */
+  min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
 }
@@ -98,7 +109,7 @@ input {
 .content-with-nav {
   padding-top: 60px;
   min-height: calc(100dvh - 60px);
-  min-height: calc(100vh - 60px); /* Fallback for older browsers */
+  min-height: calc(100vh - 60px);
   width: 100%;
 }
 
@@ -107,7 +118,7 @@ input {
     padding-top: 0;
     padding-bottom: 60px;
     min-height: calc(100dvh - 60px);
-    min-height: calc(100vh - 60px); /* Fallback for older browsers */
+    min-height: calc(100vh - 60px);
   }
 }
 </style>
