@@ -1,15 +1,6 @@
 <template>
   <div class="landing-page">
-    <header v-if="$route.path !== '/landing'" class="top-header">
-      <div class="header-content">
-        <h2>ServiceLink</h2>
-
-        <div class="header-links">
-          <router-link to="/login">Login</router-link>
-          <router-link to="/register">Register</router-link>
-        </div>
-      </div>
-    </header>
+    
     <!-- Hero Section -->
     <section class="hero">
       <div class="hero-overlay"></div>

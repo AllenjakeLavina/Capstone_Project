@@ -28,11 +28,11 @@ export default {
   setup() {
     const route = useRoute();
 
-    // Check if navigation should be shown
+    // ✅ Robust navigation hiding logic
     const showNavigation = computed(() => {
       const hiddenRoutes = [
         '/',
-        '/landing', // ✅ added this
+        '/landing',
         '/login',
         '/register',
         '/register/client',
@@ -40,7 +40,12 @@ export default {
         '/verify-email'
       ];
 
-      return !hiddenRoutes.includes(route.path);
+      // handles exact + subroutes like /login/reset
+      const isHidden = hiddenRoutes.some(path =>
+        route.path === path || route.path.startsWith(path + '/')
+      );
+
+      return !isHidden;
     });
 
     return {
@@ -71,41 +76,7 @@ body {
   width: 100%;
 }
 
-button {
-  cursor: pointer;
-  padding: 10px 20px;
-  border-radius: 5px;
-  border: none;
-  font-weight: bold;
-  transition: background-color 0.3s;
-}
-
-.primary-btn {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.primary-btn:hover {
-  background-color: #45a049;
-}
-
-.secondary-btn {
-  background-color: #2196F3;
-  color: white;
-}
-
-.secondary-btn:hover {
-  background-color: #0b7dda;
-}
-
-input {
-  padding: 10px;
-  margin: 5px 0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-/* Add margin for content when nav is present */
+/* Layout spacing when nav is visible */
 .content-with-nav {
   padding-top: 60px;
   min-height: calc(100dvh - 60px);
@@ -117,8 +88,6 @@ input {
   .content-with-nav {
     padding-top: 0;
     padding-bottom: 60px;
-    min-height: calc(100dvh - 60px);
-    min-height: calc(100vh - 60px);
   }
 }
 </style>
