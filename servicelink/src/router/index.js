@@ -37,6 +37,11 @@ const routes = [
     component: LandingPage
   },
   {
+    path: '/landing',
+    name: 'LandingPageDuplicate',
+    component: LandingPage
+  },
+  {
     path: '/login',
     name: 'Login',
     component: LoginPage
