@@ -175,12 +175,19 @@
         </table>
 
         <div v-if="transactions.length === 0" class="no-transactions">
-          <p>No transactions found.</p>
-        </div>
+        <p>No transactions found.</p>
+      </div>
+      <div class="pagination-controls">
+        <button :disabled="transactionPage <= 1" @click="changeTransactionPage(transactionPage - 1)">&laquo; Prev</button>
+        <span v-for="p in transactionTotalPages" :key="p"
+          :class="['page-num', { active: p === transactionPage }]"
+          @click="changeTransactionPage(p)">{{ p }}</span>
+        <button :disabled="transactionPage >= transactionTotalPages" @click="changeTransactionPage(transactionPage + 1)">Next &raquo;</button>
       </div>
     </div>
+  </div>
 
-    <!-- Provider Ratings Section -->
+  <!-- Provider Ratings Section -->
     <div class="provider-ratings-section">
       <div class="ratings-summary">
         <h3>Provider Ratings Overview</h3>
@@ -214,7 +221,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="provider in topProviders" :key="provider.id">
+              <tr v-for="provider in paginatedProviders" :key="provider.id">
                 <td>{{ provider.firstName }} {{ provider.lastName }}</td>
                 <td>{{ provider.email }}</td>
                 <td>
@@ -238,6 +245,13 @@
               </tr>
             </tbody>
           </table>
+          <div class="pagination-controls">
+            <button :disabled="providerPage <= 1" @click="changeProviderPage(providerPage - 1)">&laquo; Prev</button>
+            <span v-for="p in providerTotalPages" :key="p"
+              :class="['page-num', { active: p === providerPage }]"
+              @click="changeProviderPage(p)">{{ p }}</span>
+            <button :disabled="providerPage >= providerTotalPages" @click="changeProviderPage(providerPage + 1)">Next &raquo;</button>
+          </div>
         </div>
       </div>
     </div>
@@ -258,7 +272,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="booking in recentBookings" :key="booking.id">
+            <tr v-for="booking in paginatedBookings" :key="booking.id">
               <td>{{ getClientName(booking.client) }}</td>
               <td>{{ getProviderName(booking.serviceProvider) }}</td>
               <td>{{ booking.service?.title || 'N/A' }}</td>
@@ -272,6 +286,13 @@
             </tr>
           </tbody>
         </table>
+        <div class="pagination-controls">
+          <button :disabled="bookingPage <= 1" @click="changeBookingPage(bookingPage - 1)">&laquo; Prev</button>
+          <span v-for="p in bookingTotalPages" :key="p"
+            :class="['page-num', { active: p === bookingPage }]"
+            @click="changeBookingPage(p)">{{ p }}</span>
+          <button :disabled="bookingPage >= bookingTotalPages" @click="changeBookingPage(bookingPage + 1)">Next &raquo;</button>
+        </div>
       </div>
     </div>
 
@@ -284,7 +305,7 @@
 </template>
 
 <script>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import { adminService } from '../../services/apiService';
 import { Chart, registerables } from 'chart.js';
 
@@ -318,6 +339,21 @@ export default {
     const websiteViews = ref(0);
     const selectedPeriod = ref('week');
 
+    // Pagination - Transactions
+    const transactionPage = ref(1);
+    const transactionPageSize = ref(10);
+    const transactionTotal = ref(0);
+
+    // Pagination - Providers
+    const providerPage = ref(1);
+    const providerPageSize = ref(5);
+    const providerTotal = ref(0);
+
+    // Pagination - Bookings
+    const bookingPage = ref(1);
+    const bookingPageSize = ref(10);
+    const bookingTotal = ref(0);
+
     let lineChartInstance = null;
     let pieChartInstance = null;
 
@@ -347,16 +383,18 @@ export default {
           stats.value = statsResponse.data;
         }
         
-        const bookingsResponse = await adminService.getRecentBookings(10);
+        const bookingsResponse = await adminService.getRecentBookings(100);
         if (bookingsResponse.success) {
           recentBookings.value = bookingsResponse.data;
+          bookingTotal.value = bookingsResponse.data.length;
         }
 
         const ratingsResponse = await adminService.getProviderRatings();
         if (ratingsResponse.success) {
           providerRatings.value = ratingsResponse.data;
           providerRatingsStats.value = ratingsResponse.data.statistics;
-          topProviders.value = ratingsResponse.data.providers.slice(0, 10);
+          topProviders.value = ratingsResponse.data.providers;
+          providerTotal.value = ratingsResponse.data.providers.length;
         }
         
         await nextTick();
@@ -576,10 +614,14 @@ export default {
           queryParams.append('sortOrder', transactionFilters.value.sortOrder);
         }
 
+        queryParams.append('page', transactionPage.value);
+        queryParams.append('limit', transactionPageSize.value);
+
         const response = await adminService.getAllTransactions(queryParams.toString());
         
         if (response.success) {
           transactions.value = response.data;
+          transactionTotal.value = response.total || response.data.length;
         } else {
           transactionError.value = response.message || 'Failed to load transactions';
         }
@@ -601,6 +643,7 @@ export default {
         sortBy: 'date',
         sortOrder: 'desc'
       };
+      transactionPage.value = 1;
       fetchTransactions();
     };
 
@@ -642,6 +685,39 @@ export default {
       return statusMap[status] || status;
     };
 
+    // Computed pages
+    const transactionTotalPages = computed(() =>
+      Math.ceil(transactionTotal.value / transactionPageSize.value)
+    );
+    const providerTotalPages = computed(() =>
+      Math.ceil(providerTotal.value / providerPageSize.value)
+    );
+    const bookingTotalPages = computed(() =>
+      Math.ceil(bookingTotal.value / bookingPageSize.value)
+    );
+
+    // Computed slices (client-side pagination)
+    const paginatedProviders = computed(() => {
+      const start = (providerPage.value - 1) * providerPageSize.value;
+      return topProviders.value.slice(start, start + providerPageSize.value);
+    });
+    const paginatedBookings = computed(() => {
+      const start = (bookingPage.value - 1) * bookingPageSize.value;
+      return recentBookings.value.slice(start, start + bookingPageSize.value);
+    });
+
+    // Page changers
+    const changeTransactionPage = (page) => {
+      transactionPage.value = page;
+      fetchTransactions();
+    };
+    const changeProviderPage = (page) => {
+      providerPage.value = page;
+    };
+    const changeBookingPage = (page) => {
+      bookingPage.value = page;
+    };
+
     onMounted(() => {
       updateTimeAndDate();
       timeInterval.value = setInterval(updateTimeAndDate, 1000);
@@ -679,8 +755,11 @@ export default {
       getTransactionProviderName,
       formatTransactionDate,
       formatTransactionStatus,
-      websiteViews,       
-      fetchWebsiteViews 
+      websiteViews,
+      fetchWebsiteViews,
+      transactionPage, transactionTotalPages, changeTransactionPage,
+      providerPage, providerTotalPages, paginatedProviders, changeProviderPage,
+      bookingPage, bookingTotalPages, paginatedBookings, changeBookingPage,
     };
   },
   beforeUnmount() {
@@ -1395,5 +1474,58 @@ tr:hover {
 .period-select:focus,
 .period-select:hover {
   border-color: #00C853;
+}
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 0 4px;
+  flex-wrap: wrap;
+}
+
+.pagination-controls button {
+  padding: 6px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background: #00C853;
+  color: white;
+  border-color: #00C853;
+}
+
+.pagination-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-num {
+  padding: 6px 11px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.page-num:hover {
+  background: #e8f5e9;
+  border-color: #00C853;
+}
+
+.page-num.active {
+  background: #00C853;
+  color: white;
+  border-color: #00C853;
+  font-weight: 600;
 }
 </style>
