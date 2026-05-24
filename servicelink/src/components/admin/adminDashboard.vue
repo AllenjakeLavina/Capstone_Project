@@ -151,7 +151,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="transaction in transactions" :key="transaction.id">
+            <tr v-for="transaction in paginatedTransactions" :key="transaction.id">
               <td>{{ transaction.id.substring(0, 8) }}...</td>
               <td>{{ getTransactionClientName(transaction) }}</td>
               <td>{{ getTransactionProviderName(transaction) }}</td>
@@ -174,18 +174,18 @@
           </tbody>
         </table>
 
-        <div v-if="transactions.length === 0" class="no-transactions">
+        <div v-if="allTransactions.length === 0" class="no-transactions">
         <p>No transactions found.</p>
-      </div>
-      <div class="pagination-controls">
-        <button :disabled="transactionPage <= 1" @click="changeTransactionPage(transactionPage - 1)">&laquo; Prev</button>
-        <span v-for="p in transactionTotalPages" :key="p"
-          :class="['page-num', { active: p === transactionPage }]"
-          @click="changeTransactionPage(p)">{{ p }}</span>
-        <button :disabled="transactionPage >= transactionTotalPages" @click="changeTransactionPage(transactionPage + 1)">Next &raquo;</button>
+        </div>
+        <div class="pagination-controls">
+          <button :disabled="transactionPage <= 1" @click="changeTransactionPage(transactionPage - 1)">&laquo; Prev</button>
+          <span v-for="p in transactionTotalPages" :key="p"
+            :class="['page-num', { active: p === transactionPage }]"
+            @click="changeTransactionPage(p)">{{ p }}</span>
+          <button :disabled="transactionPage >= transactionTotalPages" @click="changeTransactionPage(transactionPage + 1)">Next &raquo;</button>
+        </div>
       </div>
     </div>
-  </div>
 
   <!-- Provider Ratings Section -->
     <div class="provider-ratings-section">
@@ -598,40 +598,40 @@ export default {
       }
     };
 
-    const fetchTransactions = async () => {
-      try {
-        loadingTransactions.value = true;
-        transactionError.value = '';
-        
-        const queryParams = new URLSearchParams();
-        if (transactionFilters.value.paymentStatus) {
-          queryParams.append('paymentStatus', transactionFilters.value.paymentStatus);
-        }
-        if (transactionFilters.value.sortBy) {
-          queryParams.append('sortBy', transactionFilters.value.sortBy);
-        }
-        if (transactionFilters.value.sortOrder) {
-          queryParams.append('sortOrder', transactionFilters.value.sortOrder);
-        }
+    const allTransactions = ref([]);
 
-        queryParams.append('page', transactionPage.value);
-        queryParams.append('limit', transactionPageSize.value);
+const fetchTransactions = async () => {
+  try {
+    loadingTransactions.value = true;
+    transactionError.value = '';
+    transactionPage.value = 1;
 
-        const response = await adminService.getAllTransactions(queryParams.toString());
-        
-        if (response.success) {
-          transactions.value = response.data;
-          transactionTotal.value = response.total || response.data.length;
-        } else {
-          transactionError.value = response.message || 'Failed to load transactions';
-        }
-      } catch (err) {
-        console.error('Error fetching transactions:', err);
-        transactionError.value = 'Unable to load transactions. Please try again later.';
-      } finally {
-        loadingTransactions.value = false;
-      }
-    };
+    const queryParams = new URLSearchParams();
+    if (transactionFilters.value.paymentStatus) {
+      queryParams.append('paymentStatus', transactionFilters.value.paymentStatus);
+    }
+    if (transactionFilters.value.sortBy) {
+      queryParams.append('sortBy', transactionFilters.value.sortBy);
+    }
+    if (transactionFilters.value.sortOrder) {
+      queryParams.append('sortOrder', transactionFilters.value.sortOrder);
+    }
+
+    const response = await adminService.getAllTransactions(queryParams.toString());
+
+    if (response.success) {
+      allTransactions.value = response.data;
+      transactionTotal.value = response.data.length;
+    } else {
+      transactionError.value = response.message || 'Failed to load transactions';
+    }
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    transactionError.value = 'Unable to load transactions. Please try again later.';
+  } finally {
+    loadingTransactions.value = false;
+  }
+};
 
     const applyTransactionFilters = () => {
       fetchTransactions();
@@ -696,6 +696,11 @@ export default {
       Math.ceil(bookingTotal.value / bookingPageSize.value)
     );
 
+    const paginatedTransactions = computed(() => {
+      const start = (transactionPage.value - 1) * transactionPageSize.value;
+      return allTransactions.value.slice(start, start + transactionPageSize.value);
+    });
+
     // Computed slices (client-side pagination)
     const paginatedProviders = computed(() => {
       const start = (providerPage.value - 1) * providerPageSize.value;
@@ -709,7 +714,7 @@ export default {
     // Page changers
     const changeTransactionPage = (page) => {
       transactionPage.value = page;
-      fetchTransactions();
+      // no fetch needed — client-side na
     };
     const changeProviderPage = (page) => {
       providerPage.value = page;
@@ -757,6 +762,7 @@ export default {
       formatTransactionStatus,
       websiteViews,
       fetchWebsiteViews,
+      allTransactions, paginatedTransactions,
       transactionPage, transactionTotalPages, changeTransactionPage,
       providerPage, providerTotalPages, paginatedProviders, changeProviderPage,
       bookingPage, bookingTotalPages, paginatedBookings, changeBookingPage,
