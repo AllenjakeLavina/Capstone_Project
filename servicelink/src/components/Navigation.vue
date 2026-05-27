@@ -53,19 +53,29 @@
               <div class="icon"><i class="fas fa-chart-line"></i></div>
               <span>Dashboard</span>
             </router-link>
-            <router-link to="/admin/unverified-users" class="nav-item">
-              <div class="icon"><i class="fas fa-user-times"></i></div>
-              <span>Unverified Users</span>
-            </router-link>
-            <router-link to="/admin/providers" class="nav-item">
-              <div class="icon"><i class="fas fa-briefcase"></i></div>
-              <span>All Providers</span>
-            </router-link>
-            <router-link to="/admin/clients" class="nav-item">
+
+            <!-- Users dropdown -->
+            <div class="nav-item admin-dropdown-wrapper" @mouseenter="showUsersDropdown = true" @mouseleave="showUsersDropdown = false">
               <div class="icon"><i class="fas fa-users"></i></div>
-              <span>All Clients</span>
-            </router-link>
-            
+              <span>Users</span>
+              <i class="fas fa-chevron-down" style="margin-left: 6px; font-size: 12px;"></i>
+
+              <div v-if="showUsersDropdown" class="admin-dropdown">
+                <router-link to="/admin/unverified-users" class="admin-dropdown-item" @click="showUsersDropdown = false">
+                  <i class="fas fa-user-times"></i>
+                  <span>Unverified Users</span>
+                </router-link>
+                <router-link to="/admin/providers" class="admin-dropdown-item" @click="showUsersDropdown = false">
+                  <i class="fas fa-briefcase"></i>
+                  <span>All Providers</span>
+                </router-link>
+                <router-link to="/admin/clients" class="admin-dropdown-item" @click="showUsersDropdown = false">
+                  <i class="fas fa-users"></i>
+                  <span>All Clients</span>
+                </router-link>
+              </div>
+            </div>
+
             <router-link to="/admin/category-management" class="nav-item">
               <div class="icon"><i class="fas fa-th-list"></i></div>
               <span>Category Management</span>
@@ -439,6 +449,7 @@ export default {
     // State
     const isMobile = ref(false);
     const showUserMenu = ref(false);
+    const showUsersDropdown = ref(false);
     const userRole = ref('');
     const isAuthenticated = ref(false);
     const userName = ref('');
@@ -900,6 +911,7 @@ export default {
       userEmail,
       userAvatar,
       shouldShowNav,
+      showUsersDropdown,
       toggleUserMenu,
       handleLogout,
       
@@ -1901,5 +1913,56 @@ export default {
     margin-bottom: var(--mobile-nav-height) !important;
     padding-bottom: 20px !important;
   }
+}
+.admin-dropdown-wrapper {
+  position: relative;
+  cursor: pointer;
+}
+
+.admin-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1001;
+  margin-top: 0px;
+  padding-top: 5px;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s forwards;
+}
+
+.admin-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  color: #333;
+  text-decoration: none;
+  font-size: 15px;
+  transition: background-color 0.2s;
+}
+
+.admin-dropdown-item i {
+  width: 20px;
+  text-align: center;
+  color: #555;
+}
+
+.admin-dropdown-item:hover {
+  background-color: #f0faf5;
+  color: #00C853;
+}
+
+.admin-dropdown-item:hover i {
+  color: #00C853;
+}
+
+.admin-dropdown-item.router-link-active {
+  background-color: #e8f5e9;
+  color: #00C853;
+  font-weight: 500;
 }
 </style>
