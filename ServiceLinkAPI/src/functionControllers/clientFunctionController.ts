@@ -762,17 +762,17 @@ export const bookService = async (
     });
 
     // Send email notification to provider
-    const emailSent = await sendBookingNotificationEmail(
+    sendBookingNotificationEmail(
       service.serviceProvider.user.email,
       `${service.serviceProvider.user.firstName} ${service.serviceProvider.user.lastName}`,
       `${user.firstName} ${user.lastName}`,
       service.title,
       bookingData.startTime
-    );
-
-    if (!emailSent) {
-      console.warn(`Failed to send booking notification email to provider ${service.serviceProvider.user.email}`);
-    }
+    ).then(sent => {
+      if (!sent) console.warn(`Failed to send booking notification email to provider ${service.serviceProvider.user.email}`);
+    }).catch(err => {
+      console.error('Email send error (non-blocking):', err);
+    });
 
     return booking;
   } catch (error) {
