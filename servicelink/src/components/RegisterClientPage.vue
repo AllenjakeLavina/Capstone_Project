@@ -6,11 +6,15 @@
       </div>
       <h2>Register as Client</h2>
       <p class="subtitle">Create an account to find and book services</p>
-      
-      <div v-if="showVerification" class="verification-section" key="verification">
+
+      <div
+        v-if="showVerification"
+        class="verification-section"
+        key="verification"
+      >
         <h3>Verify Your Email</h3>
         <p>Please verify your email address to complete registration</p>
-        <EmailVerificationInput 
+        <EmailVerificationInput
           :email="formData.email"
           @verification-success="handleVerificationSuccess"
           @verification-error="handleVerificationError"
@@ -22,28 +26,32 @@
         <div v-if="currentStep === 1">
           <div class="form-row">
             <div class="form-group">
-              <label for="firstName">First Name <span class="required">*</span></label>
+              <label for="firstName"
+                >First Name <span class="required">*</span></label
+              >
               <div class="input-container">
                 <span class="input-icon">👤</span>
-                <input 
-                  type="text" 
-                  id="firstName" 
-                  v-model="formData.firstName" 
+                <input
+                  type="text"
+                  id="firstName"
+                  v-model="formData.firstName"
                   required
                   placeholder="Enter your first name"
                   minlength="2"
                 />
               </div>
             </div>
-            
+
             <div class="form-group">
-              <label for="lastName">Last Name <span class="required">*</span></label>
+              <label for="lastName"
+                >Last Name <span class="required">*</span></label
+              >
               <div class="input-container">
                 <span class="input-icon">👤</span>
-                <input 
-                  type="text" 
-                  id="lastName" 
-                  v-model="formData.lastName" 
+                <input
+                  type="text"
+                  id="lastName"
+                  v-model="formData.lastName"
                   required
                   placeholder="Enter your last name"
                   minlength="2"
@@ -51,45 +59,51 @@
               </div>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="email">Email <span class="required">*</span></label>
             <div class="input-container">
               <span class="input-icon">✉️</span>
-              <input 
-                type="email" 
-                id="email" 
-                v-model="formData.email" 
+              <input
+                type="email"
+                id="email"
+                v-model="formData.email"
                 required
                 placeholder="Enter your email"
               />
             </div>
           </div>
-          
+
           <div class="form-group">
-            <label for="phone">Contact Number <span class="required">*</span></label>
+            <label for="phone"
+              >Contact Number <span class="required">*</span></label
+            >
             <div class="input-container">
               <span class="input-icon">📱</span>
-              <input 
-                type="tel" 
-                id="phone" 
-                v-model="formData.phone" 
+              <input
+                type="tel"
+                id="phone"
+                v-model="formData.phone"
                 required
                 placeholder="e.g., 09123456789"
                 maxlength="11"
               />
             </div>
-            <small class="input-hint">Enter 11-digit number starting with 09</small>
+            <small class="input-hint"
+              >Enter 11-digit number starting with 09</small
+            >
           </div>
 
           <div class="form-group">
-            <label for="addressLine1">Address <span class="required">*</span></label>
+            <label for="addressLine1"
+              >Address <span class="required">*</span></label
+            >
             <div class="input-container">
               <span class="input-icon">📍</span>
-              <input 
-                type="text" 
-                id="addressLine1" 
-                v-model="formData.addressLine1" 
+              <input
+                type="text"
+                id="addressLine1"
+                v-model="formData.addressLine1"
                 required
                 placeholder="Street address, Building number "
                 minlength="5"
@@ -101,10 +115,7 @@
             <label for="addressLine2">Barangay</label>
             <div class="input-container">
               <span class="input-icon">📍</span>
-              <select
-                id="addressLine2"
-                v-model="formData.addressLine2"
-              >
+              <select id="addressLine2" v-model="formData.addressLine2">
                 <option disabled value="">Select Barangay</option>
                 <option
                   v-for="barangay in barangays"
@@ -121,39 +132,43 @@
             <label for="city">City</label>
             <div class="input-container">
               <span class="input-icon">🏙️</span>
-              <input
-                type="text"
-                id="city"
-                :value="cityName"
-                readonly
-              />
+              <input type="text" id="city" :value="cityName" readonly />
             </div>
           </div>
 
           <div class="form-group">
-            <label for="idDocument">ID Document <span class="required">*</span></label>
+            <label for="idDocument"
+              >ID Document <span class="required">*</span></label
+            >
             <div class="file-upload" :class="{ 'file-uploaded': idDocument }">
-              <input 
-                type="file" 
-                id="idDocument" 
+              <input
+                type="file"
+                id="idDocument"
                 @change="handleFileChange"
                 accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
                 required
               />
               <div class="file-upload-info">
-                <span class="file-icon">{{ idDocument ? '✅' : '📄' }}</span>
-                <span class="file-text">{{ idDocument ? idDocument.name : 'Upload ID document' }}</span>
-                <span v-if="idDocument" class="file-size">({{ getFileSize(idDocument.size) }})</span>
+                <span class="file-icon">{{ idDocument ? "✅" : "📄" }}</span>
+                <span class="file-text">{{
+                  idDocument ? idDocument.name : "Upload ID document"
+                }}</span>
+                <span v-if="idDocument" class="file-size"
+                  >({{ getFileSize(idDocument.size) }})</span
+                >
               </div>
             </div>
-            <small class="file-hint">Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max size: 10MB)</small>
+            <small class="file-hint"
+              >Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max size:
+              10MB)</small
+            >
           </div>
 
           <div class="form-actions">
-            <button 
-              type="button" 
-              class="primary-btn client-btn" 
-              :disabled="loading" 
+            <button
+              type="button"
+              class="primary-btn client-btn"
+              :disabled="loading"
               @click="goToStep2"
             >
               Next
@@ -167,95 +182,216 @@
             <label for="password">Password</label>
             <div class="input-container">
               <span class="input-icon">🔒</span>
-              <input 
-                type="password" 
-                id="password" 
-                v-model="formData.password" 
+              <input
+                :type="showPassword ? 'text' : 'password'"
+                id="password"
+                v-model="formData.password"
                 required
                 placeholder="Create a password"
-                :class="{ 'input-error': !isPasswordValid && formData.password.length > 0 }"
+                :class="{
+                  'input-error':
+                    !isPasswordValid && formData.password.length > 0,
+                }"
               />
+              <span class="eye-icon" @click="showPassword = !showPassword">
+                <svg
+                  v-if="!showPassword"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                  />
+                  <path
+                    d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                  />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </span>
             </div>
             <div v-if="formData.password.length > 0" class="password-checklist">
-              <div class="password-requirement" :class="{ 'valid': hasMinLength, 'invalid': !hasMinLength }">
-                <span class="check-icon">{{ hasMinLength ? '✓' : '✗' }}</span>
+              <div
+                class="password-requirement"
+                :class="{ valid: hasMinLength, invalid: !hasMinLength }"
+              >
+                <span class="check-icon">{{ hasMinLength ? "✓" : "✗" }}</span>
                 <span>8 characters</span>
               </div>
-              <div class="password-requirement" :class="{ 'valid': hasUppercase, 'invalid': !hasUppercase }">
-                <span class="check-icon">{{ hasUppercase ? '✓' : '✗' }}</span>
+              <div
+                class="password-requirement"
+                :class="{ valid: hasUppercase, invalid: !hasUppercase }"
+              >
+                <span class="check-icon">{{ hasUppercase ? "✓" : "✗" }}</span>
                 <span>1 uppercase</span>
               </div>
-              <div class="password-requirement" :class="{ 'valid': hasLowercase, 'invalid': !hasLowercase }">
-                <span class="check-icon">{{ hasLowercase ? '✓' : '✗' }}</span>
+              <div
+                class="password-requirement"
+                :class="{ valid: hasLowercase, invalid: !hasLowercase }"
+              >
+                <span class="check-icon">{{ hasLowercase ? "✓" : "✗" }}</span>
                 <span>1 lowercase</span>
               </div>
-              <div class="password-requirement" :class="{ 'valid': hasNumber, 'invalid': !hasNumber }">
-                <span class="check-icon">{{ hasNumber ? '✓' : '✗' }}</span>
+              <div
+                class="password-requirement"
+                :class="{ valid: hasNumber, invalid: !hasNumber }"
+              >
+                <span class="check-icon">{{ hasNumber ? "✓" : "✗" }}</span>
                 <span>1 number</span>
               </div>
-              <div class="password-requirement" :class="{ 'valid': hasSpecialChar, 'invalid': !hasSpecialChar }">
-                <span class="check-icon">{{ hasSpecialChar ? '✓' : '✗' }}</span>
+              <div
+                class="password-requirement"
+                :class="{ valid: hasSpecialChar, invalid: !hasSpecialChar }"
+              >
+                <span class="check-icon">{{ hasSpecialChar ? "✓" : "✗" }}</span>
                 <span>1 special character</span>
               </div>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="confirmPassword">Confirm Password</label>
             <div class="input-container">
               <span class="input-icon">🔒</span>
-              <input 
-                type="password" 
-                id="confirmPassword" 
-                v-model="confirmPassword" 
+              <input
+                :type="showConfirmPassword ? 'text' : 'password'"
+                id="confirmPassword"
+                v-model="confirmPassword"
                 required
                 placeholder="Confirm your password"
-                :class="{ 'input-error': confirmPasswordError && confirmPassword.length > 0 }"
+                :class="{
+                  'input-error':
+                    confirmPasswordError && confirmPassword.length > 0,
+                }"
               />
+              <span
+                class="eye-icon"
+                @click="showConfirmPassword = !showConfirmPassword"
+              >
+                <svg
+                  v-if="!showConfirmPassword"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                  />
+                  <path
+                    d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                  />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </span>
             </div>
-            <div v-if="confirmPasswordError && confirmPassword.length > 0" class="error-message">
+            <div
+              v-if="confirmPasswordError && confirmPassword.length > 0"
+              class="error-message"
+            >
               {{ confirmPasswordError }}
             </div>
           </div>
 
           <div class="form-group form-checkbox">
-            <input 
-              type="checkbox" 
-              id="terms" 
-              v-model="acceptTerms" 
-              required
-            />
-            <label for="terms">I agree to the <a href="#" @click.prevent="showTermsModal = true" class="terms-link">Terms and Conditions</a></label>
+            <input type="checkbox" id="terms" v-model="acceptTerms" required />
+            <label for="terms"
+              >I agree to the
+              <a
+                href="#"
+                @click.prevent="showTermsModal = true"
+                class="terms-link"
+                >Terms and Conditions</a
+              ></label
+            >
           </div>
-          
+
           <div class="form-actions">
-            <button 
-              type="button" 
-              class="primary-btn" 
-              :disabled="loading" 
+            <button
+              type="button"
+              class="primary-btn"
+              :disabled="loading"
               @click="goToStep1"
             >
               Back
             </button>
-            <button type="submit" class="primary-btn client-btn" :disabled="loading || !acceptTerms">
-              {{ loading ? 'Registering...' : 'Register as Client' }}
+            <button
+              type="submit"
+              class="primary-btn client-btn"
+              :disabled="loading || !acceptTerms"
+            >
+              {{ loading ? "Registering..." : "Register as Client" }}
             </button>
           </div>
         </div>
       </form>
-      
+
       <div class="auth-footer">
-        <p>Already have an account? <router-link to="/login">Login</router-link></p>
-        <p>Want to register as a provider? <router-link to="/register/provider">Provider Registration</router-link></p>
+        <p>
+          Already have an account? <router-link to="/login">Login</router-link>
+        </p>
+        <p>
+          Want to register as a provider?
+          <router-link to="/register/provider"
+            >Provider Registration</router-link
+          >
+        </p>
       </div>
     </div>
 
     <!-- Terms & Conditions Modal -->
-    <div v-if="showTermsModal" class="modal-overlay" @click.self="showTermsModal = false">
+    <div
+      v-if="showTermsModal"
+      class="modal-overlay"
+      @click.self="showTermsModal = false"
+    >
       <div class="modal-card">
         <div class="modal-header">
           <h2>Terms and Conditions</h2>
-          <button class="modal-close" @click="showTermsModal = false">&times;</button>
+          <button class="modal-close" @click="showTermsModal = false">
+            &times;
+          </button>
         </div>
         <div class="modal-content">
           <p class="last-updated">Last updated: January 2025</p>
@@ -267,121 +403,123 @@
 </template>
 
 <script>
-import { ref, reactive, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import Swal from 'sweetalert2';
-import { clientService, authService } from '../services/apiService';
-import EmailVerificationInput from './EmailVerificationInput.vue';
-import TermsText from './settings/TermsText.vue';
+import { ref, reactive, computed, watch } from "vue";
+import { useRouter } from "vue-router";
+import Swal from "sweetalert2";
+import { clientService, authService } from "../services/apiService";
+import EmailVerificationInput from "./EmailVerificationInput.vue";
+import TermsText from "./settings/TermsText.vue";
 
 export default {
-  name: 'RegisterClientPage',
+  name: "RegisterClientPage",
   components: {
     EmailVerificationInput,
-    TermsText
+    TermsText,
   },
   setup() {
     const router = useRouter();
     const currentStep = ref(1);
     const formData = reactive({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      password: '',
-      addressLine1: '',
-      addressLine2: ''
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      password: "",
+      addressLine1: "",
+      addressLine2: "",
     });
     const idDocument = ref(null);
-    const confirmPassword = ref('');
+    const confirmPassword = ref("");
     const acceptTerms = ref(false);
     const loading = ref(false);
+    const showPassword = ref(false);
+    const showConfirmPassword = ref(false);
     const showVerification = ref(false);
     const showTermsModal = ref(false);
 
-    const cityName = 'Olongapo City';
+    const cityName = "Olongapo City";
 
     const barangays = [
-      'Barangay Asinan',
-      'Barangay Banicain',
-      'Barangay Barretto',
-      'Barangay East Bajac-Bajac',
-      'Barangay East Tapinac',
-      'Barangay Gordon Heights',
-      'Barangay Kalaklan',
-      'Barangay Kalalake',
-      'Barangay Mabayuan',
-      'Barangay New Cabalan',
-      'Barangay New Ilalim',
-      'Barangay New Kababae',
-      'Barangay New Kalalake',
-      'Barangay Old Cabalan',
-      'Barangay Pag-Asa',
-      'Barangay Sta. Rita',
-      'Barangay West Bajac-Bajac',
-      'Barangay West Tapinac'
+      "Barangay Asinan",
+      "Barangay Banicain",
+      "Barangay Barretto",
+      "Barangay East Bajac-Bajac",
+      "Barangay East Tapinac",
+      "Barangay Gordon Heights",
+      "Barangay Kalaklan",
+      "Barangay Kalalake",
+      "Barangay Mabayuan",
+      "Barangay New Cabalan",
+      "Barangay New Ilalim",
+      "Barangay New Kababae",
+      "Barangay New Kalalake",
+      "Barangay Old Cabalan",
+      "Barangay Pag-Asa",
+      "Barangay Sta. Rita",
+      "Barangay West Bajac-Bajac",
+      "Barangay West Tapinac",
     ];
 
     // Validation functions
     const validateFullName = () => {
       const firstName = formData.firstName.trim();
       const lastName = formData.lastName.trim();
-      
+
       if (!firstName || !lastName) {
-        return 'First name and last name are required';
+        return "First name and last name are required";
       }
-      
+
       if (firstName.length < 2) {
-        return 'First name must be at least 2 characters long';
+        return "First name must be at least 2 characters long";
       }
-      
+
       if (lastName.length < 2) {
-        return 'Last name must be at least 2 characters long';
+        return "Last name must be at least 2 characters long";
       }
-      
+
       // Check for valid characters (letters, spaces, hyphens, apostrophes)
       const nameRegex = /^[a-zA-Z\s'-]+$/;
       if (!nameRegex.test(firstName)) {
-        return 'First name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed';
+        return "First name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed";
       }
-      
+
       if (!nameRegex.test(lastName)) {
-        return 'Last name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed';
+        return "Last name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed";
       }
-      
+
       return null;
     };
 
     const validateContactNumber = () => {
       const phone = formData.phone.trim();
-      
+
       if (!phone) {
-        return 'Contact number is required';
+        return "Contact number is required";
       }
-      
+
       // Remove spaces, dashes, and parentheses for validation
-      const cleanPhone = phone.replace(/[\s\-()]/g, '');
-      
+      const cleanPhone = phone.replace(/[\s\-()]/g, "");
+
       // Philippine phone number format: +63XXXXXXXXXX or 09XXXXXXXXX or 0XXXXXXXXX
       // Also accept international formats
       const phoneRegex = /^09\d{9}$/;
 
       if (!phoneRegex.test(cleanPhone)) {
-        return 'Please enter a valid contact number starting with 09 (e.g., 09123456789)';
+        return "Please enter a valid contact number starting with 09 (e.g., 09123456789)";
       }
-      
+
       return null;
     };
 
     const validateAddress = () => {
       if (!formData.addressLine1.trim()) {
-        return 'Address is required';
+        return "Address is required";
       }
-      
+
       if (formData.addressLine1.trim().length < 5) {
-        return 'Address must be at least 5 characters long';
+        return "Address must be at least 5 characters long";
       }
-      
+
       return null;
     };
 
@@ -390,23 +528,29 @@ export default {
       const errors = [];
 
       if (password.length < 8) {
-        errors.push('Password must be at least 8 characters long');
+        errors.push("Password must be at least 8 characters long");
       }
 
       if (!/[a-z]/.test(password)) {
-        errors.push('Password must contain at least one lowercase letter (a-z)');
+        errors.push(
+          "Password must contain at least one lowercase letter (a-z)",
+        );
       }
 
       if (!/[A-Z]/.test(password)) {
-        errors.push('Password must contain at least one uppercase letter (A-Z)');
+        errors.push(
+          "Password must contain at least one uppercase letter (A-Z)",
+        );
       }
 
       if (!/\d/.test(password)) {
-        errors.push('Password must contain at least one number (0-9)');
+        errors.push("Password must contain at least one number (0-9)");
       }
 
       if (!/[^a-zA-Z\d]/.test(password)) {
-        errors.push('Password must contain at least one special character (!@#$%^&* etc.)');
+        errors.push(
+          "Password must contain at least one special character (!@#$%^&* etc.)",
+        );
       }
 
       return errors;
@@ -417,63 +561,84 @@ export default {
     const hasUppercase = computed(() => /[A-Z]/.test(formData.password));
     const hasLowercase = computed(() => /[a-z]/.test(formData.password));
     const hasNumber = computed(() => /\d/.test(formData.password));
-    const hasSpecialChar = computed(() => /[^a-zA-Z\d]/.test(formData.password));
+    const hasSpecialChar = computed(() =>
+      /[^a-zA-Z\d]/.test(formData.password),
+    );
     const isPasswordValid = computed(() => {
-      return hasMinLength.value && hasUppercase.value && hasLowercase.value && hasNumber.value && hasSpecialChar.value;
+      return (
+        hasMinLength.value &&
+        hasUppercase.value &&
+        hasLowercase.value &&
+        hasNumber.value &&
+        hasSpecialChar.value
+      );
     });
 
     const confirmPasswordError = computed(() => {
       if (confirmPassword.value.length === 0) {
-        return '';
+        return "";
       }
       if (formData.password !== confirmPassword.value) {
-        return 'Passwords do not match';
+        return "Passwords do not match";
       }
-      return '';
+      return "";
     });
 
     const validateIdDocument = () => {
       if (!idDocument.value) {
-        return 'ID document is required for verification';
+        return "ID document is required for verification";
       }
-      
+
       const fileSize = idDocument.value.size / 1024 / 1024; // size in MB
       if (fileSize > 10) {
-        return 'File size exceeds 10MB limit. Please upload a smaller file.';
+        return "File size exceeds 10MB limit. Please upload a smaller file.";
       }
-      
+
       // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      const fileExtension = idDocument.value.name.split('.').pop().toLowerCase();
-      const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
-      
-      if (!allowedTypes.includes(idDocument.value.type) && !allowedExtensions.includes(fileExtension)) {
-        return 'Invalid file type. Please upload JPG, PNG, PDF, DOC, or DOCX files only.';
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      const fileExtension = idDocument.value.name
+        .split(".")
+        .pop()
+        .toLowerCase();
+      const allowedExtensions = ["jpg", "jpeg", "png", "pdf", "doc", "docx"];
+
+      if (
+        !allowedTypes.includes(idDocument.value.type) &&
+        !allowedExtensions.includes(fileExtension)
+      ) {
+        return "Invalid file type. Please upload JPG, PNG, PDF, DOC, or DOCX files only.";
       }
-      
+
       return null;
     };
 
     const getFileSize = (bytes) => {
-      if (bytes === 0) return '0 Bytes';
+      if (bytes === 0) return "0 Bytes";
       const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB'];
+      const sizes = ["Bytes", "KB", "MB"];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+      return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
     };
 
     const handleFileChange = async (event) => {
       idDocument.value = event.target.files[0];
-      
+
       // Validate file when selected
       if (idDocument.value) {
         const fileError = validateIdDocument();
         if (fileError) {
           await Swal.fire({
-            icon: 'error',
-            title: 'Invalid File',
+            icon: "error",
+            title: "Invalid File",
             text: fileError,
-            confirmButtonColor: '#106e40'
+            confirmButtonColor: "#106e40",
           });
           idDocument.value = null;
           event.target.value = null;
@@ -490,10 +655,10 @@ export default {
       const nameError = validateFullName();
       if (nameError) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
+          icon: "error",
+          title: "Validation Error",
           text: nameError,
-          confirmButtonColor: '#106e40'
+          confirmButtonColor: "#106e40",
         });
         return;
       }
@@ -502,10 +667,10 @@ export default {
       const phoneError = validateContactNumber();
       if (phoneError) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
+          icon: "error",
+          title: "Validation Error",
           text: phoneError,
-          confirmButtonColor: '#106e40'
+          confirmButtonColor: "#106e40",
         });
         return;
       }
@@ -514,10 +679,10 @@ export default {
       const addressError = validateAddress();
       if (addressError) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
+          icon: "error",
+          title: "Validation Error",
           text: addressError,
-          confirmButtonColor: '#106e40'
+          confirmButtonColor: "#106e40",
         });
         return;
       }
@@ -526,10 +691,10 @@ export default {
       const idError = validateIdDocument();
       if (idError) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
+          icon: "error",
+          title: "Validation Error",
           text: idError,
-          confirmButtonColor: '#106e40'
+          confirmButtonColor: "#106e40",
         });
         return;
       }
@@ -542,10 +707,10 @@ export default {
       const nameError = validateFullName();
       if (nameError) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
+          icon: "error",
+          title: "Validation Error",
           text: nameError,
-          confirmButtonColor: '#106e40'
+          confirmButtonColor: "#106e40",
         });
         return;
       }
@@ -554,10 +719,10 @@ export default {
       const phoneError = validateContactNumber();
       if (phoneError) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
+          icon: "error",
+          title: "Validation Error",
           text: phoneError,
-          confirmButtonColor: '#106e40'
+          confirmButtonColor: "#106e40",
         });
         return;
       }
@@ -566,22 +731,22 @@ export default {
       const addressError = validateAddress();
       if (addressError) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
+          icon: "error",
+          title: "Validation Error",
           text: addressError,
-          confirmButtonColor: '#106e40'
+          confirmButtonColor: "#106e40",
         });
         return;
       }
-      
+
       // Validate password strength
       const passwordValidationErrors = validatePassword(formData.password);
       if (passwordValidationErrors.length > 0) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Weak Password',
-          text: passwordValidationErrors.join(', '),
-          confirmButtonColor: '#106e40'
+          icon: "error",
+          title: "Weak Password",
+          text: passwordValidationErrors.join(", "),
+          confirmButtonColor: "#106e40",
         });
         return;
       }
@@ -589,10 +754,10 @@ export default {
       // Validate passwords match
       if (formData.password !== confirmPassword.value) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Password Mismatch',
-          text: 'Passwords do not match',
-          confirmButtonColor: '#106e40'
+          icon: "error",
+          title: "Password Mismatch",
+          text: "Passwords do not match",
+          confirmButtonColor: "#106e40",
         });
         return;
       }
@@ -601,54 +766,57 @@ export default {
       const idError = validateIdDocument();
       if (idError) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
+          icon: "error",
+          title: "Validation Error",
           text: idError,
-          confirmButtonColor: '#106e40'
+          confirmButtonColor: "#106e40",
         });
         return;
       }
 
       loading.value = true;
-      
+
       try {
         const formDataToSend = new FormData();
-        formDataToSend.append('email', formData.email);
-        formDataToSend.append('password', formData.password);
-        formDataToSend.append('firstName', formData.firstName.trim());
-        formDataToSend.append('lastName', formData.lastName.trim());
-        formDataToSend.append('phone', formData.phone.trim());
-        formDataToSend.append('address', JSON.stringify({
-          addressLine1: formData.addressLine1.trim(),
-          addressLine2: formData.addressLine2?.trim() || '',
-          city: cityName
-        }));
-        formDataToSend.append('idDocument', idDocument.value);
+        formDataToSend.append("email", formData.email);
+        formDataToSend.append("password", formData.password);
+        formDataToSend.append("firstName", formData.firstName.trim());
+        formDataToSend.append("lastName", formData.lastName.trim());
+        formDataToSend.append("phone", formData.phone.trim());
+        formDataToSend.append(
+          "address",
+          JSON.stringify({
+            addressLine1: formData.addressLine1.trim(),
+            addressLine2: formData.addressLine2?.trim() || "",
+            city: cityName,
+          }),
+        );
+        formDataToSend.append("idDocument", idDocument.value);
 
         const response = await clientService.registerClient(formDataToSend);
-        
+
         if (response.success) {
           await Swal.fire({
-          icon: 'success',
-          title: 'Registration Successful!',
-          text: 'Your account has been created. Please login to continue.',
-          confirmButtonColor: '#8cc63f'
-        });
-        router.push('/');  // ← DIREKTANG LOGIN
+            icon: "success",
+            title: "Registration Successful!",
+            text: "Your account has been created. Please login to continue.",
+            confirmButtonColor: "#8cc63f",
+          });
+          router.push("/"); // ← DIREKTANG LOGIN
         } else {
           await Swal.fire({
-            icon: 'error',
-            title: 'Registration Failed',
-            text: response.message || 'Registration failed. Please try again.',
-            confirmButtonColor: '#106e40'
+            icon: "error",
+            title: "Registration Failed",
+            text: response.message || "Registration failed. Please try again.",
+            confirmButtonColor: "#106e40",
           });
         }
       } catch (err) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.message || 'An error occurred during registration',
-          confirmButtonColor: '#106e40'
+          icon: "error",
+          title: "Error",
+          text: err.message || "An error occurred during registration",
+          confirmButtonColor: "#106e40",
         });
       } finally {
         loading.value = false;
@@ -658,31 +826,34 @@ export default {
     const handleVerificationSuccess = async () => {
       try {
         // Attempt to login after successful verification
-        const loginResponse = await authService.login(formData.email, formData.password);
+        const loginResponse = await authService.login(
+          formData.email,
+          formData.password,
+        );
         if (loginResponse.success) {
           // Store the token
-          localStorage.setItem('token', loginResponse.data.token);
+          localStorage.setItem("token", loginResponse.data.token);
           // Redirect to home page
-          router.push('/');
+          router.push("/");
         } else {
-          router.push('/login');
+          router.push("/login");
         }
       } catch (err) {
-        console.error('Auto-login failed:', err);
-        router.push('/login');
+        console.error("Auto-login failed:", err);
+        router.push("/login");
       }
     };
 
     watch(showTermsModal, (isOpen) => {
-      document.body.style.overflow = isOpen ? 'hidden' : '';
+      document.body.style.overflow = isOpen ? "hidden" : "";
     });
 
     const handleVerificationError = async (errorMessage) => {
       await Swal.fire({
-        icon: 'error',
-        title: 'Verification Error',
+        icon: "error",
+        title: "Verification Error",
         text: errorMessage,
-        confirmButtonColor: '#106e40'
+        confirmButtonColor: "#106e40",
       });
     };
 
@@ -692,6 +863,8 @@ export default {
       confirmPassword,
       acceptTerms,
       loading,
+      showPassword,
+      showConfirmPassword,
       showVerification,
       showTermsModal,
       cityName,
@@ -710,9 +883,9 @@ export default {
       goToStep2,
       handleRegister,
       handleVerificationSuccess,
-      handleVerificationError
+      handleVerificationError,
     };
-  }
+  },
 };
 </script>
 
@@ -945,7 +1118,8 @@ input[type="checkbox"] {
   font-style: italic;
 }
 
-.password-hint, .input-hint {
+.password-hint,
+.input-hint {
   display: block;
   margin-top: 8px;
   color: #718096;
@@ -1059,7 +1233,6 @@ input[type="checkbox"] {
   text-decoration: underline;
 }
 
-
 .verification-section {
   text-align: center;
   padding: 20px 0;
@@ -1082,7 +1255,7 @@ input[type="checkbox"] {
     flex-direction: column;
     gap: 0;
   }
-  
+
   .auth-card {
     padding: 30px 20px;
   }
@@ -1208,5 +1381,22 @@ input[type="checkbox"] {
   .modal-content {
     padding: 20px;
   }
+}
+.eye-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  z-index: 1;
+  transition: color 0.2s ease;
+}
+
+.eye-icon:hover {
+  color: #4a5568;
 }
 </style>
