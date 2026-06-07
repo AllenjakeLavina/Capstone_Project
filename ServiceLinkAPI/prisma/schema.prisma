@@ -340,6 +340,7 @@ enum BookingStatus {
   COMPLETED
   CANCELLED
   DISPUTED
+  EXPIRED
 }
 
 // Time records for tracking working hours

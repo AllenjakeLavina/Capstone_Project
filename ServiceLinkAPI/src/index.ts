@@ -1,17 +1,18 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
-import express, { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { clientRoutes } from './routes/clientRoutes';
-import cors from 'cors';
-import { mainRoutes } from './routes/mainRoutes';
-import { adminRoutes } from './routes/adminRoutes';
-import { providerRoutes } from './routes/providerRoutes';
-import path from 'path';
-import { configureStaticFileServing } from './middlewares/fileHandler';
-import http from 'http';
-import { setupSocketServer } from './server/socketServer';
-import os from 'os';
+import express, { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+import { clientRoutes } from "./routes/clientRoutes";
+import cors from "cors";
+import { mainRoutes } from "./routes/mainRoutes";
+import { adminRoutes } from "./routes/adminRoutes";
+import { providerRoutes } from "./routes/providerRoutes";
+import path from "path";
+import { configureStaticFileServing } from "./middlewares/fileHandler";
+import http from "http";
+import { setupSocketServer } from "./server/socketServer";
+import os from "os";
+import { expireOverdueBookings } from "./functionControllers/clientFunctionController";
 const app = express();
 export const prisma = new PrismaClient();
 
@@ -20,78 +21,85 @@ const server = http.createServer(app);
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-  origin:  '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 
 // Increase payload size limit for file uploads
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Configure static file serving for uploads
 configureStaticFileServing(app);
 
 // Serve HTML test pages
-app.get('/provider-booking', (req, res) => {
-  res.sendFile(path.join(__dirname, 'providerBooking.html'));
+app.get("/provider-booking", (req, res) => {
+  res.sendFile(path.join(__dirname, "providerBooking.html"));
 });
 
-app.get('/client-address', (req, res) => {
-  res.sendFile(path.join(__dirname, 'clientaddress.html'));
+app.get("/client-address", (req, res) => {
+  res.sendFile(path.join(__dirname, "clientaddress.html"));
 });
 
-app.get('/client-booking', (req, res) => {
-  res.sendFile(path.join(__dirname, 'clientBooking.html'));
+app.get("/client-booking", (req, res) => {
+  res.sendFile(path.join(__dirname, "clientBooking.html"));
 });
 
-app.get('/chat', (req, res) => {
-  res.sendFile(path.join(__dirname, 'chat.html'));
+app.get("/chat", (req, res) => {
+  res.sendFile(path.join(__dirname, "chat.html"));
 });
 
-app.get('/provider-fillup', (req, res) => {
-  res.sendFile(path.join(__dirname, 'indexprovider.html'));
+app.get("/provider-fillup", (req, res) => {
+  res.sendFile(path.join(__dirname, "indexprovider.html"));
 });
 
-app.get('/provider-register', (req, res) => {
-  res.sendFile(path.join(__dirname, 'providerRegister.html'));
+app.get("/provider-register", (req, res) => {
+  res.sendFile(path.join(__dirname, "providerRegister.html"));
 });
-app.get('/admin-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
+app.get("/admin-dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "admin-dashboard.html"));
 });
-app.get('/fetchfunctions', (req, res) => {
-  res.sendFile(path.join(__dirname, 'fetchfunctions.html'));
+app.get("/fetchfunctions", (req, res) => {
+  res.sendFile(path.join(__dirname, "fetchfunctions.html"));
 });
 // Routes
-app.use('/api/provider', providerRoutes);
-app.use('/api/client', clientRoutes);
-app.use('/api', mainRoutes);
-app.use('/api/admin', adminRoutes);
-app.get('/', (req: Request, res: Response) => {
-  res.send('API is running!');
+app.use("/api/provider", providerRoutes);
+app.use("/api/client", clientRoutes);
+app.use("/api", mainRoutes);
+app.use("/api/admin", adminRoutes);
+app.get("/", (req: Request, res: Response) => {
+  res.send("API is running!");
 });
 
 const PORT: number = 5500;
-const HOST: string = '0.0.0.0';
+const HOST: string = "0.0.0.0";
 // Function to get all local IP addresses
 function getAllLocalIpAddresses(): string[] {
   const addresses: string[] = [];
   const networks = os.networkInterfaces();
-  
+
   for (const name of Object.keys(networks)) {
     for (const net of networks[name] || []) {
       // Only get IPv4 addresses and skip internal ones
-      if (net.family === 'IPv4' && !net.internal) {
+      if (net.family === "IPv4" && !net.internal) {
         addresses.push(net.address);
       }
     }
   }
-  return addresses.length ? addresses : ['localhost'];
+  return addresses.length ? addresses : ["localhost"];
 }
 // Setup Socket.IO server
 export const io = setupSocketServer(server);
+
+// Start booking expiry job
+expireOverdueBookings();
+setInterval(expireOverdueBookings, 60 * 60 * 1000);
+console.log("⏰ Booking expiry job started.");
 
 // Start the server
 server.listen(PORT, (): void => {

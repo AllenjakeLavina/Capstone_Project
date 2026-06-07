@@ -16,11 +16,15 @@
       <div class="filter-container">
         <div class="filter-label">Filter by status:</div>
         <div class="filter-options">
-          <button 
-            v-for="status in statusOptions" 
-            :key="status.value" 
+          <button
+            v-for="status in statusOptions"
+            :key="status.value"
             @click="filterByStatus(status.value)"
-            :class="['filter-btn', currentFilter === status.value ? 'active' : '']">
+            :class="[
+              'filter-btn',
+              currentFilter === status.value ? 'active' : '',
+            ]"
+          >
             {{ status.label }}
           </button>
         </div>
@@ -32,69 +36,106 @@
           <div class="booking-status" :class="booking.status.toLowerCase()">
             {{ formatStatus(booking.status) }}
           </div>
-          
+
           <div class="booking-header">
             <div class="booking-image" v-if="getServiceImage(booking)">
-              <img :src="getServiceImage(booking)" :alt="booking.service.title" />
+              <img
+                :src="getServiceImage(booking)"
+                :alt="booking.service.title"
+              />
             </div>
             <div class="booking-info">
-              <h3 class="booking-title">{{ booking.title || booking.service.title }}</h3>
+              <h3 class="booking-title">
+                {{ booking.title || booking.service.title }}
+              </h3>
               <p class="booking-date">
-                <i class="fa fa-calendar"></i> 
+                <i class="fa fa-calendar"></i>
                 {{ formatDate(booking.startTime) }}
               </p>
               <p class="booking-provider">
-                <i class="fa fa-user"></i> 
+                <i class="fa fa-user"></i>
                 {{ getProviderName(booking) }}
               </p>
               <p class="booking-price">
-                <i class="fa fa-tag"></i> 
-                ₱{{ Number(booking.totalAmount || booking.service.pricing).toFixed(2) }}
+                <i class="fa fa-tag"></i>
+                ₱{{
+                  Number(
+                    booking.totalAmount || booking.service.pricing,
+                  ).toFixed(2)
+                }}
               </p>
             </div>
           </div>
 
           <div class="booking-address" v-if="booking.address">
-            <i class="fa fa-map-marker"></i> {{ formatAddress(booking.address) }}
+            <i class="fa fa-map-marker"></i>
+            {{ formatAddress(booking.address) }}
           </div>
 
           <div class="booking-payment-status" v-if="booking.payment">
-            <span :class="['payment-status-badge', booking.payment.status === 'COMPLETED' ? 'paid' : 'unpaid']">
-              <i :class="booking.payment.status === 'COMPLETED' ? 'fa fa-check-circle' : 'fa fa-clock'"></i>
-              Payment Status: {{ booking.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+            <span
+              :class="[
+                'payment-status-badge',
+                booking.payment.status === 'COMPLETED' ? 'paid' : 'unpaid',
+              ]"
+            >
+              <i
+                :class="
+                  booking.payment.status === 'COMPLETED'
+                    ? 'fa fa-check-circle'
+                    : 'fa fa-clock'
+                "
+              ></i>
+              Payment Status:
+              {{ booking.payment.status === "COMPLETED" ? "Paid" : "Unpaid" }}
             </span>
           </div>
-          
+
           <div class="booking-actions">
-            <button class="btn btn-details" @click="viewBookingDetails(booking.id)">
+            <button
+              class="btn btn-details"
+              @click="viewBookingDetails(booking.id)"
+            >
               View Details
             </button>
-            
-            <button 
+
+            <button
               v-if="booking.status === 'PENDING'"
-              class="btn btn-edit" 
-              @click="openEditModal(booking)">
+              class="btn btn-edit"
+              @click="openEditModal(booking)"
+            >
               Edit Booking
             </button>
-            
-            <button 
+
+            <button
               v-if="booking.status === 'PENDING'"
-              class="btn btn-cancel" 
-              @click="confirmCancelBooking(booking)">
+              class="btn btn-cancel"
+              @click="confirmCancelBooking(booking)"
+            >
               Cancel Booking
             </button>
-            
-            <button 
+
+            <button
+              v-if="booking.status === 'EXPIRED'"
+              class="btn btn-rebook"
+              @click="rebookService(booking)"
+            >
+              Rebook
+            </button>
+
+            <button
               v-if="booking.status === 'COMPLETED' && !booking.payment"
-              class="btn btn-payment" 
-              @click="openPaymentModal(booking)">
+              class="btn btn-payment"
+              @click="openPaymentModal(booking)"
+            >
               Process Payment
             </button>
 
-            <button 
+            <button
               v-if="booking.status === 'COMPLETED' && !hasReviewed(booking)"
-              class="btn btn-review" 
-              @click="openReviewModal(booking)">
+              class="btn btn-review"
+              @click="openReviewModal(booking)"
+            >
               Write Review
             </button>
           </div>
@@ -105,36 +146,60 @@
         <div class="empty-state">
           <i class="fa fa-calendar-o empty-icon"></i>
           <h3>No bookings found</h3>
-          <p>You don't have any {{ currentFilter === 'ALL' ? '' : formatStatus(currentFilter).toLowerCase() }} bookings yet.</p>
-          <button class="btn btn-primary" @click="goToServices">Browse Services</button>
+          <p>
+            You don't have any
+            {{
+              currentFilter === "ALL"
+                ? ""
+                : formatStatus(currentFilter).toLowerCase()
+            }}
+            bookings yet.
+          </p>
+          <button class="btn btn-primary" @click="goToServices">
+            Browse Services
+          </button>
         </div>
       </div>
 
       <!-- Cancel Confirmation Modal -->
       <Teleport to="body">
-        <div v-if="showCancelModal" class="modal-overlay" @click.self="showCancelModal = false">
+        <div
+          v-if="showCancelModal"
+          class="modal-overlay"
+          @click.self="showCancelModal = false"
+        >
           <div class="modal">
             <div class="modal-header warning">
               <h2>Cancel Booking</h2>
-              <button class="close-btn" @click="showCancelModal = false">&times;</button>
+              <button class="close-btn" @click="showCancelModal = false">
+                &times;
+              </button>
             </div>
             <div class="modal-body">
               <p>Are you sure you want to cancel this booking?</p>
               <p class="warning-text">This action cannot be undone.</p>
-              
+
               <div class="booking-summary">
-                <h4>{{ selectedBooking?.title || selectedBooking?.service.title }}</h4>
+                <h4>
+                  {{ selectedBooking?.title || selectedBooking?.service.title }}
+                </h4>
                 <p>Date: {{ formatDate(selectedBooking?.startTime) }}</p>
                 <p>Provider: {{ getProviderName(selectedBooking) }}</p>
               </div>
-              
+
               <div class="modal-actions">
-                <button class="btn btn-secondary" @click="showCancelModal = false">No, Keep It</button>
-                <button 
-                  class="btn btn-danger" 
-                  @click="cancelBooking()" 
-                  :disabled="isCancelling">
-                  {{ isCancelling ? 'Cancelling...' : 'Yes, Cancel Booking' }}
+                <button
+                  class="btn btn-secondary"
+                  @click="showCancelModal = false"
+                >
+                  No, Keep It
+                </button>
+                <button
+                  class="btn btn-danger"
+                  @click="cancelBooking()"
+                  :disabled="isCancelling"
+                >
+                  {{ isCancelling ? "Cancelling..." : "Yes, Cancel Booking" }}
                 </button>
               </div>
             </div>
@@ -144,37 +209,60 @@
 
       <!-- Payment Confirmation Modal -->
       <Teleport to="body">
-        <div v-if="showPaymentModal" class="modal-overlay" @click.self="showPaymentModal = false">
+        <div
+          v-if="showPaymentModal"
+          class="modal-overlay"
+          @click.self="showPaymentModal = false"
+        >
           <div class="modal">
             <div class="modal-header">
               <h2>Process Payment</h2>
-              <button class="close-btn" @click="showPaymentModal = false">&times;</button>
+              <button class="close-btn" @click="showPaymentModal = false">
+                &times;
+              </button>
             </div>
             <div class="modal-body">
               <div class="payment-details">
-                <h3>{{ selectedBooking?.title || selectedBooking?.service.title }}</h3>
+                <h3>
+                  {{ selectedBooking?.title || selectedBooking?.service.title }}
+                </h3>
                 <p class="payment-amount">
-                  Amount Due: ₱{{ Number(selectedBooking?.totalAmount || selectedBooking?.service.pricing).toFixed(2) }}
+                  Amount Due: ₱{{
+                    Number(
+                      selectedBooking?.totalAmount ||
+                        selectedBooking?.service.pricing,
+                    ).toFixed(2)
+                  }}
                 </p>
                 <p>Date: {{ formatDate(selectedBooking?.startTime) }}</p>
                 <p>Provider: {{ getProviderName(selectedBooking) }}</p>
               </div>
-              
+
               <div class="payment-method">
                 <p class="payment-note">
-                  <i class="fa fa-info-circle"></i> 
-                  <strong>Payment Method: Cash On-Service</strong><br>
-                  Payment will be collected in cash when the service is provided. The provider will mark the payment as paid after receiving it.
+                  <i class="fa fa-info-circle"></i>
+                  <strong>Payment Method: Cash On-Service</strong><br />
+                  Payment will be collected in cash when the service is
+                  provided. The provider will mark the payment as paid after
+                  receiving it.
                 </p>
               </div>
-              
+
               <div class="modal-actions">
-                <button class="btn btn-secondary" @click="showPaymentModal = false">Cancel</button>
-                <button 
-                  class="btn btn-primary" 
-                  @click="confirmPayment()" 
-                  :disabled="isProcessingPayment">
-                  {{ isProcessingPayment ? 'Processing...' : 'Process Payment' }}
+                <button
+                  class="btn btn-secondary"
+                  @click="showPaymentModal = false"
+                >
+                  Cancel
+                </button>
+                <button
+                  class="btn btn-primary"
+                  @click="confirmPayment()"
+                  :disabled="isProcessingPayment"
+                >
+                  {{
+                    isProcessingPayment ? "Processing..." : "Process Payment"
+                  }}
                 </button>
               </div>
             </div>
@@ -184,23 +272,33 @@
 
       <!-- Review Modal -->
       <Teleport to="body">
-        <div v-if="showReviewModal" class="modal-overlay" @click.self="showReviewModal = false">
+        <div
+          v-if="showReviewModal"
+          class="modal-overlay"
+          @click.self="showReviewModal = false"
+        >
           <div class="modal">
             <div class="modal-header">
               <h2>Write a Review</h2>
-              <button class="close-btn" @click="showReviewModal = false">&times;</button>
+              <button class="close-btn" @click="showReviewModal = false">
+                &times;
+              </button>
             </div>
             <div class="modal-body">
               <div class="review-form">
                 <div class="rating-input">
                   <label>Rating:</label>
                   <div class="star-rating">
-                    <button 
-                      v-for="star in 5" 
+                    <button
+                      v-for="star in 5"
                       :key="star"
                       @click="setRating(star)"
-                      :class="['star-btn', star <= reviewData.rating ? 'active' : '']"
-                      type="button">
+                      :class="[
+                        'star-btn',
+                        star <= reviewData.rating ? 'active' : '',
+                      ]"
+                      type="button"
+                    >
                       <i class="fa fa-star"></i>
                     </button>
                   </div>
@@ -208,7 +306,7 @@
 
                 <div class="form-group">
                   <label for="reviewComment">Comment:</label>
-                  <textarea 
+                  <textarea
                     id="reviewComment"
                     v-model="reviewData.comment"
                     placeholder="Share your experience..."
@@ -219,32 +317,49 @@
 
                 <div class="file-upload">
                   <label>Add Photos (optional):</label>
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     ref="reviewImagesInput"
                     @change="handleReviewImagesUpload"
                     accept="image/*"
                     multiple
                     class="form-control"
                   />
-                  <p class="file-hint">You can upload up to 5 images (JPG, PNG, GIF - max 5MB each)</p>
-                  
+                  <p class="file-hint">
+                    You can upload up to 5 images (JPG, PNG, GIF - max 5MB each)
+                  </p>
+
                   <div v-if="selectedImages.length > 0" class="selected-images">
-                    <div v-for="(image, index) in selectedImages" :key="index" class="image-preview">
-                      <img :src="image.preview" :alt="'Selected image ' + (index + 1)" />
-                      <button class="remove-image" @click="removeImage(index)">&times;</button>
+                    <div
+                      v-for="(image, index) in selectedImages"
+                      :key="index"
+                      class="image-preview"
+                    >
+                      <img
+                        :src="image.preview"
+                        :alt="'Selected image ' + (index + 1)"
+                      />
+                      <button class="remove-image" @click="removeImage(index)">
+                        &times;
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <div class="modal-actions">
-                <button class="btn btn-secondary" @click="showReviewModal = false">Cancel</button>
-                <button 
-                  class="btn btn-primary" 
-                  @click="submitReview()" 
-                  :disabled="isSubmittingReview || !reviewData.rating">
-                  {{ isSubmittingReview ? 'Submitting...' : 'Submit Review' }}
+                <button
+                  class="btn btn-secondary"
+                  @click="showReviewModal = false"
+                >
+                  Cancel
+                </button>
+                <button
+                  class="btn btn-primary"
+                  @click="submitReview()"
+                  :disabled="isSubmittingReview || !reviewData.rating"
+                >
+                  {{ isSubmittingReview ? "Submitting..." : "Submit Review" }}
                 </button>
               </div>
             </div>
@@ -254,7 +369,11 @@
 
       <!-- Edit Booking Modal -->
       <Teleport to="body">
-        <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+        <div
+          v-if="showEditModal"
+          class="modal-overlay"
+          @click.self="closeEditModal"
+        >
           <div class="modal">
             <div class="modal-header">
               <h2>Edit Booking</h2>
@@ -262,11 +381,20 @@
             </div>
             <div class="modal-body">
               <div class="booking-service-details">
-                <h3>{{ selectedBooking?.title || selectedBooking?.service.title }}</h3>
-                <p class="modal-price">₱{{ Number(selectedBooking?.totalAmount || selectedBooking?.service.pricing).toFixed(2) }}</p>
+                <h3>
+                  {{ selectedBooking?.title || selectedBooking?.service.title }}
+                </h3>
+                <p class="modal-price">
+                  ₱{{
+                    Number(
+                      selectedBooking?.totalAmount ||
+                        selectedBooking?.service.pricing,
+                    ).toFixed(2)
+                  }}
+                </p>
                 <p>Provider: {{ getProviderName(selectedBooking) }}</p>
               </div>
-              
+
               <form @submit.prevent="submitEditBooking">
                 <div class="form-group">
                   <label for="edit-booking-date">Date & Time</label>
@@ -274,21 +402,31 @@
                     <i class="fa fa-calendar"></i>
                     {{ formatDate(selectedBooking?.startTime) }}
                   </div>
-                  <small class="read-only-hint">Date and time cannot be changed after booking</small>
+                  <small class="read-only-hint"
+                    >Date and time cannot be changed after booking</small
+                  >
                 </div>
-                
+
                 <div class="form-group">
                   <label for="edit-booking-address">Address</label>
                   <div class="address-input-group">
-                    <select id="edit-booking-address" v-model="editForm.addressId" required>
+                    <select
+                      id="edit-booking-address"
+                      v-model="editForm.addressId"
+                      required
+                    >
                       <option value="">-- Select an address --</option>
-                      <option v-for="address in addresses" :key="address.id" :value="address.id">
+                      <option
+                        v-for="address in addresses"
+                        :key="address.id"
+                        :value="address.id"
+                      >
                         {{ formatAddress(address) }}
                       </option>
                     </select>
-                    <button 
-                      type="button" 
-                      class="add-address-btn" 
+                    <button
+                      type="button"
+                      class="add-address-btn"
                       @click="showAddAddressModal = true"
                       title="Add new address"
                     >
@@ -296,16 +434,29 @@
                     </button>
                   </div>
                 </div>
-                
+
                 <div class="form-group">
                   <label for="edit-booking-notes">Additional Notes</label>
-                  <textarea id="edit-booking-notes" v-model="editForm.notes"></textarea>
+                  <textarea
+                    id="edit-booking-notes"
+                    v-model="editForm.notes"
+                  ></textarea>
                 </div>
-                
+
                 <div class="booking-actions">
-                  <button type="button" class="btn btn-cancel" @click="closeEditModal">Cancel</button>
-                  <button type="submit" class="btn btn-confirm" :disabled="isEditing">
-                    {{ isEditing ? 'Updating...' : 'Update Booking' }}
+                  <button
+                    type="button"
+                    class="btn btn-cancel"
+                    @click="closeEditModal"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn-confirm"
+                    :disabled="isEditing"
+                  >
+                    {{ isEditing ? "Updating..." : "Update Booking" }}
                   </button>
                 </div>
               </form>
@@ -316,11 +467,17 @@
 
       <!-- Booking Details Modal -->
       <Teleport to="body">
-        <div v-if="showDetailsModal" class="modal-overlay" @click.self="closeDetailsModal">
+        <div
+          v-if="showDetailsModal"
+          class="modal-overlay"
+          @click.self="closeDetailsModal"
+        >
           <div class="modal">
             <div class="modal-header">
               <h2>Booking Details</h2>
-              <button class="close-btn" @click="closeDetailsModal">&times;</button>
+              <button class="close-btn" @click="closeDetailsModal">
+                &times;
+              </button>
             </div>
             <div class="modal-body">
               <div v-if="loadingDetails" class="loading-details">
@@ -329,27 +486,74 @@
               </div>
               <div v-else-if="selectedBookingDetails">
                 <div class="booking-summary">
-                  <div class="status-badge-inline" :class="selectedBookingDetails.status.toLowerCase()">
+                  <div
+                    class="status-badge-inline"
+                    :class="selectedBookingDetails.status.toLowerCase()"
+                  >
                     {{ formatStatus(selectedBookingDetails.status) }}
                   </div>
-                  <h4>{{ selectedBookingDetails.service?.title || 'Service' }}</h4>
-                  <p><i class="fa fa-calendar"></i> Date: {{ formatDate(selectedBookingDetails.startTime) }}</p>
-                  <p><i class="fa fa-user"></i> Provider: {{ getProviderName(selectedBookingDetails) }}</p>
-                  <p><i class="fa fa-tag"></i> Amount: ₱{{ Number(selectedBookingDetails.totalAmount || selectedBookingDetails.service?.pricing || 0).toFixed(2) }}</p>
-                  <p v-if="selectedBookingDetails.address"><i class="fa fa-map-marker"></i> Location: {{ formatAddress(selectedBookingDetails.address) }}</p>
-                  <p v-if="selectedBookingDetails.notes"><i class="fa fa-sticky-note"></i> Notes: {{ selectedBookingDetails.notes }}</p>
+                  <h4>
+                    {{ selectedBookingDetails.service?.title || "Service" }}
+                  </h4>
+                  <p>
+                    <i class="fa fa-calendar"></i> Date:
+                    {{ formatDate(selectedBookingDetails.startTime) }}
+                  </p>
+                  <p>
+                    <i class="fa fa-user"></i> Provider:
+                    {{ getProviderName(selectedBookingDetails) }}
+                  </p>
+                  <p>
+                    <i class="fa fa-tag"></i> Amount: ₱{{
+                      Number(
+                        selectedBookingDetails.totalAmount ||
+                          selectedBookingDetails.service?.pricing ||
+                          0,
+                      ).toFixed(2)
+                    }}
+                  </p>
+                  <p v-if="selectedBookingDetails.address">
+                    <i class="fa fa-map-marker"></i> Location:
+                    {{ formatAddress(selectedBookingDetails.address) }}
+                  </p>
+                  <p v-if="selectedBookingDetails.notes">
+                    <i class="fa fa-sticky-note"></i> Notes:
+                    {{ selectedBookingDetails.notes }}
+                  </p>
                 </div>
 
-                <div v-if="selectedBookingDetails.payment" class="payment-details">
+                <div
+                  v-if="selectedBookingDetails.payment"
+                  class="payment-details"
+                >
                   <h4>Payment Information</h4>
                   <p><strong>Payment Method:</strong> Cash On-Service</p>
-                  <p><strong>Payment Status:</strong> 
-                    <span :class="['payment-status-badge', selectedBookingDetails.payment.status === 'COMPLETED' ? 'paid' : 'unpaid']">
-                      {{ selectedBookingDetails.payment.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+                  <p>
+                    <strong>Payment Status:</strong>
+                    <span
+                      :class="[
+                        'payment-status-badge',
+                        selectedBookingDetails.payment.status === 'COMPLETED'
+                          ? 'paid'
+                          : 'unpaid',
+                      ]"
+                    >
+                      {{
+                        selectedBookingDetails.payment.status === "COMPLETED"
+                          ? "Paid"
+                          : "Unpaid"
+                      }}
                     </span>
                   </p>
-                  <p v-if="selectedBookingDetails.payment.paymentDate"><strong>Date Paid:</strong> {{ formatDate(selectedBookingDetails.payment.paymentDate) }}</p>
-                  <p><strong>Amount:</strong> ₱{{ Number(selectedBookingDetails.payment.amount).toFixed(2) }}</p>
+                  <p v-if="selectedBookingDetails.payment.paymentDate">
+                    <strong>Date Paid:</strong>
+                    {{ formatDate(selectedBookingDetails.payment.paymentDate) }}
+                  </p>
+                  <p>
+                    <strong>Amount:</strong> ₱{{
+                      Number(selectedBookingDetails.payment.amount).toFixed(2)
+                    }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -371,45 +575,52 @@
 </template>
 
 <script>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
-import { clientService } from '@/services/apiService';
-import Swal from 'sweetalert2';
-import AddAddressModal from '@/components/modals/AddAddressModal.vue';
-import { io } from 'socket.io-client';
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
+import { clientService } from "@/services/apiService";
+import Swal from "sweetalert2";
+import AddAddressModal from "@/components/modals/AddAddressModal.vue";
+import { io } from "socket.io-client";
 
-const API_BASE_URL = process.env.VUE_APP_FILE_URL || (process.env.VUE_APP_API_URL ? process.env.VUE_APP_API_URL.replace(/\/?api\/?$/, '') : 'http://localhost:5500');
+const API_BASE_URL =
+  process.env.VUE_APP_FILE_URL ||
+  (process.env.VUE_APP_API_URL
+    ? process.env.VUE_APP_API_URL.replace(/\/?api\/?$/, "")
+    : "http://localhost:5500");
 const SOCKET_URL = API_BASE_URL;
 
 // Helper function to get file URL
 const getFileUrl = (relativePath) => {
-  if (!relativePath) return '';
-  
-  if (relativePath && (relativePath.startsWith('http://') || relativePath.startsWith('https://'))) {
+  if (!relativePath) return "";
+
+  if (
+    relativePath &&
+    (relativePath.startsWith("http://") || relativePath.startsWith("https://"))
+  ) {
     return relativePath;
   }
-  
-  if (relativePath && relativePath.startsWith('/')) {
+
+  if (relativePath && relativePath.startsWith("/")) {
     return `${API_BASE_URL}${relativePath}`;
   }
-  
+
   return relativePath;
 };
 
 export default {
-  name: 'ClientBookings',
+  name: "ClientBookings",
   components: {
-    AddAddressModal
+    AddAddressModal,
   },
   setup() {
     const router = useRouter();
     const bookings = ref([]);
     const loading = ref(true);
-    const error = ref('');
-    const currentFilter = ref('ALL');
+    const error = ref("");
+    const currentFilter = ref("ALL");
     const userReviews = ref([]);
     const reviewedBookingIds = ref(new Set());
-    
+
     // Modal states
     const showCancelModal = ref(false);
     const showPaymentModal = ref(false);
@@ -421,22 +632,22 @@ export default {
     const isProcessingPayment = ref(false);
 
     // Payment related refs
-    
+
     // Review related refs
     const showReviewModal = ref(false);
     const reviewImagesInput = ref(null);
     const selectedImages = ref([]);
     const reviewData = ref({
       rating: 0,
-      comment: ''
+      comment: "",
     });
     const isSubmittingReview = ref(false);
 
     // Edit Booking related refs
     const showEditModal = ref(false);
     const editForm = ref({
-      addressId: '',
-      notes: ''
+      addressId: "",
+      notes: "",
     });
     const isEditing = ref(false);
     const addresses = ref([]);
@@ -445,27 +656,27 @@ export default {
 
     // Initialize socket connection for real-time updates
     const initializeSocket = () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) return;
 
       socket.value = io(SOCKET_URL, {
-        path: '/socket',
+        path: "/socket",
         auth: { token },
-        transports: ['websocket', 'polling'],
+        transports: ["websocket", "polling"],
         reconnection: true,
         reconnectionAttempts: 5,
-        reconnectionDelay: 1000
+        reconnectionDelay: 1000,
       });
 
-      socket.value.on('connect', () => {
-        console.log('Socket connected for bookings');
+      socket.value.on("connect", () => {
+        console.log("Socket connected for bookings");
       });
 
       // Listen for booking updates
-      socket.value.on('booking-updated', (data) => {
-        console.log('Booking updated via socket:', data);
+      socket.value.on("booking-updated", (data) => {
+        console.log("Booking updated via socket:", data);
         // Update the booking in the list
-        const index = bookings.value.findIndex(b => b.id === data.bookingId);
+        const index = bookings.value.findIndex((b) => b.id === data.bookingId);
         if (index !== -1) {
           // Update the booking with new data
           bookings.value[index] = { ...bookings.value[index], ...data.booking };
@@ -473,44 +684,47 @@ export default {
           bookings.value = [...bookings.value];
         } else {
           // If booking not in list, refresh the list
-          fetchBookings(currentFilter.value === 'ALL' ? null : currentFilter.value);
+          fetchBookings(
+            currentFilter.value === "ALL" ? null : currentFilter.value,
+          );
         }
       });
 
       // Listen for notifications
-      socket.value.on('notification', (notification) => {
-        console.log('New notification received:', notification);
+      socket.value.on("notification", (notification) => {
+        console.log("New notification received:", notification);
         // You can show a toast or update notification count here
       });
     };
 
     // Status options for filtering
     const statusOptions = [
-      { label: 'All', value: 'ALL' },
-      { label: 'Pending', value: 'PENDING' },
-      { label: 'Confirmed', value: 'CONFIRMED' },
-      { label: 'In Progress', value: 'IN_PROGRESS' },
-      { label: 'Completed', value: 'COMPLETED' },
-      { label: 'Cancelled', value: 'CANCELLED' }
+      { label: "All", value: "ALL" },
+      { label: "Pending", value: "PENDING" },
+      { label: "Confirmed", value: "CONFIRMED" },
+      { label: "In Progress", value: "IN_PROGRESS" },
+      { label: "Completed", value: "COMPLETED" },
+      { label: "Cancelled", value: "CANCELLED" },
+      { label: "Expired", value: "EXPIRED" },
     ];
 
     // Fetch all bookings
     const fetchBookings = async (status = null) => {
       loading.value = true;
-      error.value = '';
-      
+      error.value = "";
+
       try {
         const response = await clientService.getBookings(status);
-        
+
         if (response.success) {
-          console.log('Bookings:', response.data);
+          console.log("Bookings:", response.data);
           bookings.value = response.data;
         } else {
-          error.value = response.message || 'Failed to load bookings';
+          error.value = response.message || "Failed to load bookings";
         }
       } catch (err) {
-        console.error('Error fetching bookings:', err);
-        error.value = 'Unable to load your bookings. Please try again later.';
+        console.error("Error fetching bookings:", err);
+        error.value = "Unable to load your bookings. Please try again later.";
       } finally {
         loading.value = false;
       }
@@ -519,51 +733,64 @@ export default {
     // Filter bookings by status
     const filterByStatus = (status) => {
       currentFilter.value = status;
-      fetchBookings(status === 'ALL' ? null : status);
+      fetchBookings(status === "ALL" ? null : status);
     };
 
     // Format date
     const formatDate = (dateString) => {
-      if (!dateString) return '';
-      
+      if (!dateString) return "";
+
       const date = new Date(dateString);
-      return date.toLocaleString('en-PH', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit', 
-        minute: '2-digit'
+      return date.toLocaleString("en-PH", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     };
 
     // Format booking status
     const formatStatus = (status) => {
-      if (!status) return '';
-      
+      if (!status) return "";
+
       switch (status) {
-        case 'PENDING': return 'Pending';
-        case 'CONFIRMED': return 'Confirmed';
-        case 'IN_PROGRESS': return 'In Progress';
-        case 'COMPLETED': return 'Completed';
-        case 'CANCELLED': return 'Cancelled';
-        case 'DISPUTED': return 'Disputed';
-        default: return status;
+        case "PENDING":
+          return "Pending";
+        case "CONFIRMED":
+          return "Confirmed";
+        case "IN_PROGRESS":
+          return "In Progress";
+        case "COMPLETED":
+          return "Completed";
+        case "CANCELLED":
+          return "Cancelled";
+        case "DISPUTED":
+          return "Disputed";
+        case "EXPIRED":
+          return "Expired";
+        default:
+          return status;
       }
     };
 
     // Format address
     const formatAddress = (address) => {
-      if (!address) return '';
+      if (!address) return "";
       return `${address.addressLine1}, ${address.city}, ${address.state} ${address.postalCode}`;
     };
 
     // Get provider name
     const getProviderName = (booking) => {
-      if (!booking || !booking.serviceProvider || !booking.serviceProvider.user) {
-        return 'Unknown Provider';
+      if (
+        !booking ||
+        !booking.serviceProvider ||
+        !booking.serviceProvider.user
+      ) {
+        return "Unknown Provider";
       }
-      
+
       const { firstName, lastName } = booking.serviceProvider.user;
       return `${firstName} ${lastName}`;
     };
@@ -571,24 +798,24 @@ export default {
     // Get service image
     const getServiceImage = (booking) => {
       if (!booking || !booking.service || !booking.service.imageUrls) {
-        return '';
+        return "";
       }
-      
+
       try {
         // If imageUrls is a JSON string, parse it
         let imageUrls = booking.service.imageUrls;
-        if (typeof imageUrls === 'string') {
+        if (typeof imageUrls === "string") {
           imageUrls = JSON.parse(imageUrls);
         }
-        
+
         if (Array.isArray(imageUrls) && imageUrls.length > 0) {
           return getFileUrl(imageUrls[0]);
         }
       } catch (err) {
-        console.error('Error parsing image URLs:', err);
+        console.error("Error parsing image URLs:", err);
       }
-      
-      return '';
+
+      return "";
     };
 
     // View booking details in modal
@@ -596,27 +823,27 @@ export default {
       showDetailsModal.value = true;
       loadingDetails.value = true;
       selectedBookingDetails.value = null;
-      
+
       try {
         const response = await clientService.getBookingDetails(bookingId);
         if (response.success) {
           selectedBookingDetails.value = response.data;
         } else {
           Swal.fire({
-            title: 'Error',
-            text: response.message || 'Failed to load booking details',
-            icon: 'error',
-            confirmButtonColor: '#f44336'
+            title: "Error",
+            text: response.message || "Failed to load booking details",
+            icon: "error",
+            confirmButtonColor: "#f44336",
           });
           showDetailsModal.value = false;
         }
       } catch (err) {
-        console.error('Error fetching booking details:', err);
+        console.error("Error fetching booking details:", err);
         Swal.fire({
-          title: 'Error',
-          text: 'Unable to load booking details. Please try again later.',
-          icon: 'error',
-          confirmButtonColor: '#f44336'
+          title: "Error",
+          text: "Unable to load booking details. Please try again later.",
+          icon: "error",
+          confirmButtonColor: "#f44336",
         });
         showDetailsModal.value = false;
       } finally {
@@ -631,7 +858,7 @@ export default {
 
     // Go to services page
     const goToServices = () => {
-      router.push('/client/services');
+      router.push("/client/services");
     };
 
     // Show cancel booking confirmation
@@ -643,49 +870,56 @@ export default {
     // Cancel booking
     const cancelBooking = async () => {
       if (!selectedBooking.value) return;
-      
+
       isCancelling.value = true;
-      
+
       try {
-        const response = await clientService.cancelBooking(selectedBooking.value.id);
-        
+        const response = await clientService.cancelBooking(
+          selectedBooking.value.id,
+        );
+
         if (response.success) {
           // Close modal and refresh bookings
           showCancelModal.value = false;
           // Update the status locally to avoid a full refresh
-          const index = bookings.value.findIndex(b => b.id === selectedBooking.value.id);
+          const index = bookings.value.findIndex(
+            (b) => b.id === selectedBooking.value.id,
+          );
           if (index !== -1) {
-            bookings.value[index].status = 'CANCELLED';
+            bookings.value[index].status = "CANCELLED";
           }
-          
+
           // Show success message
           Swal.fire({
-            title: 'Booking Cancelled',
-            text: 'Your booking has been successfully cancelled',
-            icon: 'success',
-            confirmButtonColor: '#4CAF50',
-            timer: 3000
+            title: "Booking Cancelled",
+            text: "Your booking has been successfully cancelled",
+            icon: "success",
+            confirmButtonColor: "#4CAF50",
+            timer: 3000,
           });
-          
+
           // If filtering, we may need to refetch
-          if (currentFilter.value !== 'ALL' && currentFilter.value !== 'CANCELLED') {
+          if (
+            currentFilter.value !== "ALL" &&
+            currentFilter.value !== "CANCELLED"
+          ) {
             fetchBookings(currentFilter.value);
           }
         } else {
           Swal.fire({
-            title: 'Cancellation Failed',
-            text: response.message || 'Failed to cancel booking',
-            icon: 'error',
-            confirmButtonColor: '#f44336'
+            title: "Cancellation Failed",
+            text: response.message || "Failed to cancel booking",
+            icon: "error",
+            confirmButtonColor: "#f44336",
           });
         }
       } catch (err) {
-        console.error('Error cancelling booking:', err);
+        console.error("Error cancelling booking:", err);
         Swal.fire({
-          title: 'Error',
-          text: 'Unable to cancel booking. Please try again later.',
-          icon: 'error',
-          confirmButtonColor: '#f44336'
+          title: "Error",
+          text: "Unable to cancel booking. Please try again later.",
+          icon: "error",
+          confirmButtonColor: "#f44336",
         });
       } finally {
         isCancelling.value = false;
@@ -698,30 +932,30 @@ export default {
       showPaymentModal.value = true;
     };
 
-
     const handleReviewImagesUpload = (event) => {
       const files = Array.from(event.target.files);
-      
+
       // Validate number of files
       if (selectedImages.value.length + files.length > 5) {
         Swal.fire({
-          title: 'Too Many Files',
-          text: 'You can upload a maximum of 5 images',
-          icon: 'warning',
-          confirmButtonColor: '#ff9800'
+          title: "Too Many Files",
+          text: "You can upload a maximum of 5 images",
+          icon: "warning",
+          confirmButtonColor: "#ff9800",
         });
-        event.target.value = '';
+        event.target.value = "";
         return;
       }
 
       // Validate file sizes and create previews
-      files.forEach(file => {
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      files.forEach((file) => {
+        if (file.size > 5 * 1024 * 1024) {
+          // 5MB limit
           Swal.fire({
-            title: 'File Too Large',
+            title: "File Too Large",
             text: `File ${file.name} exceeds 5MB limit`,
-            icon: 'warning',
-            confirmButtonColor: '#ff9800'
+            icon: "warning",
+            confirmButtonColor: "#ff9800",
           });
           return;
         }
@@ -730,7 +964,7 @@ export default {
         reader.onload = (e) => {
           selectedImages.value.push({
             file,
-            preview: e.target.result
+            preview: e.target.result,
           });
         };
         reader.readAsDataURL(file);
@@ -747,68 +981,75 @@ export default {
         // Check if payment already exists (any status)
         if (selectedBooking.value.payment) {
           Swal.fire({
-            title: 'Payment Already Processed',
-            text: 'Payment has already been processed for this booking',
-            icon: 'info',
-            confirmButtonColor: '#4CAF50'
+            title: "Payment Already Processed",
+            text: "Payment has already been processed for this booking",
+            icon: "info",
+            confirmButtonColor: "#4CAF50",
           });
           showPaymentModal.value = false;
           return;
         }
-        
+
         isProcessingPayment.value = true;
         const result = await clientService.processPayment(
-          selectedBooking.value.id
+          selectedBooking.value.id,
         );
 
         if (result.success) {
           showPaymentModal.value = false;
-          
+
           // Update the booking locally with the actual payment data from backend
-          const index = bookings.value.findIndex(b => b.id === selectedBooking.value.id);
+          const index = bookings.value.findIndex(
+            (b) => b.id === selectedBooking.value.id,
+          );
           if (index !== -1 && result.data) {
             // Use the payment data returned from backend (which has status 'PENDING')
             // The backend returns: { booking, payment }
             if (result.data.payment) {
               bookings.value[index].payment = result.data.payment;
             }
-            
+
             // Update booking status if it changed (might be CONFIRMED now)
             if (result.data.booking && result.data.booking.status) {
               bookings.value[index].status = result.data.booking.status;
             }
-            
-            console.log('Updated booking after payment processing:', bookings.value[index]);
+
+            console.log(
+              "Updated booking after payment processing:",
+              bookings.value[index],
+            );
           }
-          
+
           // Show success message with SweetAlert2
           Swal.fire({
-            title: 'Payment Processed!',
-            text: 'Your payment has been successfully processed. Cash payment will be collected on service.',
-            icon: 'success',
-            confirmButtonColor: '#4CAF50',
-            timer: 3000
+            title: "Payment Processed!",
+            text: "Your payment has been successfully processed. Cash payment will be collected on service.",
+            icon: "success",
+            confirmButtonColor: "#4CAF50",
+            timer: 3000,
           });
-          
+
           // Refetch bookings to ensure we have the latest data from backend
-          await fetchBookings(currentFilter.value === 'ALL' ? null : currentFilter.value);
+          await fetchBookings(
+            currentFilter.value === "ALL" ? null : currentFilter.value,
+          );
         } else {
           // Error message with SweetAlert2
           Swal.fire({
-            title: 'Payment Failed',
-            text: result.message || 'Failed to process payment',
-            icon: 'error',
-            confirmButtonColor: '#f44336'
+            title: "Payment Failed",
+            text: result.message || "Failed to process payment",
+            icon: "error",
+            confirmButtonColor: "#f44336",
           });
         }
       } catch (error) {
-        console.error('Payment error:', error);
+        console.error("Payment error:", error);
         // Error message with SweetAlert2
         Swal.fire({
-          title: 'Error',
-          text: 'An error occurred while processing payment',
-          icon: 'error',
-          confirmButtonColor: '#f44336'
+          title: "Error",
+          text: "An error occurred while processing payment",
+          icon: "error",
+          confirmButtonColor: "#f44336",
         });
       } finally {
         isProcessingPayment.value = false;
@@ -824,25 +1065,25 @@ export default {
     const submitReview = async () => {
       if (!reviewData.value.rating) {
         Swal.fire({
-          title: 'Rating Required',
-          text: 'Please provide a rating before submitting',
-          icon: 'warning',
-          confirmButtonColor: '#ff9800'
+          title: "Rating Required",
+          text: "Please provide a rating before submitting",
+          icon: "warning",
+          confirmButtonColor: "#ff9800",
         });
         return;
       }
 
       try {
         isSubmittingReview.value = true;
-        const imageFiles = selectedImages.value.map(img => img.file);
-        
+        const imageFiles = selectedImages.value.map((img) => img.file);
+
         const result = await clientService.submitReview(
           selectedBooking.value.id,
           {
             rating: parseFloat(reviewData.value.rating), // Ensure it's a float
-            comment: reviewData.value.comment
+            comment: reviewData.value.comment,
           },
-          imageFiles
+          imageFiles,
         );
 
         if (result.success) {
@@ -853,36 +1094,36 @@ export default {
           reviewedBookingIds.value = updatedReviewed;
           // Show success message
           Swal.fire({
-            title: 'Review Submitted!',
-            text: 'Thank you for your feedback',
-            icon: 'success',
-            confirmButtonColor: '#4CAF50',
-            timer: 3000
+            title: "Review Submitted!",
+            text: "Thank you for your feedback",
+            icon: "success",
+            confirmButtonColor: "#4CAF50",
+            timer: 3000,
           });
           // Sync reviews from server (no need to refetch bookings)
           await fetchUserReviews();
         } else {
           Swal.fire({
-            title: 'Submission Failed',
-            text: result.message || 'Failed to submit review',
-            icon: 'error',
-            confirmButtonColor: '#f44336'
+            title: "Submission Failed",
+            text: result.message || "Failed to submit review",
+            icon: "error",
+            confirmButtonColor: "#f44336",
           });
         }
       } catch (error) {
-        console.error('Review submission error:', error);
+        console.error("Review submission error:", error);
         Swal.fire({
-          title: 'Error',
-          text: 'An error occurred while submitting the review',
-          icon: 'error',
-          confirmButtonColor: '#f44336'
+          title: "Error",
+          text: "An error occurred while submitting the review",
+          icon: "error",
+          confirmButtonColor: "#f44336",
         });
       } finally {
         isSubmittingReview.value = false;
-        reviewData.value = { rating: 0, comment: '' };
+        reviewData.value = { rating: 0, comment: "" };
         selectedImages.value = [];
         if (reviewImagesInput.value) {
-          reviewImagesInput.value.value = '';
+          reviewImagesInput.value.value = "";
         }
       }
     };
@@ -895,22 +1136,24 @@ export default {
 
     // Function to check if payment is completed
     const hasCompletedPayment = (booking) => {
-      return booking && booking.payment && booking.payment.status === 'COMPLETED';
+      return (
+        booking && booking.payment && booking.payment.status === "COMPLETED"
+      );
     };
-    
+
     // Function to open payment modal
     const openPaymentModal = (booking) => {
       // Check if payment already exists (any status)
       if (booking.payment) {
         Swal.fire({
-          title: 'Payment Already Processed',
-          text: 'Payment has already been processed for this booking',
-          icon: 'info',
-          confirmButtonColor: '#4CAF50'
+          title: "Payment Already Processed",
+          text: "Payment has already been processed for this booking",
+          icon: "info",
+          confirmButtonColor: "#4CAF50",
         });
         return;
       }
-      
+
       selectedBooking.value = booking;
       showPaymentModal.value = true;
     };
@@ -918,7 +1161,7 @@ export default {
     // Function to open review modal
     const openReviewModal = (booking) => {
       selectedBooking.value = booking;
-      reviewData.value = { rating: 0, comment: '' };
+      reviewData.value = { rating: 0, comment: "" };
       selectedImages.value = [];
       showReviewModal.value = true;
     };
@@ -927,8 +1170,8 @@ export default {
     const openEditModal = (booking) => {
       selectedBooking.value = booking;
       editForm.value = {
-        addressId: booking.address ? booking.address.id : '',
-        notes: booking.notes || ''
+        addressId: booking.address ? booking.address.id : "",
+        notes: booking.notes || "",
       };
       showEditModal.value = true;
     };
@@ -937,8 +1180,8 @@ export default {
     const closeEditModal = () => {
       showEditModal.value = false;
       editForm.value = {
-        addressId: '',
-        notes: ''
+        addressId: "",
+        notes: "",
       };
     };
 
@@ -946,10 +1189,10 @@ export default {
     const submitEditBooking = async () => {
       if (!editForm.value.addressId) {
         Swal.fire({
-          title: 'Incomplete Form',
-          text: 'Please select an address.',
-          icon: 'warning',
-          confirmButtonColor: '#ff9800'
+          title: "Incomplete Form",
+          text: "Please select an address.",
+          icon: "warning",
+          confirmButtonColor: "#ff9800",
         });
         return;
       }
@@ -960,36 +1203,36 @@ export default {
           selectedBooking.value.id,
           {
             addressId: editForm.value.addressId,
-            notes: editForm.value.notes
-          }
+            notes: editForm.value.notes,
+          },
         );
 
         if (result.success) {
           showEditModal.value = false;
           Swal.fire({
-            title: 'Booking Updated',
-            text: 'Your booking has been successfully updated.',
-            icon: 'success',
-            confirmButtonColor: '#4CAF50',
-            timer: 3000
+            title: "Booking Updated",
+            text: "Your booking has been successfully updated.",
+            icon: "success",
+            confirmButtonColor: "#4CAF50",
+            timer: 3000,
           });
           // Refresh bookings list
           await fetchBookings();
         } else {
           Swal.fire({
-            title: 'Update Failed',
-            text: result.message || 'Failed to update booking',
-            icon: 'error',
-            confirmButtonColor: '#f44336'
+            title: "Update Failed",
+            text: result.message || "Failed to update booking",
+            icon: "error",
+            confirmButtonColor: "#f44336",
           });
         }
       } catch (error) {
-        console.error('Error submitting edit booking:', error);
+        console.error("Error submitting edit booking:", error);
         Swal.fire({
-          title: 'Error',
-          text: 'An error occurred while updating the booking',
-          icon: 'error',
-          confirmButtonColor: '#f44336'
+          title: "Error",
+          text: "An error occurred while updating the booking",
+          icon: "error",
+          confirmButtonColor: "#f44336",
         });
       } finally {
         isEditing.value = false;
@@ -1010,7 +1253,7 @@ export default {
         socket.value.disconnect();
       }
     });
-    
+
     // Add function to fetch user reviews
     const fetchUserReviews = async () => {
       try {
@@ -1019,8 +1262,8 @@ export default {
           const reviewsList = Array.isArray(response.data)
             ? response.data
             : Array.isArray(response.data?.reviews)
-              ? response.data.reviews
-              : [];
+            ? response.data.reviews
+            : [];
           userReviews.value = reviewsList;
           const ids = new Set();
           reviewsList.forEach((review) => {
@@ -1030,7 +1273,7 @@ export default {
           reviewedBookingIds.value = ids;
         }
       } catch (err) {
-        console.error('Error fetching user reviews:', err);
+        console.error("Error fetching user reviews:", err);
       }
     };
 
@@ -1042,16 +1285,18 @@ export default {
           addresses.value = response.data;
           // If the selected booking has an address, set it as the default selected address
           if (selectedBooking.value && selectedBooking.value.address) {
-            const index = addresses.value.findIndex(addr => addr.id === selectedBooking.value.address.id);
+            const index = addresses.value.findIndex(
+              (addr) => addr.id === selectedBooking.value.address.id,
+            );
             if (index !== -1) {
               editForm.value.addressId = selectedBooking.value.address.id;
             }
           }
         } else {
-          console.error('Error fetching addresses:', response.message);
+          console.error("Error fetching addresses:", response.message);
         }
       } catch (err) {
-        console.error('Error fetching addresses:', err);
+        console.error("Error fetching addresses:", err);
       }
     };
 
@@ -1061,17 +1306,25 @@ export default {
       editForm.value.addressId = newAddress.id; // Set the new address as selected
       showAddAddressModal.value = false;
       Swal.fire({
-        title: 'Address Added',
-        text: 'Your new address has been added.',
-        icon: 'success',
-        confirmButtonColor: '#4CAF50',
-        timer: 3000
+        title: "Address Added",
+        text: "Your new address has been added.",
+        icon: "success",
+        confirmButtonColor: "#4CAF50",
+        timer: 3000,
       });
     };
 
     // Close add address modal
     const closeAddAddressModal = () => {
       showAddAddressModal.value = false;
+    };
+
+    // Rebook service
+    const rebookService = (booking) => {
+      router.push({
+        path: "/client/services",
+        query: { rebookServiceId: booking.service.id },
+      });
     };
 
     return {
@@ -1126,14 +1379,16 @@ export default {
       closeDetailsModal,
       handleAddressAdded,
       closeAddAddressModal,
+      rebookService,
     };
-  }
+  },
 };
 </script>
 
 <style scoped>
 /* Global reset for this component */
-:deep(body), :deep(html) {
+:deep(body),
+:deep(html) {
   margin: 0;
   padding: 0;
 }
@@ -1195,7 +1450,7 @@ export default {
 }
 
 .page-title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -5px;
   left: 0;
@@ -1227,8 +1482,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-container {
@@ -1324,7 +1583,7 @@ export default {
 }
 
 .booking-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -1383,6 +1642,14 @@ export default {
 .booking-status.disputed {
   background: linear-gradient(135deg, #95a5a6, #7f8c8d);
 }
+.booking-status.expired {
+  background: linear-gradient(135deg, #636e72, #2d3436);
+}
+
+.status-badge-inline.expired {
+  background: #dfe6e9;
+  color: #2d3436;
+}
 
 .booking-header {
   display: flex;
@@ -1430,7 +1697,9 @@ export default {
   line-height: 1.3;
 }
 
-.booking-date, .booking-provider, .booking-price {
+.booking-date,
+.booking-provider,
+.booking-price {
   margin: 8px 0;
   font-size: 0.95rem;
   color: #505a68;
@@ -1438,7 +1707,9 @@ export default {
   align-items: center;
 }
 
-.booking-date i, .booking-provider i, .booking-price i {
+.booking-date i,
+.booking-provider i,
+.booking-price i {
   width: 24px;
   color: #27ae60;
   margin-right: 6px;
@@ -1612,12 +1883,18 @@ export default {
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  align-items: center; 
+  align-items: center;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .empty-icon {
@@ -1628,9 +1905,15 @@ export default {
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .empty-state h3 {
@@ -1687,8 +1970,14 @@ export default {
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-header {
@@ -1944,9 +2233,15 @@ textarea.form-control {
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .rating-input {
@@ -2103,6 +2398,16 @@ textarea.form-control {
   box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
+.btn-rebook {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  color: white;
+}
+
+.btn-rebook:hover {
+  background: linear-gradient(135deg, #00cec9, #00b894);
+  box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+}
+
 @media screen and (max-width: 1600px) {
   .bookings-list {
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -2161,86 +2466,86 @@ textarea.form-control {
   .client-bookings {
     padding: 15px;
   }
-  
+
   .page-title {
     font-size: 1.8rem;
   }
-  
+
   .booking-header {
     flex-direction: column;
   }
-  
+
   .booking-image {
     width: 100%;
     height: 180px;
     margin-bottom: 15px;
   }
-  
+
   .booking-title {
     padding-right: 0;
     margin-top: 10px;
   }
-  
+
   .booking-status {
     position: static;
     display: inline-block;
     margin-bottom: 15px;
   }
-  
+
   .booking-actions {
     flex-direction: column;
   }
-  
+
   .btn {
     width: 100%;
     padding: 12px;
   }
-  
+
   .filter-container {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .filter-options {
     width: 100%;
     overflow-x: auto;
     padding-bottom: 10px;
     flex-wrap: nowrap;
   }
-  
+
   .filter-btn {
     white-space: nowrap;
   }
-  
+
   .bookings-list {
     grid-template-columns: 1fr;
   }
-  
+
   .modal {
     width: 90%;
     max-height: 80vh;
   }
-  
+
   .star-rating {
     gap: 8px;
   }
-  
+
   .star-btn {
     font-size: 1.8rem;
   }
-  
+
   .page-title {
     font-size: 1.8rem;
   }
-  
+
   .selected-images {
     justify-content: center;
   }
-  
+
   .modal-actions {
     flex-direction: column;
   }
-  
+
   .modal-actions .btn {
     width: 100%;
   }
@@ -2264,23 +2569,24 @@ textarea.form-control {
   .client-bookings {
     padding: 10px;
   }
-  
-  .modal-body, .modal-header {
+
+  .modal-body,
+  .modal-header {
     padding: 15px;
   }
-  
+
   .booking-card {
     padding: 20px;
   }
-  
+
   .booking-title {
     font-size: 1.2rem;
   }
-  
+
   .star-btn {
     font-size: 1.5rem;
   }
-  
+
   .booking-status {
     font-size: 0.7rem;
     padding: 5px 12px;

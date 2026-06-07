@@ -19,7 +19,7 @@
           <p>Total Bookings</p>
         </div>
       </div>
-      
+
       <div class="card">
         <div class="card-icon">
           <i class="fas fa-users"></i>
@@ -29,7 +29,7 @@
           <p>Total Clients</p>
         </div>
       </div>
-      
+
       <div class="card">
         <div class="card-icon">
           <i class="fas fa-briefcase"></i>
@@ -39,7 +39,7 @@
           <p>Total Providers</p>
         </div>
       </div>
-      
+
       <div class="card">
         <div class="card-icon">
           <i class="fas fa-coins"></i>
@@ -67,11 +67,19 @@
       <div class="chart-container">
         <div class="chart-header">
           <h3>
-            {{ selectedPeriod === 'week' ? 'Bookings Over Past 7 Days' 
-            : selectedPeriod === 'month' ? 'Bookings Over Past 30 Days' 
-            : 'Bookings Over Past Year' }}
+            {{
+              selectedPeriod === "week"
+                ? "Bookings Over Past 7 Days"
+                : selectedPeriod === "month"
+                ? "Bookings Over Past 30 Days"
+                : "Bookings Over Past Year"
+            }}
           </h3>
-          <select v-model="selectedPeriod" @change="changePeriod(selectedPeriod)" class="period-select">
+          <select
+            v-model="selectedPeriod"
+            @change="changePeriod(selectedPeriod)"
+            class="period-select"
+          >
             <option value="week">Weekly</option>
             <option value="month">Monthly</option>
             <option value="year">Yearly</option>
@@ -98,7 +106,10 @@
         <div class="filters-section">
           <div class="filter-group">
             <label>Payment Status:</label>
-            <select v-model="transactionFilters.paymentStatus" @change="applyTransactionFilters">
+            <select
+              v-model="transactionFilters.paymentStatus"
+              @change="applyTransactionFilters"
+            >
               <option value="">All</option>
               <option value="PENDING">Unpaid</option>
               <option value="COMPLETED">Paid</option>
@@ -107,7 +118,10 @@
 
           <div class="filter-group">
             <label>Sort By:</label>
-            <select v-model="transactionFilters.sortBy" @change="applyTransactionFilters">
+            <select
+              v-model="transactionFilters.sortBy"
+              @change="applyTransactionFilters"
+            >
               <option value="date">Date</option>
               <option value="amount">Amount</option>
             </select>
@@ -115,13 +129,18 @@
 
           <div class="filter-group">
             <label>Order:</label>
-            <select v-model="transactionFilters.sortOrder" @change="applyTransactionFilters">
+            <select
+              v-model="transactionFilters.sortOrder"
+              @change="applyTransactionFilters"
+            >
               <option value="desc">Descending</option>
               <option value="asc">Ascending</option>
             </select>
           </div>
 
-          <button class="btn btn-secondary" @click="resetTransactionFilters">Reset</button>
+          <button class="btn btn-secondary" @click="resetTransactionFilters">
+            Reset
+          </button>
         </div>
       </div>
 
@@ -151,21 +170,49 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="transaction in paginatedTransactions" :key="transaction.id">
+            <tr
+              v-for="transaction in paginatedTransactions"
+              :key="transaction.id"
+            >
               <td>{{ transaction.id.substring(0, 8) }}...</td>
               <td>{{ getTransactionClientName(transaction) }}</td>
               <td>{{ getTransactionProviderName(transaction) }}</td>
-              <td>{{ transaction.service?.title || 'N/A' }}</td>
-              <td>₱{{ Number(transaction.payment?.amount || transaction.totalAmount || 0).toFixed(2) }}</td>
-              <td>{{ transaction.payment?.paymentMethod || 'Cash' }}</td>
+              <td>{{ transaction.service?.title || "N/A" }}</td>
               <td>
-                <span :class="['status-badge', transaction.payment?.status === 'COMPLETED' ? 'paid' : 'unpaid']">
-                  {{ transaction.payment?.status === 'COMPLETED' ? 'Paid' : 'Unpaid' }}
+                ₱{{
+                  Number(
+                    transaction.payment?.amount || transaction.totalAmount || 0,
+                  ).toFixed(2)
+                }}
+              </td>
+              <td>{{ transaction.payment?.paymentMethod || "Cash" }}</td>
+              <td>
+                <span
+                  :class="[
+                    'status-badge',
+                    transaction.payment?.status === 'COMPLETED'
+                      ? 'paid'
+                      : 'unpaid',
+                  ]"
+                >
+                  {{
+                    transaction.payment?.status === "COMPLETED"
+                      ? "Paid"
+                      : "Unpaid"
+                  }}
                 </span>
               </td>
-              <td>{{ transaction.payment?.paymentDate ? formatTransactionDate(transaction.payment.paymentDate) : 'N/A' }}</td>
               <td>
-                <span :class="['status-badge', getStatusClass(transaction.status)]">
+                {{
+                  transaction.payment?.paymentDate
+                    ? formatTransactionDate(transaction.payment.paymentDate)
+                    : "N/A"
+                }}
+              </td>
+              <td>
+                <span
+                  :class="['status-badge', getStatusClass(transaction.status)]"
+                >
                   {{ formatTransactionStatus(transaction.status) }}
                 </span>
               </td>
@@ -175,33 +222,53 @@
         </table>
 
         <div v-if="allTransactions.length === 0" class="no-transactions">
-        <p>No transactions found.</p>
+          <p>No transactions found.</p>
         </div>
         <div class="pagination-controls">
-          <button :disabled="transactionPage <= 1" @click="changeTransactionPage(transactionPage - 1)">&laquo; Prev</button>
-          <span v-for="p in transactionTotalPages" :key="p"
+          <button
+            :disabled="transactionPage <= 1"
+            @click="changeTransactionPage(transactionPage - 1)"
+          >
+            &laquo; Prev
+          </button>
+          <span
+            v-for="p in transactionTotalPages"
+            :key="p"
             :class="['page-num', { active: p === transactionPage }]"
-            @click="changeTransactionPage(p)">{{ p }}</span>
-          <button :disabled="transactionPage >= transactionTotalPages" @click="changeTransactionPage(transactionPage + 1)">Next &raquo;</button>
+            @click="changeTransactionPage(p)"
+            >{{ p }}</span
+          >
+          <button
+            :disabled="transactionPage >= transactionTotalPages"
+            @click="changeTransactionPage(transactionPage + 1)"
+          >
+            Next &raquo;
+          </button>
         </div>
       </div>
     </div>
 
-  <!-- Provider Ratings Section -->
+    <!-- Provider Ratings Section -->
     <div class="provider-ratings-section">
       <div class="ratings-summary">
         <h3>Provider Ratings Overview</h3>
         <div class="summary-stats">
           <div class="stat-item">
-            <div class="stat-value">{{ providerRatingsStats.overallAverageRating || 0 }}</div>
+            <div class="stat-value">
+              {{ providerRatingsStats.overallAverageRating || 0 }}
+            </div>
             <div class="stat-label">Overall Average Rating</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ providerRatingsStats.providersWithReviews || 0 }}</div>
+            <div class="stat-value">
+              {{ providerRatingsStats.providersWithReviews || 0 }}
+            </div>
             <div class="stat-label">Providers with Reviews</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ providerRatingsStats.totalProviders || 0 }}</div>
+            <div class="stat-value">
+              {{ providerRatingsStats.totalProviders || 0 }}
+            </div>
             <div class="stat-label">Total Providers</div>
           </div>
         </div>
@@ -226,31 +293,58 @@
                 <td>{{ provider.email }}</td>
                 <td>
                   <div class="rating-display">
-                    <span class="rating-value">{{ provider.averageRating }}</span>
+                    <span class="rating-value">{{
+                      provider.averageRating
+                    }}</span>
                     <div class="stars">
-                      <i 
-                        v-for="star in 5" 
+                      <i
+                        v-for="star in 5"
                         :key="star"
-                        :class="['fas', 'fa-star', star <= provider.averageRating ? 'star-filled' : 'star-empty']"
+                        :class="[
+                          'fas',
+                          'fa-star',
+                          star <= provider.averageRating
+                            ? 'star-filled'
+                            : 'star-empty',
+                        ]"
                       ></i>
                     </div>
                   </div>
                 </td>
                 <td>{{ provider.totalReviews }}</td>
                 <td>
-                  <span :class="['status-badge', provider.isActive ? 'status-active' : 'status-inactive']">
-                    {{ provider.isActive ? 'Active' : 'Inactive' }}
+                  <span
+                    :class="[
+                      'status-badge',
+                      provider.isActive ? 'status-active' : 'status-inactive',
+                    ]"
+                  >
+                    {{ provider.isActive ? "Active" : "Inactive" }}
                   </span>
                 </td>
               </tr>
             </tbody>
           </table>
           <div class="pagination-controls">
-            <button :disabled="providerPage <= 1" @click="changeProviderPage(providerPage - 1)">&laquo; Prev</button>
-            <span v-for="p in providerTotalPages" :key="p"
+            <button
+              :disabled="providerPage <= 1"
+              @click="changeProviderPage(providerPage - 1)"
+            >
+              &laquo; Prev
+            </button>
+            <span
+              v-for="p in providerTotalPages"
+              :key="p"
               :class="['page-num', { active: p === providerPage }]"
-              @click="changeProviderPage(p)">{{ p }}</span>
-            <button :disabled="providerPage >= providerTotalPages" @click="changeProviderPage(providerPage + 1)">Next &raquo;</button>
+              @click="changeProviderPage(p)"
+              >{{ p }}</span
+            >
+            <button
+              :disabled="providerPage >= providerTotalPages"
+              @click="changeProviderPage(providerPage + 1)"
+            >
+              Next &raquo;
+            </button>
           </div>
         </div>
       </div>
@@ -275,23 +369,39 @@
             <tr v-for="booking in paginatedBookings" :key="booking.id">
               <td>{{ getClientName(booking.client) }}</td>
               <td>{{ getProviderName(booking.serviceProvider) }}</td>
-              <td>{{ booking.service?.title || 'N/A' }}</td>
+              <td>{{ booking.service?.title || "N/A" }}</td>
               <td>
                 <span :class="['status-badge', getStatusClass(booking.status)]">
                   {{ booking.status }}
                 </span>
               </td>
-              <td>₱{{ booking.totalAmount || booking.service?.pricing || 'N/A' }}</td>
+              <td>
+                ₱{{ booking.totalAmount || booking.service?.pricing || "N/A" }}
+              </td>
               <td>{{ formatDate(booking.createdAt) }}</td>
             </tr>
           </tbody>
         </table>
         <div class="pagination-controls">
-          <button :disabled="bookingPage <= 1" @click="changeBookingPage(bookingPage - 1)">&laquo; Prev</button>
-          <span v-for="p in bookingTotalPages" :key="p"
+          <button
+            :disabled="bookingPage <= 1"
+            @click="changeBookingPage(bookingPage - 1)"
+          >
+            &laquo; Prev
+          </button>
+          <span
+            v-for="p in bookingTotalPages"
+            :key="p"
             :class="['page-num', { active: p === bookingPage }]"
-            @click="changeBookingPage(p)">{{ p }}</span>
-          <button :disabled="bookingPage >= bookingTotalPages" @click="changeBookingPage(bookingPage + 1)">Next &raquo;</button>
+            @click="changeBookingPage(p)"
+            >{{ p }}</span
+          >
+          <button
+            :disabled="bookingPage >= bookingTotalPages"
+            @click="changeBookingPage(bookingPage + 1)"
+          >
+            Next &raquo;
+          </button>
         </div>
       </div>
     </div>
@@ -305,15 +415,15 @@
 </template>
 
 <script>
-import { ref, onMounted, nextTick, computed } from 'vue';
-import { adminService } from '../../services/apiService';
-import { Chart, registerables } from 'chart.js';
+import { ref, onMounted, nextTick, computed } from "vue";
+import { adminService } from "../../services/apiService";
+import { Chart, registerables } from "chart.js";
 
 // Register Chart.js components
 Chart.register(...registerables);
 
 export default {
-  name: 'AdminDashboard',
+  name: "AdminDashboard",
   setup() {
     const loading = ref(true);
     const stats = ref({});
@@ -323,21 +433,21 @@ export default {
     const topProviders = ref([]);
     const lineChart = ref(null);
     const pieChart = ref(null);
-    const currentTime = ref('');
-    const currentDate = ref('');
+    const currentTime = ref("");
+    const currentDate = ref("");
     const timeInterval = ref(null);
     const transactions = ref([]);
     const loadingTransactions = ref(false);
-    const transactionError = ref('');
+    const transactionError = ref("");
     const transactionFilters = ref({
-      paymentStatus: '',
-      sortBy: 'date',
-      sortOrder: 'desc'
+      paymentStatus: "",
+      sortBy: "date",
+      sortOrder: "desc",
     });
 
     // ✅ BAGO
     const websiteViews = ref(0);
-    const selectedPeriod = ref('week');
+    const selectedPeriod = ref("week");
 
     // Pagination - Transactions
     const transactionPage = ref(1);
@@ -359,30 +469,32 @@ export default {
 
     const updateTimeAndDate = () => {
       const now = new Date();
-      currentTime.value = now.toLocaleTimeString('en-US', {
+      currentTime.value = now.toLocaleTimeString("en-US", {
         hour12: true,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       });
-      currentDate.value = now.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+      currentDate.value = now.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     };
 
     const loadDashboardData = async () => {
       try {
         loading.value = true;
-        
+
         // ✅ BAGO: i-pass ang selectedPeriod
-        const statsResponse = await adminService.getDashboardStats(selectedPeriod.value);
+        const statsResponse = await adminService.getDashboardStats(
+          selectedPeriod.value,
+        );
         if (statsResponse.success) {
           stats.value = statsResponse.data;
         }
-        
+
         const bookingsResponse = await adminService.getRecentBookings(100);
         if (bookingsResponse.success) {
           recentBookings.value = bookingsResponse.data;
@@ -396,11 +508,11 @@ export default {
           topProviders.value = ratingsResponse.data.providers;
           providerTotal.value = ratingsResponse.data.providers.length;
         }
-        
+
         await nextTick();
         createCharts();
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error("Error loading dashboard data:", error);
       } finally {
         loading.value = false;
       }
@@ -425,34 +537,36 @@ export default {
     const createLineChart = () => {
       const canvas = lineChart.value;
       if (!canvas || !stats.value.bookingsLast7Days) return;
-      
+
       if (lineChartInstance) {
         lineChartInstance.destroy();
       }
-      
+
       const data = stats.value.bookingsLast7Days;
 
       lineChartInstance = new Chart(canvas, {
-        type: 'line',
+        type: "line",
         data: {
-          labels: data.map(item => item.date),
-          datasets: [{
-            label: 'Bookings',
-            data: data.map(item => item.count),
-            borderColor: '#00C853',
-            backgroundColor: 'rgba(0, 200, 83, 0.05)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: '#00C853',
-            pointBorderColor: '#00C853',
-            pointBorderWidth: 0,
-            pointRadius: 3,
-            pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#00C853',
-            pointHoverBorderColor: '#fff',
-            pointHoverBorderWidth: 2,
-          }]
+          labels: data.map((item) => item.date),
+          datasets: [
+            {
+              label: "Bookings",
+              data: data.map((item) => item.count),
+              borderColor: "#00C853",
+              backgroundColor: "rgba(0, 200, 83, 0.05)",
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: "#00C853",
+              pointBorderColor: "#00C853",
+              pointBorderWidth: 0,
+              pointRadius: 3,
+              pointHoverRadius: 6,
+              pointHoverBackgroundColor: "#00C853",
+              pointHoverBorderColor: "#fff",
+              pointHoverBorderWidth: 2,
+            },
+          ],
         },
         options: {
           responsive: true,
@@ -460,127 +574,137 @@ export default {
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#fff',
-              titleColor: '#333',
-              bodyColor: '#00C853',
-              borderColor: '#e0e0e0',
+              backgroundColor: "#fff",
+              titleColor: "#333",
+              bodyColor: "#00C853",
+              borderColor: "#e0e0e0",
               borderWidth: 1,
               padding: 10,
               displayColors: false,
               callbacks: {
                 title: (items) => items[0].label,
-                label: (item) => `Bookings: ${item.raw}`
-              }
-            }
+                label: (item) => `Bookings: ${item.raw}`,
+              },
+            },
           },
           scales: {
             x: {
               grid: {
-                color: 'rgba(0,0,0,0.04)',
+                color: "rgba(0,0,0,0.04)",
                 drawTicks: false,
               },
               border: { display: false },
               ticks: {
-                color: '#aaa',
+                color: "#aaa",
                 font: { size: 11 },
                 maxRotation: 0,
                 autoSkip: true,
                 // ✅ Key fix: limit kung ilan lang ang lalabas
-                maxTicksLimit: selectedPeriod.value === 'month' ? 8 : 
-                              selectedPeriod.value === 'year' ? 12 : 7,
-              }
+                maxTicksLimit:
+                  selectedPeriod.value === "month"
+                    ? 8
+                    : selectedPeriod.value === "year"
+                    ? 12
+                    : 7,
+              },
             },
             y: {
               beginAtZero: true,
               grid: {
-                color: 'rgba(0,0,0,0.04)',
+                color: "rgba(0,0,0,0.04)",
                 drawTicks: false,
               },
-              border: { 
+              border: {
                 display: false,
-                dash: [4, 4]
+                dash: [4, 4],
               },
               ticks: {
-                color: '#aaa',
+                color: "#aaa",
                 font: { size: 11 },
                 stepSize: 1,
-                padding: 8
-              }
-            }
+                padding: 8,
+              },
+            },
           },
           interaction: {
             intersect: false,
-            mode: 'index'
-          }
-        }
+            mode: "index",
+          },
+        },
       });
     };
 
     const createPieChart = () => {
       const canvas = pieChart.value;
       if (!canvas || !stats.value.statusDistribution) return;
-      
+
       if (pieChartInstance) {
         pieChartInstance.destroy();
       }
-      
+
       const data = stats.value.statusDistribution;
 
       const statusColors = {
-        'COMPLETED': '#00C853',
-        'PENDING': '#FF9800',
-        'CANCELLED': '#F44336',
-        'IN_PROGRESS': '#2196F3',
-        'CONFIRMED': '#9C27B0',
-        'DISPUTED': '#607D8B'
+        COMPLETED: "#00C853",
+        PENDING: "#FF9800",
+        CANCELLED: "#F44336",
+        IN_PROGRESS: "#2196F3",
+        CONFIRMED: "#9C27B0",
+        DISPUTED: "#607D8B",
+        EXPIRED: "#2d3436",
       };
-      
+
       pieChartInstance = new Chart(canvas, {
-        type: 'pie',
+        type: "pie",
         data: {
-          labels: data.map(item => item.status),
-          datasets: [{
-            data: data.map(item => item.count),
-            backgroundColor: data.map(item => statusColors[item.status] || '#607D8B'),
-            borderWidth: 2,
-            borderColor: '#fff'
-          }]
+          labels: data.map((item) => item.status),
+          datasets: [
+            {
+              data: data.map((item) => item.count),
+              backgroundColor: data.map(
+                (item) => statusColors[item.status] || "#607D8B",
+              ),
+              borderWidth: 2,
+              borderColor: "#fff",
+            },
+          ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              position: 'bottom',
+              position: "bottom",
               labels: {
                 padding: 20,
-                usePointStyle: true
-              }
-            }
-          }
-        }
+                usePointStyle: true,
+              },
+            },
+          },
+        },
       });
     };
 
     const getClientName = (client) => {
-      if (!client?.user) return 'N/A';
+      if (!client?.user) return "N/A";
       return `${client.user.firstName} ${client.user.lastName}`;
     };
 
     const getProviderName = (provider) => {
-      if (!provider?.user) return 'N/A';
+      if (!provider?.user) return "N/A";
       return `${provider.user.firstName} ${provider.user.lastName}`;
     };
 
     const getStatusClass = (status) => {
       const statusClasses = {
-        'PENDING': 'status-pending',
-        'ACCEPTED': 'status-accepted',
-        'IN_PROGRESS': 'status-progress',
-        'COMPLETED': 'status-completed',
-        'CANCELLED': 'status-cancelled'
+        PENDING: "status-pending",
+        ACCEPTED: "status-accepted",
+        IN_PROGRESS: "status-progress",
+        COMPLETED: "status-completed",
+        CANCELLED: "status-cancelled",
+        EXPIRED: "status-expired",
       };
-      return statusClasses[status] || 'status-default';
+      return statusClasses[status] || "status-default";
     };
 
     const formatDate = (dateString) => {
@@ -594,44 +718,51 @@ export default {
           websiteViews.value = response.data.count;
         }
       } catch (error) {
-        console.error('Error fetching website views:', error);
+        console.error("Error fetching website views:", error);
       }
     };
 
     const allTransactions = ref([]);
 
-const fetchTransactions = async () => {
-  try {
-    loadingTransactions.value = true;
-    transactionError.value = '';
-    transactionPage.value = 1;
+    const fetchTransactions = async () => {
+      try {
+        loadingTransactions.value = true;
+        transactionError.value = "";
+        transactionPage.value = 1;
 
-    const queryParams = new URLSearchParams();
-    if (transactionFilters.value.paymentStatus) {
-      queryParams.append('paymentStatus', transactionFilters.value.paymentStatus);
-    }
-    if (transactionFilters.value.sortBy) {
-      queryParams.append('sortBy', transactionFilters.value.sortBy);
-    }
-    if (transactionFilters.value.sortOrder) {
-      queryParams.append('sortOrder', transactionFilters.value.sortOrder);
-    }
+        const queryParams = new URLSearchParams();
+        if (transactionFilters.value.paymentStatus) {
+          queryParams.append(
+            "paymentStatus",
+            transactionFilters.value.paymentStatus,
+          );
+        }
+        if (transactionFilters.value.sortBy) {
+          queryParams.append("sortBy", transactionFilters.value.sortBy);
+        }
+        if (transactionFilters.value.sortOrder) {
+          queryParams.append("sortOrder", transactionFilters.value.sortOrder);
+        }
 
-    const response = await adminService.getAllTransactions(queryParams.toString());
+        const response = await adminService.getAllTransactions(
+          queryParams.toString(),
+        );
 
-    if (response.success) {
-      allTransactions.value = response.data;
-      transactionTotal.value = response.data.length;
-    } else {
-      transactionError.value = response.message || 'Failed to load transactions';
-    }
-  } catch (err) {
-    console.error('Error fetching transactions:', err);
-    transactionError.value = 'Unable to load transactions. Please try again later.';
-  } finally {
-    loadingTransactions.value = false;
-  }
-};
+        if (response.success) {
+          allTransactions.value = response.data;
+          transactionTotal.value = response.data.length;
+        } else {
+          transactionError.value =
+            response.message || "Failed to load transactions";
+        }
+      } catch (err) {
+        console.error("Error fetching transactions:", err);
+        transactionError.value =
+          "Unable to load transactions. Please try again later.";
+      } finally {
+        loadingTransactions.value = false;
+      }
+    };
 
     const applyTransactionFilters = () => {
       fetchTransactions();
@@ -639,9 +770,9 @@ const fetchTransactions = async () => {
 
     const resetTransactionFilters = () => {
       transactionFilters.value = {
-        paymentStatus: '',
-        sortBy: 'date',
-        sortOrder: 'desc'
+        paymentStatus: "",
+        sortBy: "date",
+        sortOrder: "desc",
       };
       transactionPage.value = 1;
       fetchTransactions();
@@ -651,54 +782,58 @@ const fetchTransactions = async () => {
       if (transaction.client?.user) {
         return `${transaction.client.user.firstName} ${transaction.client.user.lastName}`;
       }
-      return 'N/A';
+      return "N/A";
     };
 
     const getTransactionProviderName = (transaction) => {
       if (transaction.serviceProvider?.user) {
         return `${transaction.serviceProvider.user.firstName} ${transaction.serviceProvider.user.lastName}`;
       }
-      return 'N/A';
+      return "N/A";
     };
 
     const formatTransactionDate = (dateString) => {
-      if (!dateString) return 'N/A';
+      if (!dateString) return "N/A";
       const date = new Date(dateString);
-      return date.toLocaleString('en-PH', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      return date.toLocaleString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     };
 
     const formatTransactionStatus = (status) => {
       const statusMap = {
-        'PENDING': 'Pending',
-        'CONFIRMED': 'Confirmed',
-        'IN_PROGRESS': 'In Progress',
-        'COMPLETED': 'Completed',
-        'CANCELLED': 'Cancelled',
-        'DISPUTED': 'Disputed'
+        PENDING: "Pending",
+        CONFIRMED: "Confirmed",
+        IN_PROGRESS: "In Progress",
+        COMPLETED: "Completed",
+        CANCELLED: "Cancelled",
+        DISPUTED: "Disputed",
+        EXPIRED: "Expired",
       };
       return statusMap[status] || status;
     };
 
     // Computed pages
     const transactionTotalPages = computed(() =>
-      Math.ceil(transactionTotal.value / transactionPageSize.value)
+      Math.ceil(transactionTotal.value / transactionPageSize.value),
     );
     const providerTotalPages = computed(() =>
-      Math.ceil(providerTotal.value / providerPageSize.value)
+      Math.ceil(providerTotal.value / providerPageSize.value),
     );
     const bookingTotalPages = computed(() =>
-      Math.ceil(bookingTotal.value / bookingPageSize.value)
+      Math.ceil(bookingTotal.value / bookingPageSize.value),
     );
 
     const paginatedTransactions = computed(() => {
       const start = (transactionPage.value - 1) * transactionPageSize.value;
-      return allTransactions.value.slice(start, start + transactionPageSize.value);
+      return allTransactions.value.slice(
+        start,
+        start + transactionPageSize.value,
+      );
     });
 
     // Computed slices (client-side pagination)
@@ -762,17 +897,26 @@ const fetchTransactions = async () => {
       formatTransactionStatus,
       websiteViews,
       fetchWebsiteViews,
-      allTransactions, paginatedTransactions,
-      transactionPage, transactionTotalPages, changeTransactionPage,
-      providerPage, providerTotalPages, paginatedProviders, changeProviderPage,
-      bookingPage, bookingTotalPages, paginatedBookings, changeBookingPage,
+      allTransactions,
+      paginatedTransactions,
+      transactionPage,
+      transactionTotalPages,
+      changeTransactionPage,
+      providerPage,
+      providerTotalPages,
+      paginatedProviders,
+      changeProviderPage,
+      bookingPage,
+      bookingTotalPages,
+      paginatedBookings,
+      changeBookingPage,
     };
   },
   beforeUnmount() {
     if (this.timeInterval) {
       clearInterval(this.timeInterval);
     }
-  }
+  },
 };
 </script>
 
@@ -809,13 +953,13 @@ const fetchTransactions = async () => {
 }
 
 .page-title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
   width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #00C853, #009688);
+  background: linear-gradient(90deg, #00c853, #009688);
   border-radius: 2px;
 }
 
@@ -827,9 +971,9 @@ const fetchTransactions = async () => {
 .time {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #00C853;
+  color: #00c853;
   margin-bottom: 4px;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 .date {
@@ -862,7 +1006,7 @@ const fetchTransactions = async () => {
 }
 
 .card-icon {
-  background: linear-gradient(135deg, #00C853 0%, #009688 100%);
+  background: linear-gradient(135deg, #00c853 0%, #009688 100%);
   color: white;
   width: 70px;
   height: 70px;
@@ -956,7 +1100,7 @@ const fetchTransactions = async () => {
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #00C853;
+  color: #00c853;
   margin-bottom: 8px;
 }
 
@@ -1007,7 +1151,7 @@ const fetchTransactions = async () => {
 }
 
 .star-filled {
-  color: #FFD700;
+  color: #ffd700;
 }
 
 .star-empty {
@@ -1056,7 +1200,8 @@ table {
   overflow: hidden;
 }
 
-th, td {
+th,
+td {
   padding: 14px 12px;
   text-align: left;
   border-bottom: 1px solid #ececec;
@@ -1127,6 +1272,12 @@ tr:hover {
   border: 1px solid #d6d8db;
 }
 
+.status-expired {
+  background: #dfe6e9;
+  color: #2d3436;
+  border: 1px solid #b2bec3;
+}
+
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -1145,15 +1296,19 @@ tr:hover {
   width: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #00C853;
+  border-top: 4px solid #00c853;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */
@@ -1161,11 +1316,11 @@ tr:hover {
   .admin-dashboard {
     padding: 15px 20px;
   }
-  
+
   .charts-section {
     grid-template-columns: 1fr;
   }
-  
+
   .chart-wrapper {
     height: 300px;
   }
@@ -1175,89 +1330,90 @@ tr:hover {
   .admin-dashboard {
     padding: 10px 15px;
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: 15px;
     align-items: flex-start;
   }
-  
+
   .page-title {
     font-size: 2rem;
   }
-  
+
   .time-date-display {
     text-align: left;
   }
-  
+
   .time {
     font-size: 1.5rem;
   }
-  
+
   .date {
     font-size: 0.9rem;
   }
-  
+
   .summary-cards {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 15px;
   }
-  
+
   .card {
     padding: 20px;
   }
-  
+
   .card-icon {
     width: 60px;
     height: 60px;
     font-size: 1.5rem;
     margin-right: 15px;
   }
-  
+
   .card-content h3 {
     font-size: 1.8rem;
   }
-  
+
   .charts-section {
     gap: 15px;
   }
-  
+
   .chart-container {
     padding: 20px;
   }
-  
+
   .chart-wrapper {
     height: 250px;
   }
-  
+
   .ratings-summary {
     padding: 20px;
   }
-  
+
   .summary-stats {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .stat-value {
     font-size: 1.5rem;
   }
-  
+
   .top-providers {
     padding: 20px;
   }
-  
+
   .rating-display {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
   }
-  
+
   .recent-bookings {
     padding: 20px;
   }
-  
-  th, td {
+
+  th,
+  td {
     padding: 12px 8px;
     font-size: 0.9rem;
   }
@@ -1267,30 +1423,31 @@ tr:hover {
   .admin-dashboard {
     padding: 8px 10px;
   }
-  
+
   .summary-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .card {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .card-icon {
     margin-right: 0;
     margin-bottom: 15px;
   }
-  
+
   .chart-wrapper {
     height: 200px;
   }
-  
-  th, td {
+
+  th,
+  td {
     padding: 8px 6px;
     font-size: 0.8rem;
   }
-  
+
   .status-badge {
     padding: 4px 8px;
     font-size: 0.7rem;
@@ -1381,7 +1538,7 @@ tr:hover {
   width: 40px;
   height: 40px;
   border: 3px solid #f3f3f3;
-  border-top: 3px solid #00C853;
+  border-top: 3px solid #00c853;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -1479,7 +1636,7 @@ tr:hover {
 
 .period-select:focus,
 .period-select:hover {
-  border-color: #00C853;
+  border-color: #00c853;
 }
 .pagination-controls {
   display: flex;
@@ -1502,9 +1659,9 @@ tr:hover {
 }
 
 .pagination-controls button:hover:not(:disabled) {
-  background: #00C853;
+  background: #00c853;
   color: white;
-  border-color: #00C853;
+  border-color: #00c853;
 }
 
 .pagination-controls button:disabled {
@@ -1525,13 +1682,13 @@ tr:hover {
 
 .page-num:hover {
   background: #e8f5e9;
-  border-color: #00C853;
+  border-color: #00c853;
 }
 
 .page-num.active {
-  background: #00C853;
+  background: #00c853;
   color: white;
-  border-color: #00C853;
+  border-color: #00c853;
   font-weight: 600;
 }
 </style>
