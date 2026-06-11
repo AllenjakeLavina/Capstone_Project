@@ -1,6 +1,5 @@
 <template>
   <div class="landing-page">
-    
     <!-- Hero Section -->
     <section class="hero">
       <div class="hero-overlay"></div>
@@ -10,10 +9,19 @@
         <div class="shape shape-3"></div>
       </div>
       <div class="hero-content">
-        <img src="../assets/logo.png" alt="ServiceLink Logo" class="hero-logo" />
+        <img
+          src="../assets/logo.png"
+          alt="ServiceLink Logo"
+          class="hero-logo"
+        />
         <h1 class="hero-title">ServiceLink</h1>
-        <p class="hero-tagline">Connect with top-rated professionals in your area</p>
-        <p class="hero-description">Find service providers in Olongapo. Connect with verified professionals for your home, business, or personal needs.</p>
+        <p class="hero-tagline">
+          Connect with top-rated professionals in your area
+        </p>
+        <p class="hero-description">
+          Find service providers in Olongapo. Connect with verified
+          professionals for your home, business, or personal needs.
+        </p>
         <div class="hero-actions">
           <router-link to="/login" class="primary-btn">
             <i class="fa fa-search"></i> Find Services
@@ -30,10 +38,16 @@
       <div class="container">
         <div class="section-header">
           <h2>Why Choose ServiceLink?</h2>
-          <p class="section-subtitle">Connecting you with trusted service providers in Olongapo</p>
+          <p class="section-subtitle">
+            Connecting you with trusted service providers in Olongapo
+          </p>
         </div>
         <div class="features-grid">
-          <div class="feature-card" v-for="(feature, index) in features" :key="index">
+          <div
+            class="feature-card"
+            v-for="(feature, index) in features"
+            :key="index"
+          >
             <div class="feature-icon-wrapper" :class="feature.shapeClass">
               <i :class="feature.icon"></i>
             </div>
@@ -49,16 +63,24 @@
       <div class="container">
         <div class="section-header">
           <h2>Explore Our Services</h2>
-          <p class="section-subtitle">Discover professionals across various categories</p>
+          <p class="section-subtitle">
+            Discover professionals across various categories
+          </p>
         </div>
         <div class="categories-grid">
-          <div v-for="category in categories" :key="category.name" class="category-card">
+          <div
+            v-for="category in categories"
+            :key="category.name"
+            class="category-card"
+          >
             <div class="category-icon-wrapper" :class="category.shapeClass">
               <i :class="category.icon"></i>
             </div>
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
-            <router-link to="/login" class="category-link">Explore →</router-link>
+            <router-link to="/login" class="category-link"
+              >Explore →</router-link
+            >
           </div>
         </div>
       </div>
@@ -76,24 +98,43 @@
         </div>
         <div v-else-if="error" class="error-message">{{ error }}</div>
         <div v-else class="providers-grid">
-          <div v-for="provider in providers" :key="provider.id" class="provider-card">
+          <div
+            v-for="provider in providers"
+            :key="provider.id"
+            class="provider-card"
+          >
             <div class="provider-image">
-              <img :src="getProfileImage(provider.profilePicture)" :alt="provider.name">
+              <img
+                :src="getProfileImage(provider.profilePicture)"
+                :alt="provider.name"
+              />
             </div>
             <div class="provider-info">
               <h3>{{ provider.name }}</h3>
-              <p class="provider-headline">{{ provider.headline || 'Professional Service Provider' }}</p>
+              <p class="provider-headline">
+                {{ provider.headline || "Professional Service Provider" }}
+              </p>
               <div class="provider-skills">
-                <span v-for="(skill, index) in provider.skills.slice(0, 3)" :key="index" class="skill-tag">
+                <span
+                  v-for="(skill, index) in provider.skills.slice(0, 3)"
+                  :key="index"
+                  class="skill-tag"
+                >
                   {{ skill.name }}
                 </span>
               </div>
               <div class="provider-footer">
                 <div class="rating">
-                  <span class="stars">★ {{ provider.rating?.toFixed(1) || '0.0' }}</span>
-                  <span class="review-count">({{ provider.reviewCount || '0' }} reviews)</span>
+                  <span class="stars"
+                    >★ {{ provider.rating?.toFixed(1) || "0.0" }}</span
+                  >
+                  <span class="review-count"
+                    >({{ provider.reviewCount || "0" }} reviews)</span
+                  >
                 </div>
-                <button @click="handleViewProfile()" class="view-profile">View Profile</button>
+                <button @click="handleViewProfile()" class="view-profile">
+                  View Profile
+                </button>
               </div>
             </div>
           </div>
@@ -115,7 +156,9 @@
                 </div>
                 <div class="contact-text">
                   <h4>Email</h4>
-                  <a href="mailto:servicelinkolongapo@gmail.com">servicelinkolongapo@gmail.com</a>
+                  <a href="mailto:servicelinkolongapo@gmail.com"
+                    >servicelinkolongapo@gmail.com</a
+                  >
                 </div>
               </div>
               <div class="contact-item">
@@ -133,7 +176,12 @@
                 </div>
                 <div class="contact-text">
                   <h4>Facebook</h4>
-                  <a href="https://www.facebook.com/profile.php?id=61584255115576" target="_blank" rel="noopener noreferrer">Service Link</a>
+                  <a
+                    href="https://www.facebook.com/profile.php?id=61584255115576"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Service Link</a
+                  >
                 </div>
               </div>
             </div>
@@ -154,17 +202,38 @@
         <div class="footer-content">
           <div class="footer-section">
             <div class="footer-logo-box">
-              <img :src="logoImage" alt="ServiceLink Logo" class="footer-logo" />
+              <img
+                :src="logoImage"
+                alt="ServiceLink Logo"
+                class="footer-logo"
+              />
             </div>
-            <p class="footer-description">Connecting Olongapo with trusted service providers. Your one-stop platform for all service needs.</p>
+            <p class="footer-description">
+              Connecting Olongapo with trusted service providers. Your one-stop
+              platform for all service needs.
+            </p>
             <div class="social-links">
-              <a href="https://www.facebook.com/profile.php?id=61584255115576" target="_blank" rel="noopener noreferrer" class="social-link facebook" aria-label="Facebook">
+              <a
+                href="https://www.facebook.com/profile.php?id=61584255115576"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="social-link facebook"
+                aria-label="Facebook"
+              >
                 <i class="fab fa-facebook-f"></i>
               </a>
-              <a href="mailto:servicelinkolongapo@gmail.com" class="social-link email" aria-label="Email">
+              <a
+                href="mailto:servicelinkolongapo@gmail.com"
+                class="social-link email"
+                aria-label="Email"
+              >
                 <i class="fab fa-google"></i>
               </a>
-              <a href="tel:09150664403" class="social-link phone" aria-label="Phone">
+              <a
+                href="tel:09150664403"
+                class="social-link phone"
+                aria-label="Phone"
+              >
                 <i class="fas fa-phone"></i>
               </a>
             </div>
@@ -173,21 +242,46 @@
             <h4>Quick Links</h4>
             <ul class="footer-links">
               <li><router-link to="/login">Find Services</router-link></li>
-              <li><router-link to="/register">Register as Provider</router-link></li>
-              <li><router-link to="/register/client">Register as Client</router-link></li>
+              <li>
+                <router-link to="/register">Register as Provider</router-link>
+              </li>
+              <li>
+                <router-link to="/register/client"
+                  >Register as Client</router-link
+                >
+              </li>
             </ul>
           </div>
           <div class="footer-section">
             <h4>Contact Us</h4>
             <ul class="footer-links">
-              <li><i class="fab fa-google"></i> <a href="mailto:servicelinkolongapo@gmail.com">servicelinkolongapo@gmail.com</a></li>
-              <li><i class="fas fa-phone"></i> <a href="tel:09150664403">09150664403</a></li>
-              <li><i class="fab fa-facebook-f"></i> <a href="https://www.facebook.com/profile.php?id=61584255115576" target="_blank" rel="noopener noreferrer">Service Link</a></li>
+              <li>
+                <i class="fab fa-google"></i>
+                <a href="mailto:servicelinkolongapo@gmail.com"
+                  >servicelinkolongapo@gmail.com</a
+                >
+              </li>
+              <li>
+                <i class="fas fa-phone"></i>
+                <a href="tel:09150664403">09150664403</a>
+              </li>
+              <li>
+                <i class="fab fa-facebook-f"></i>
+                <a
+                  href="https://www.facebook.com/profile.php?id=61584255115576"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Service Link</a
+                >
+              </li>
             </ul>
           </div>
         </div>
         <div class="footer-bottom">
-          <p>&copy; {{ currentYear }} ServiceLink - Mabayuan Olongapo City, Zambales. All rights reserved.</p>
+          <p>
+            &copy; {{ currentYear }} ServiceLink - Mabayuan Olongapo City,
+            Zambales. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
@@ -195,60 +289,93 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue';
-import apiService, { providerService, adminService } from '../services/apiService';
-import { useRouter } from 'vue-router';
-import logoImage from '../assets/logo.png';
+import { ref, onMounted, computed } from "vue";
+import apiService, {
+  providerService,
+  adminService,
+} from "../services/apiService";
+import { useRouter } from "vue-router";
+import logoImage from "../assets/logo.png";
 
 export default {
-  name: 'LandingPage',
+  name: "LandingPage",
   setup() {
     const router = useRouter();
     const categories = ref([
-      { name: 'Tutoring & Education', shapeClass: 'shape-ring', icon: 'fa fa-graduation-cap', description: 'Find qualified tutors and educators for various subjects' },
-      { name: 'Home Services', shapeClass: 'shape-square', icon: 'fa fa-home', description: 'Home maintenance, cleaning, and improvement services' },
-      { name: 'Handyman Services', shapeClass: 'shape-block', icon: 'fa fa-wrench', description: 'Repair and installation services for your home' },
-      { name: 'Professional Services', shapeClass: 'shape-circle', icon: 'fa fa-briefcase', description: 'Business consulting and professional advice' },
-      { name: 'IT & Tech Support', shapeClass: 'shape-ring', icon: 'fa fa-laptop', description: 'Computer repair and technical assistance' },
-      { name: 'Delivery & Errands', shapeClass: 'shape-square', icon: 'fa fa-truck', description: 'Local delivery and personal errand services' },
+      {
+        name: "Tutoring & Education",
+        shapeClass: "shape-ring",
+        icon: "fa fa-graduation-cap",
+        description: "Find qualified tutors and educators for various subjects",
+      },
+      {
+        name: "Home Services",
+        shapeClass: "shape-square",
+        icon: "fa fa-home",
+        description: "Home maintenance, cleaning, and improvement services",
+      },
+      {
+        name: "Handyman Services",
+        shapeClass: "shape-block",
+        icon: "fa fa-wrench",
+        description: "Repair and installation services for your home",
+      },
+      {
+        name: "Professional Services",
+        shapeClass: "shape-circle",
+        icon: "fa fa-briefcase",
+        description: "Business consulting and professional advice",
+      },
+      {
+        name: "IT & Tech Support",
+        shapeClass: "shape-ring",
+        icon: "fa fa-laptop",
+        description: "Computer repair and technical assistance",
+      },
+      {
+        name: "Delivery & Errands",
+        shapeClass: "shape-square",
+        icon: "fa fa-truck",
+        description: "Local delivery and personal errand services",
+      },
     ]);
-    
+
     const features = ref([
-      { 
-        shapeClass: 'shape-circle', 
-        icon: 'fa fa-check-circle',
-        title: 'Verified Providers', 
-        description: 'All service providers undergo verification process' 
+      {
+        shapeClass: "shape-circle",
+        icon: "fa fa-check-circle",
+        title: "Verified Providers",
+        description: "All service providers undergo verification process",
       },
-      { 
-        shapeClass: 'shape-square', 
-        icon: 'fa fa-dollar-sign',
-        title: 'Transparent Pricing', 
-        description: 'Clear pricing with no hidden charges' 
+      {
+        shapeClass: "shape-square",
+        icon: "fas fa-coins",
+        title: "Transparent Pricing",
+        description: "Clear pricing with no hidden charges",
       },
-      { 
-        shapeClass: 'shape-ring', 
-        icon: 'fa fa-star',
-        title: 'Customer Reviews', 
-        description: 'Read authentic reviews from previous customers' 
+      {
+        shapeClass: "shape-ring",
+        icon: "fa fa-star",
+        title: "Customer Reviews",
+        description: "Read authentic reviews from previous customers",
       },
-      { 
-        shapeClass: 'shape-block', 
-        icon: 'fa fa-calendar-check',
-        title: 'Easy Booking', 
-        description: 'Simple and straightforward booking process' 
+      {
+        shapeClass: "shape-block",
+        icon: "fa fa-calendar-check",
+        title: "Easy Booking",
+        description: "Simple and straightforward booking process",
       },
-      { 
-        shapeClass: 'shape-circle', 
-        icon: 'fa fa-shield-alt',
-        title: 'Secure Platform', 
-        description: 'Your data and transactions are secure' 
+      {
+        shapeClass: "shape-circle",
+        icon: "fa fa-shield-alt",
+        title: "Secure Platform",
+        description: "Your data and transactions are secure",
       },
-      { 
-        shapeClass: 'shape-square', 
-        icon: 'fa fa-map-marker-alt',
-        title: 'Local Services', 
-        description: 'Find services available in Olongapo area' 
+      {
+        shapeClass: "shape-square",
+        icon: "fa fa-map-marker-alt",
+        title: "Local Services",
+        description: "Find services available in Olongapo area",
       },
     ]);
 
@@ -268,23 +395,26 @@ export default {
     };
 
     const handleViewProfile = () => {
-      router.push('/login');
+      router.push("/login");
     };
 
     const fetchProviders = async () => {
       try {
         loading.value = true;
-        const response = await providerService.searchProviders({}, { limit: 5, sortBy: 'rating', sortOrder: 'desc' });
+        const response = await providerService.searchProviders(
+          {},
+          { limit: 5, sortBy: "rating", sortOrder: "desc" },
+        );
         if (response.success) {
           providers.value = response.data.providers
-          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-          .slice(0, 5);
+            .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+            .slice(0, 5);
         } else {
-          error.value = response.message || 'Failed to load providers';
+          error.value = response.message || "Failed to load providers";
         }
       } catch (err) {
-        error.value = 'An error occurred while loading providers';
-        console.error('Error fetching providers:', err);
+        error.value = "An error occurred while loading providers";
+        console.error("Error fetching providers:", err);
       } finally {
         loading.value = false;
       }
@@ -294,7 +424,7 @@ export default {
       fetchProviders();
       adminService.incrementWebsiteViews().catch(() => {});
     });
-    
+
     return {
       providers,
       loading,
@@ -304,9 +434,9 @@ export default {
       currentYear,
       handleViewProfile,
       getProfileImage,
-      logoImage
+      logoImage,
     };
-  }
+  },
 };
 </script>
 
@@ -337,7 +467,8 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+    repeat;
   opacity: 0.1;
 }
 
@@ -380,7 +511,8 @@ export default {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) rotate(0deg);
   }
   33% {
@@ -445,7 +577,8 @@ export default {
   animation: fadeInUp 1s ease 0.8s both;
 }
 
-.primary-btn, .outline-btn {
+.primary-btn,
+.outline-btn {
   padding: 16px 40px;
   border-radius: 12px;
   font-weight: 600;
@@ -746,7 +879,6 @@ export default {
   transform: scaleX(1);
 }
 
-
 .category-card h3 {
   font-size: 1.5rem;
   margin-bottom: 16px;
@@ -806,7 +938,12 @@ export default {
   left: 0;
   width: 100%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(16, 110, 64, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(16, 110, 64, 0.2),
+    transparent
+  );
 }
 
 .providers-grid {
@@ -846,7 +983,7 @@ export default {
   left: 0;
   width: 100%;
   height: 60px;
-  background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
 }
 
 .provider-image img {
@@ -956,7 +1093,8 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+    repeat;
   opacity: 0.1;
 }
 
@@ -1252,8 +1390,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */
@@ -1273,7 +1415,7 @@ export default {
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .hero-tagline {
     font-size: 1.3rem;
   }
@@ -1281,14 +1423,14 @@ export default {
   .hero-description {
     font-size: 1rem;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     gap: 16px;
   }
 
-  
-  .primary-btn, .outline-btn {
+  .primary-btn,
+  .outline-btn {
     width: 100%;
     text-align: center;
     justify-content: center;
@@ -1298,11 +1440,15 @@ export default {
     font-size: 2rem;
   }
 
-  .categories-grid, .providers-grid, .features-grid {
+  .categories-grid,
+  .providers-grid,
+  .features-grid {
     grid-template-columns: 1fr;
   }
 
-  .category-card, .provider-card, .feature-card {
+  .category-card,
+  .provider-card,
+  .feature-card {
     margin: 0;
   }
 
